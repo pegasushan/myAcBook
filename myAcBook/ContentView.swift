@@ -202,11 +202,19 @@ private var groupedRecordSections: some View {
                     Button(action: {
                         isAddingNewRecord = true
                     }) {
-                        Label("새 항목 추가", systemImage: "plus")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .padding(.horizontal)
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("새 항목 추가")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(Color.accentColor)
+                        .clipShape(Capsule())
+                        .shadow(radius: 4)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()

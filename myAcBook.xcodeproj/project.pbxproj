@@ -29,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		83BD60D82DC4AE2000BAAA4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Record+CoreDataClass.swift"; sourceTree = "<group>"; };
 		83BE44262DBF478D005C700E /* Record+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Record+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		83C5FFBA2DBF3CF4005EB195 /* myAcBook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myAcBook.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +83,7 @@
 		83C5FFB12DBF3CF4005EB195 = {
 			isa = PBXGroup;
 			children = (
+				83BD60D82DC4AE2000BAAA4D /* Info.plist */,
 				83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */,
 				83BE44262DBF478D005C700E /* Record+CoreDataProperties.swift */,
 				83C5FFBC2DBF3CF4005EB195 /* myAcBook */,
