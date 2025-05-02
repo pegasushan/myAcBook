@@ -66,15 +66,6 @@ struct AccountingTabView: View {
                         }
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button("시스템 설정 사용") { colorScheme = "system" }
-                        Button("라이트 모드") { colorScheme = "light" }
-                        Button("다크 모드") { colorScheme = "dark" }
-                    } label: {
-                        Image(systemName: "paintbrush")
-                    }
-                }
             }
         }
     }

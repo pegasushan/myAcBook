@@ -13,19 +13,24 @@ struct FilterSummaryView: View {
     var selectedDateFilter: String
     var dateRangeText: String
     var onTap: () -> Void
+    var onReset: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Button(action: {
-                onTap()
-            }) {
-                HStack {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                    Text("필터 설정")
-                    Spacer()
+            HStack(spacing: 16) {
+                Button(action: {
+                    onTap()
+                }) {
+                    HStack {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                        Text("필터 설정")
+                    }
+                    .font(.body)
+                    .foregroundColor(.blue)
                 }
-                .font(.body)
-                .foregroundColor(.blue)
+                .contentShape(Rectangle())
+
+                Spacer()
             }
             if selectedTypeFilter != "전체" || selectedDateFilter != "전체" || selectedCategory != "전체" {
                 VStack(alignment: .leading, spacing: 4) {

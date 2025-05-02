@@ -14,7 +14,7 @@ public struct CategoryManagerView: View {
                 Section(header:
                     VStack(alignment: .leading) {
                         Text("카테고리 목록")
-                            .font(.subheadline)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                     }
                     .padding(.top, 8)
@@ -22,11 +22,13 @@ public struct CategoryManagerView: View {
                     if selectedType == "수입" {
                         ForEach(categoryManager.incomeCategories, id: \.self) { category in
                             Text(category)
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
                         }
                         .onDelete(perform: categoryManager.deleteIncomeCategory)
                     } else {
                         ForEach(categoryManager.expenseCategories, id: \.self) { category in
                             Text(category)
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
                         }
                         .onDelete(perform: categoryManager.deleteExpenseCategory)
                     }
@@ -35,7 +37,7 @@ public struct CategoryManagerView: View {
                 Section(header:
                     VStack(alignment: .leading) {
                         Text("새 카테고리 추가")
-                            .font(.subheadline)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                     }
                     .padding(.top, 12)
@@ -43,6 +45,7 @@ public struct CategoryManagerView: View {
                     HStack(spacing: 12) {
                         TextField("카테고리 이름", text: $newCategoryName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .font(.system(size: 15, design: .rounded))
                         Button("추가") {
                             let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
                             if !trimmed.isEmpty {
@@ -55,6 +58,7 @@ public struct CategoryManagerView: View {
                             }
                         }
                         .buttonStyle(.bordered)
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
                     .padding(.vertical, 4)
                 }

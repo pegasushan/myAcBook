@@ -9,6 +9,7 @@ struct ContentView: View {
 private var records: FetchedResults<Record>
 
 @AppStorage("colorScheme") private var colorScheme: String = "system"
+@AppStorage("isHapticsEnabled") private var isHapticsEnabled: Bool = true
 
 @State private var selectedRecords = Set<Record>()
 @State private var editMode: EditMode = .inactive
@@ -23,8 +24,18 @@ private var records: FetchedResults<Record>
 @AppStorage("selectedDateFilter") private var selectedDateFilter: String = "전체"
 @AppStorage("selectedTypeFilter") private var selectedTypeFilter: String = "전체"
 @State private var showFilterSheet = false
-@State private var customStartDate = Date()
-@State private var customEndDate = Date()
+@AppStorage("customStartDate") private var customStartTimestamp: Double = Date().timeIntervalSince1970
+@AppStorage("customEndDate") private var customEndTimestamp: Double = Date().timeIntervalSince1970
+
+private var customStartDate: Date {
+    get { Date(timeIntervalSince1970: customStartTimestamp) }
+    set { customStartTimestamp = newValue.timeIntervalSince1970 }
+}
+
+private var customEndDate: Date {
+    get { Date(timeIntervalSince1970: customEndTimestamp) }
+    set { customEndTimestamp = newValue.timeIntervalSince1970 }
+}
 @StateObject private var categoryManager = CategoryManager()
 @State private var showSplash = true
 
@@ -54,9 +65,8 @@ private var records: FetchedResults<Record>
                 return "\(formatDateShort(monthAgo)) ~ \(formatDateShort(now))"
             }
         case "직접 선택":
-            let start = formatDateShort(customStartDate)
-            let end = formatDateShort(customEndDate)
-            return "\(min(start, end)) ~ \(max(start, end))"
+            let sortedDates = [customStartDate, customEndDate].sorted()
+            return "\(formatDateShort(sortedDates[0])) ~ \(formatDateShort(sortedDates[1]))"
         default:
             return selectedDateFilter
         }
@@ -186,20 +196,21 @@ private var groupedRecordSections: some View {
                         .foregroundColor(.secondary)
 
                     Text("해당 조건에 맞는 내역이 없습니다.")
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
 
                     Button(action: {
                         isAddingNewRecord = true
                     }) {
                         Label("새 항목 추가", systemImage: "plus")
-                            .font(.body)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .padding(.horizontal)
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 80)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+                .multilineTextAlignment(.center)
             } else {
                 ForEach(sortedRecordDates, id: \.self) { date in
                     if let records = groupedRecordsByDate[date] {
@@ -239,7 +250,14 @@ var body: some View {
                         selectedCategory: selectedCategory,
                         selectedDateFilter: selectedDateFilter,
                         dateRangeText: dateRangeText(),
-                        onTap: { showFilterSheet = true }
+                        onTap: { showFilterSheet = true },
+                        onReset: {
+                            selectedTypeFilter = "전체"
+                            selectedCategory = "전체"
+                            selectedDateFilter = "전체"
+                            customStartTimestamp = Date().timeIntervalSince1970
+                            customEndTimestamp = Date().timeIntervalSince1970
+                        }
                     )
                 ),
                 recordListSection: AnyView(recordListSection)
@@ -249,8 +267,14 @@ var body: some View {
                     selectedType: $selectedTypeFilter,
                     selectedCategory: $selectedCategory,
                     selectedDate: $selectedDateFilter,
-                    customStartDate: $customStartDate,
-                    customEndDate: $customEndDate,
+                    customStartDate: Binding(
+                        get: { Date(timeIntervalSince1970: customStartTimestamp) },
+                        set: { customStartTimestamp = $0.timeIntervalSince1970 }
+                    ),
+                    customEndDate: Binding(
+                        get: { Date(timeIntervalSince1970: customEndTimestamp) },
+                        set: { customEndTimestamp = $0.timeIntervalSince1970 }
+                    ),
                     categoryManager: categoryManager
                 )
             }
@@ -269,22 +293,29 @@ var body: some View {
             .tabItem {
                 Label("통계", systemImage: "chart.pie.fill")
             }
+
+            NavigationView {
+                SettingsView()
+            }
+            .tabItem {
+                Label("설정", systemImage: "gear")
+            }
         }
-        .preferredColorScheme(
-            colorScheme == "light" ? .light :
-            colorScheme == "dark" ? .dark : nil
-        )
         .sheet(isPresented: $isAddingNewRecord, onDismiss: {
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.success)
+            if isHapticsEnabled {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
         }) {
             AddRecordView(categoryManager: categoryManager, recordToEdit: nil)
                 .environment(\.managedObjectContext, viewContext)
                 .presentationDetents([.large])
         }
         .sheet(item: $selectedRecord, onDismiss: {
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.success)
+            if isHapticsEnabled {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
         }) { record in
             AddRecordView(categoryManager: categoryManager, recordToEdit: record)
                 .environment(\.managedObjectContext, viewContext)
@@ -316,41 +347,55 @@ private var recordListSection: some View {
 
 private var filterSummaryView: some View {
     VStack(alignment: .leading, spacing: 6) {
-        Button(action: {
-            showFilterSheet = true
-        }) {
-            HStack {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                Text("필터 설정")
-                Spacer()
+        // 필터 설정 버튼과 초기화 버튼을 HStack으로 분리 배치
+        HStack {
+            Button(action: {
+                showFilterSheet = true
+            }) {
+                HStack {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                    Text("필터 설정")
+                }
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(.blue)
             }
-            .font(.body)
-            .foregroundColor(.blue)
+            Spacer()
+            Button(action: {
+                selectedTypeFilter = "전체"
+                selectedCategory = "전체"
+                selectedDateFilter = "전체"
+                customStartTimestamp = Date().timeIntervalSince1970
+                customEndTimestamp = Date().timeIntervalSince1970
+            }) {
+                Label("초기화", systemImage: "arrow.counterclockwise")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundColor(.red)
+            }
         }
         if selectedTypeFilter != "전체" || selectedDateFilter != "전체" || selectedCategory != "전체" {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("유형:")
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
                     Text(selectedTypeFilter)
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("카테고리:")
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
                     Text(selectedCategory)
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text("기간:")
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
                     Text(dateRangeText())
-                        .font(.caption)
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
                 }
             }
@@ -370,6 +415,8 @@ private func recordSection(for records: [Record], date: Date) -> some View {
             recordRowView(record: record)
         }
     }
+    .headerProminence(.increased)
+    .font(.system(size: 15, weight: .medium, design: .rounded))
 }
 
 @ViewBuilder

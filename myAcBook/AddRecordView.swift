@@ -33,9 +33,10 @@ struct AddRecordView: View {
                     }
                     .listRowBackground(Color.clear)
                 }
-                Section(header: Text("금액").font(.caption)) {
+                Section(header: Text("금액").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     TextField("예: 10,000", text: $amount)
                         .keyboardType(.decimalPad)
+                        .font(.system(size: 15, design: .rounded))
                         .onChange(of: amount) {
                             let numberString = amount.replacingOccurrences(of: ",", with: "")
                             if let value = Int(numberString) {
@@ -50,28 +51,32 @@ struct AddRecordView: View {
                     ForEach(types, id: \.self) { Text($0) }
                 }
                 .pickerStyle(.segmented)
+                .font(.system(size: 15, design: .rounded))
                 .disabled(recordToEdit != nil)
 
-                Section(header: Text("카테고리")) {
+                Section(header: Text("카테고리").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     Picker("카테고리", selection: $category) {
                         Text("선택").tag("선택")
                         ForEach(categories, id: \.self) { Text($0).tag($0) }
                     }
+                    .font(.system(size: 15, design: .rounded))
                     Button(action: {
                         showCategoryManager = true
                     }) {
                         Label("카테고리 관리", systemImage: "folder")
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundColor(.blue)
                     }
                 }
 
-                Section(header: Text("설명").font(.caption)) {
+                Section(header: Text("설명").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     TextField("항목에 대한 설명", text: $detail)
+                        .font(.system(size: 15, design: .rounded))
                 }
 
-                Section(header: Text("날짜").font(.caption)) {
+                Section(header: Text("날짜").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     DatePicker("날짜", selection: $date, displayedComponents: .date)
+                        .font(.system(size: 15, design: .rounded))
                 }
             }
             .alert(isPresented: $showAlert) {
