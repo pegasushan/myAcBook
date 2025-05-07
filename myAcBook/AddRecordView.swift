@@ -33,7 +33,7 @@ struct AddRecordView: View {
                     }
                     .listRowBackground(Color.clear)
                 }
-                Section(header: Text("금액").font(.system(size: 15, weight: .semibold, design: .rounded))) {
+                Section {
                     TextField("예: 10,000", text: $amount)
                         .keyboardType(.decimalPad)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
@@ -54,7 +54,7 @@ struct AddRecordView: View {
                 .font(.system(size: 15, weight: .regular, design: .rounded))
                 .disabled(recordToEdit != nil)
 
-                Section(header: Text("카테고리").font(.system(size: 15, weight: .semibold, design: .rounded))) {
+                Section {
                     Picker("카테고리", selection: $category) {
                         Text("선택").font(.system(size: 15, weight: .regular, design: .rounded)).tag("선택")
                         ForEach(categories, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)).tag($0) }
@@ -69,12 +69,12 @@ struct AddRecordView: View {
                     }
                 }
 
-                Section(header: Text("설명").font(.system(size: 15, weight: .semibold, design: .rounded))) {
+                Section {
                     TextField("항목에 대한 설명", text: $detail)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
 
-                Section(header: Text("날짜").font(.system(size: 15, weight: .semibold, design: .rounded))) {
+                Section {
                     DatePicker("날짜", selection: $date, displayedComponents: .date)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
@@ -93,11 +93,13 @@ struct AddRecordView: View {
                     Button(recordToEdit == nil ? "저장" : "수정 완료") {
                         saveRecord()
                     }
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("취소") {
                         dismiss()
                     }
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
             }
             .onAppear {

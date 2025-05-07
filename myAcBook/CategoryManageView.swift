@@ -74,15 +74,17 @@ public struct CategoryManagerView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("카테고리 관리")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("닫기") {
                         dismiss()
                     }
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
                     EditButton()
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
             }
         }
