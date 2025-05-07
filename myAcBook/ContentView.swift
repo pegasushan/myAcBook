@@ -204,9 +204,9 @@ private var groupedRecordSections: some View {
                     }) {
                         HStack(spacing: 8) {
                             Image(systemName: "plus")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
                             Text("새 항목 추가")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
                         }
                         .foregroundColor(.white)
                         .padding(.vertical, 10)
@@ -287,7 +287,7 @@ var body: some View {
                 )
             }
             .tabItem {
-                Label("가계부", systemImage: "list.bullet.rectangle")
+                Label("가계부 🧾", systemImage: "list.bullet.rectangle")
             }
 
             StatisticsTabView(
@@ -299,14 +299,14 @@ var body: some View {
                 formattedAmount: formattedAmount
             )
             .tabItem {
-                Label("통계", systemImage: "chart.pie.fill")
+                Label("통계 📊", systemImage: "chart.pie.fill")
             }
 
             NavigationView {
                 SettingsView()
             }
             .tabItem {
-                Label("설정", systemImage: "gear")
+                Label("설정 ⚙️", systemImage: "gear")
             }
         }
         .sheet(isPresented: $isAddingNewRecord, onDismiss: {
@@ -351,6 +351,7 @@ private var recordListSection: some View {
     }
     .listRowInsets(EdgeInsets())
     .listRowBackground(Color(.systemBackground))
+    .font(.system(size: 14, weight: .regular, design: .rounded))
 }
 
 private var filterSummaryView: some View {
@@ -376,7 +377,7 @@ private var filterSummaryView: some View {
                 customEndTimestamp = Date().timeIntervalSince1970
             }) {
                 Label("초기화", systemImage: "arrow.counterclockwise")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundColor(.red)
             }
         }
@@ -412,6 +413,7 @@ private var filterSummaryView: some View {
     .padding()
     .background(Color(.systemBackground))
     .cornerRadius(12)
+    .font(.system(size: 14, weight: .regular, design: .rounded))
 }
 
 
@@ -419,12 +421,13 @@ private var filterSummaryView: some View {
 private func recordSection(for records: [Record], date: Date) -> some View {
     Section {
         SectionHeader(title: formattedDate(date))
+            .font(.system(size: 15, weight: .semibold, design: .rounded))
         ForEach(records) { record in
             recordRowView(record: record)
         }
     }
     .headerProminence(.increased)
-    .font(.system(size: 15, weight: .medium, design: .rounded))
+    .font(.system(size: 14, weight: .regular, design: .rounded))
 }
 
 @ViewBuilder

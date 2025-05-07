@@ -15,9 +15,8 @@ struct SplashView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 120, height: 120)
 
-                Text("AccountBook")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                Text("가계부 🧾")
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .foregroundColor(.primary)
             }
             .scaleEffect(scale)

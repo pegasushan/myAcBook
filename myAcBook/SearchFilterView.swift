@@ -78,17 +78,22 @@ struct SearchFilterView: View {
                     }
                 }
             }
-            .navigationTitle("필터 설정")
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("필터 설정")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("취소") {
                         dismiss()
                     }
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("적용") {
                         dismiss()
                     }
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
             }
         }

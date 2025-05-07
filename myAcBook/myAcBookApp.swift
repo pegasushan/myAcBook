@@ -9,36 +9,26 @@ struct myAcBookApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if isAppLockEnabled {
-                    if authManager.isUnlocked {
-                        ContentView()
-                            .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                            .preferredColorScheme(
-                                colorScheme == "light" ? .light :
-                                colorScheme == "dark" ? .dark : nil
-                            )
-                    } else {
-                        VStack {
-                            Text("앱 잠금 해제 필요")
-                                .font(.title2)
-                                .padding()
+            ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .preferredColorScheme(
+                    colorScheme == "light" ? .light :
+                    colorScheme == "dark" ? .dark : nil
+                )
+                .overlay(
+                    Group {
+                        if isAppLockEnabled && !authManager.isUnlocked {
+                            Color.black.opacity(0.6).ignoresSafeArea()
                         }
                     }
-                } else {
-                    ContentView()
-                        .environment(\.managedObjectContext, persistenceController.container.viewContext)
-                        .preferredColorScheme(
-                            colorScheme == "light" ? .light :
-                            colorScheme == "dark" ? .dark : nil
-                        )
+                )
+                .task {
+                    if isAppLockEnabled && !authManager.isUnlocked {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            authManager.authenticate()
+                        }
+                    }
                 }
-            }
-            .task {
-                if isAppLockEnabled && !authManager.isUnlocked {
-                    authManager.authenticate()
-                }
-            }
         }
     }
 }

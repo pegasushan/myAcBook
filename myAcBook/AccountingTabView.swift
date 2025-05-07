@@ -35,14 +35,14 @@ struct AccountingTabView: View {
                     }
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("AccountBook")
-                        .font(.headline)
-                        .fontWeight(.bold)
+                    Text("가계부 🧾")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     if isDeleteMode {
                         if selectedRecords.isEmpty {
                             Text("선택")
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(.secondary)
                         } else {
                             Button(action: {
@@ -55,6 +55,7 @@ struct AccountingTabView: View {
                                 }
                             }) {
                                 Text("선택 삭제 (\(selectedRecords.count))")
+                                    .font(.system(size: 15, weight: .regular, design: .rounded))
                                     .foregroundColor(.red)
                             }
                         }

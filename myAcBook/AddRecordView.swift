@@ -27,7 +27,7 @@ struct AddRecordView: View {
                 Section {
                     HStack {
                         Text(recordToEdit == nil ? "📥 항목 추가" : "✏️ 항목 수정")
-                            .font(.title3.bold())
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
                             .padding(.vertical, 6)
                         Spacer()
                     }
@@ -36,7 +36,7 @@ struct AddRecordView: View {
                 Section(header: Text("금액").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     TextField("예: 10,000", text: $amount)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 15, design: .rounded))
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
                         .onChange(of: amount) {
                             let numberString = amount.replacingOccurrences(of: ",", with: "")
                             if let value = Int(numberString) {
@@ -48,18 +48,18 @@ struct AddRecordView: View {
                 }
 
                 Picker("구분", selection: $type) {
-                    ForEach(types, id: \.self) { Text($0) }
+                    ForEach(types, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)) }
                 }
                 .pickerStyle(.segmented)
-                .font(.system(size: 15, design: .rounded))
+                .font(.system(size: 15, weight: .regular, design: .rounded))
                 .disabled(recordToEdit != nil)
 
                 Section(header: Text("카테고리").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     Picker("카테고리", selection: $category) {
-                        Text("선택").tag("선택")
-                        ForEach(categories, id: \.self) { Text($0).tag($0) }
+                        Text("선택").font(.system(size: 15, weight: .regular, design: .rounded)).tag("선택")
+                        ForEach(categories, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)).tag($0) }
                     }
-                    .font(.system(size: 15, design: .rounded))
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
                     Button(action: {
                         showCategoryManager = true
                     }) {
@@ -71,12 +71,12 @@ struct AddRecordView: View {
 
                 Section(header: Text("설명").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     TextField("항목에 대한 설명", text: $detail)
-                        .font(.system(size: 15, design: .rounded))
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
 
                 Section(header: Text("날짜").font(.system(size: 15, weight: .semibold, design: .rounded))) {
                     DatePicker("날짜", selection: $date, displayedComponents: .date)
-                        .font(.system(size: 15, design: .rounded))
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
             }
             .alert(isPresented: $showAlert) {

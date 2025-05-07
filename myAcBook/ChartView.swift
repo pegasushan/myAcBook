@@ -12,6 +12,7 @@ struct ChartView: View {
             if groupedRecords.isEmpty {
                 Text("데이터가 없습니다.")
                     .foregroundColor(.secondary)
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
             } else {
                 Chart {
                     ForEach(groupedRecords, id: \.category) { group in
@@ -27,7 +28,12 @@ struct ChartView: View {
                 .padding()
             }
         }
-        .navigationTitle("소비 통계 📊")
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Text("소비 통계 📊")
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+            }
+        }
     }
 
     // ✨ 지출만 그룹핑

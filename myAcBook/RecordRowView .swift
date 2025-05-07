@@ -28,26 +28,26 @@ struct RecordRowView: View {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: (record.type ?? "지출") == "수입" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                     .foregroundColor((record.type ?? "지출") == "수입" ? .green : .red)
-                    .font(.subheadline)
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         if let date = record.date {
                             Text(formattedDate(date))
-                                .font(.caption2)
+                                .font(.system(size: 12, weight: .regular, design: .rounded))
                                 .foregroundColor(.secondary)
                         }
                         Text(record.category ?? "Unknown")
-                            .font(.subheadline)
+                            .font(.system(size: 15, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
                         if let detail = record.detail, !detail.isEmpty {
                             Text(detail)
-                                .font(.caption2)
+                                .font(.system(size: 13, weight: .regular, design: .rounded))
                                 .foregroundColor(.gray)
                         }
                         Spacer()
                         Text(formattedAmount(record.amount))
-                            .font(.subheadline.bold())
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
                 }
             }

@@ -5,11 +5,13 @@ struct MainView: View {
         TabView {
             ContentView()
                 .tabItem {
-                    Label("가계부", systemImage: "list.bullet.rectangle.portrait")
+                    Label("가계부 🧾", systemImage: "list.bullet.rectangle.portrait")
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                 }
             ChartView()
                 .tabItem {
-                    Label("통계", systemImage: "chart.pie")
+                    Label("통계 📊", systemImage: "chart.pie")
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
                 }
         }
     }

@@ -48,49 +48,67 @@ struct StatisticsTabView: View {
                 } else if selectedStatTab == "그래프" {
                     List {
                         Section(header: Text("월별 수입/지출 통계 그래프")) {
-                            Chart {
-                                ForEach(sortedMonths, id: \.self) { month in
-                                    let income = monthlyIncomeTotals[month] ?? 0
-                                    BarMark(
-                                        x: .value("Month", month),
-                                        y: .value("금액", income)
-                                    )
-                                    .position(by: .value("종류", "수입"))
-                                    .foregroundStyle(.green)
-                                    .annotation(position: .top) {
-                                        Text(formattedCompactNumber(income))
-                                            .font(.caption)
-                                    }
-                                    let expense = monthlyExpenseTotals[month] ?? 0
-                                    BarMark(
-                                        x: .value("Month", month),
-                                        y: .value("금액", expense)
-                                    )
-                                    .position(by: .value("종류", "지출"))
-                                    .foregroundStyle(.red)
-                                    .annotation(position: .top) {
-                                        Text(formattedCompactNumber(expense))
-                                            .font(.caption)
-                                    }
+                            if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
+                                VStack {
+                                    Spacer()
+                                    Text("표시할 데이터가 없습니다")
+                                        .font(.system(size: 14, weight: .regular, design: .rounded))
+                                        .foregroundColor(.gray)
+                                        .frame(maxWidth: .infinity)
+                                        .multilineTextAlignment(.center)
+                                    Spacer()
                                 }
-                            }
-                            .chartYAxis {
-                                AxisMarks(position: .leading) { value in
-                                    AxisGridLine()
-                                    AxisTick()
-                                    AxisValueLabel {
-                                        if let doubleValue = value.as(Double.self) {
-                                            Text(formattedCompactNumber(doubleValue))
+                                .frame(height: 250)
+                            } else {
+                                Chart {
+                                    ForEach(sortedMonths, id: \.self) { month in
+                                        let income = monthlyIncomeTotals[month] ?? 0
+                                        BarMark(
+                                            x: .value("Month", month),
+                                            y: .value("금액", income)
+                                        )
+                                        .position(by: .value("종류", "수입"))
+                                        .foregroundStyle(.green)
+                                        .annotation(position: .top) {
+                                            Text(formattedCompactNumber(income))
+                                                .font(.system(size: 13, weight: .regular, design: .rounded))
+                                        }
+                                        let expense = monthlyExpenseTotals[month] ?? 0
+                                        BarMark(
+                                            x: .value("Month", month),
+                                            y: .value("금액", expense)
+                                        )
+                                        .position(by: .value("종류", "지출"))
+                                        .foregroundStyle(.red)
+                                        .annotation(position: .top) {
+                                            Text(formattedCompactNumber(expense))
+                                                .font(.system(size: 13, weight: .regular, design: .rounded))
                                         }
                                     }
                                 }
+                                .chartYAxis {
+                                    AxisMarks(position: .leading) { value in
+                                        AxisGridLine()
+                                        AxisTick()
+                                        AxisValueLabel {
+                                            if let doubleValue = value.as(Double.self) {
+                                                Text(formattedCompactNumber(doubleValue))
+                                            }
+                                        }
+                                    }
+                                }
+                                .frame(height: 250)
                             }
-                            .frame(height: 250)
                         }
                     }
                 }
             }
-            .navigationTitle("통계 📊")
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("통계 📊")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                }
+            }
         }
     }
 
@@ -101,23 +119,36 @@ struct StatisticsTabView: View {
         sectionTitleSuffix: String,
         formattedAmount: @escaping (Double) -> String
     ) -> some View {
-        List {
-            let sortedMonths = monthlyCategoryTotals.keys.sorted { (Int($0) ?? 0) < (Int($1) ?? 0) }
-            ForEach(sortedMonths, id: \.self) { month in
-                Section(header: VStack(alignment: .leading) {
-                    Text("\(month) 월 \(sectionTitleSuffix)")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    Text("총 합계: \(formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0))")
-                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundColor(color)
-                }) {
-                    ForEach(Array(monthlyCategoryTotals[month]!.keys), id: \.self) { category in
-                        HStack {
-                            Text(category)
-                            Spacer()
-                            Text(formattedAmount(monthlyCategoryTotals[month]![category] ?? 0))
-                                .bold()
-                                .foregroundColor(color)
+        if monthlyCategoryTotals.isEmpty {
+            VStack {
+                Spacer()
+                Text("표시할 데이터가 없습니다")
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                Spacer()
+            }
+            .frame(maxHeight: .infinity)
+        } else {
+            List {
+                let sortedMonths = monthlyCategoryTotals.keys.sorted { (Int($0) ?? 0) < (Int($1) ?? 0) }
+                ForEach(sortedMonths, id: \.self) { month in
+                    Section(header: VStack(alignment: .leading) {
+                        Text("\(month) 월 \(sectionTitleSuffix)")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        Text("총 합계: \(formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0))")
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundColor(color)
+                    }) {
+                        ForEach(Array(monthlyCategoryTotals[month]!.keys), id: \.self) { category in
+                            HStack {
+                                Text(category)
+                                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                                Spacer()
+                                Text(formattedAmount(monthlyCategoryTotals[month]![category] ?? 0))
+                                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                                    .foregroundColor(color)
+                            }
                         }
                     }
                 }

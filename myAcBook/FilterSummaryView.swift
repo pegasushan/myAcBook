@@ -25,7 +25,7 @@ struct FilterSummaryView: View {
                         Image(systemName: "line.3.horizontal.decrease.circle")
                         Text("필터 설정")
                     }
-                    .font(.body)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundColor(.blue)
                 }
                 .contentShape(Rectangle())
@@ -36,26 +36,26 @@ struct FilterSummaryView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("유형:")
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
                         Text(selectedTypeFilter)
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.primary)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("카테고리:")
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
                         Text(selectedCategory)
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.primary)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("기간:")
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
                         Text(dateRangeText)
-                            .font(.caption)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.primary)
                     }
                 }
