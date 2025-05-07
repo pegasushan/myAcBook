@@ -8,6 +8,7 @@ struct StatisticsTabView: View {
     let monthlyCategoryIncomeTotals: [String: [String: Double]]
     let monthlyCategoryExpenseTotals: [String: [String: Double]]
     let formattedAmount: (Double) -> String
+    @State private var isAscendingSort = false
 
     var sortedMonths: [String] {
         let dateFormatter = DateFormatter()
@@ -17,6 +18,16 @@ struct StatisticsTabView: View {
             guard let d1 = dateFormatter.date(from: $0),
                   let d2 = dateFormatter.date(from: $1) else { return false }
             return d1 < d2
+        }
+    }
+    
+    var sortedCategoryMonths: [String] {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        return monthlyCategoryIncomeTotals.keys.sorted {
+            guard let d1 = dateFormatter.date(from: $0),
+                  let d2 = dateFormatter.date(from: $1) else { return false }
+            return d1 > d2
         }
     }
 
@@ -36,14 +47,18 @@ struct StatisticsTabView: View {
                         monthlyCategoryTotals: monthlyCategoryIncomeTotals,
                         color: .green,
                         sectionTitleSuffix: "수입",
-                        formattedAmount: formattedAmount
+                        formattedAmount: formattedAmount,
+                        isAscendingSort: isAscendingSort,
+                        onToggleSort: { isAscendingSort.toggle() }
                     )
                 } else if selectedStatTab == "지출" {
                     CategorySectionView(
                         monthlyCategoryTotals: monthlyCategoryExpenseTotals,
                         color: .red,
                         sectionTitleSuffix: "지출",
-                        formattedAmount: formattedAmount
+                        formattedAmount: formattedAmount,
+                        isAscendingSort: isAscendingSort,
+                        onToggleSort: { isAscendingSort.toggle() }
                     )
                 } else if selectedStatTab == "그래프" {
                     List {
@@ -112,42 +127,70 @@ struct StatisticsTabView: View {
         }
     }
 
+    func getSortedMonths(
+        from monthlyCategoryTotals: [String: [String: Double]],
+        ascending: Bool
+    ) -> [String] {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        return monthlyCategoryTotals.keys.sorted {
+            guard let d1 = dateFormatter.date(from: $0),
+                  let d2 = dateFormatter.date(from: $1) else { return false }
+            return ascending ? d1 < d2 : d1 > d2
+        }
+    }
+
     @ViewBuilder
     func CategorySectionView(
         monthlyCategoryTotals: [String: [String: Double]],
         color: Color,
         sectionTitleSuffix: String,
-        formattedAmount: @escaping (Double) -> String
+        formattedAmount: @escaping (Double) -> String,
+        isAscendingSort: Bool,
+        onToggleSort: @escaping () -> Void
     ) -> some View {
-        if monthlyCategoryTotals.isEmpty {
-            VStack {
-                Spacer()
-                Text("표시할 데이터가 없습니다")
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                Spacer()
-            }
-            .frame(maxHeight: .infinity)
-        } else {
-            List {
-                let sortedMonths = monthlyCategoryTotals.keys.sorted { (Int($0) ?? 0) < (Int($1) ?? 0) }
-                ForEach(sortedMonths, id: \.self) { month in
-                    Section(header: VStack(alignment: .leading) {
-                        Text("\(month) 월 \(sectionTitleSuffix)")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        Text("총 합계: \(formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0))")
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                            .foregroundColor(color)
-                    }) {
-                        ForEach(Array(monthlyCategoryTotals[month]!.keys), id: \.self) { category in
+        let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: isAscendingSort)
+
+        Group {
+            if monthlyCategoryTotals.isEmpty {
+                VStack {
+                    Spacer()
+                    Text("표시할 데이터가 없습니다")
+                        .font(.system(size: 14, weight: .regular, design: .rounded))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                    Spacer()
+                }
+                .frame(maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(sortedMonths, id: \.self) { month in
+                        Section(header: VStack(alignment: .leading) {
                             HStack {
-                                Text(category)
-                                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                                Text("\(month) 월 \(sectionTitleSuffix)")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                                 Spacer()
-                                Text(formattedAmount(monthlyCategoryTotals[month]![category] ?? 0))
-                                    .font(.system(size: 14, weight: .regular, design: .rounded))
-                                    .foregroundColor(color)
+                                Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
+                                    .font(.system(size: 13))
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onToggleSort()
+                            }
+
+                            Text("총 합계: \(formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0))")
+                                .font(.system(size: 14, weight: .regular, design: .rounded))
+                                .foregroundColor(color)
+                        }) {
+                            ForEach(Array(monthlyCategoryTotals[month]!.keys), id: \.self) { category in
+                                HStack {
+                                    Text(category)
+                                        .font(.system(size: 14, weight: .regular, design: .rounded))
+                                    Spacer()
+                                    Text(formattedAmount(monthlyCategoryTotals[month]![category] ?? 0))
+                                        .font(.system(size: 14, weight: .regular, design: .rounded))
+                                        .foregroundColor(color)
+                                }
                             }
                         }
                     }
