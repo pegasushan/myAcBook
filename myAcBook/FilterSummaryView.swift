@@ -46,7 +46,7 @@ struct FilterSummaryView: View {
                         Text("카테고리:")
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
-                        Text(selectedCategory)
+                        Text(selectedCategory.isEmpty ? "전체" : selectedCategory)
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.primary)
                     }

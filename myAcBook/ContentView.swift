@@ -21,6 +21,19 @@ private var records: FetchedResults<Record>
 @State private var selectedStatTab: String = "지출"
 @State private var isDeleteMode = false
 @AppStorage("selectedCategory") private var selectedCategory: String = "전체"
+@State private var selectedIncomeCategory: String = "전체"
+@State private var selectedExpenseCategory: String = "전체"
+@State private var selectedAllCategory: String = "전체"
+    private var currentCategory: String {
+        switch selectedTypeFilter {
+        case "수입":
+            return selectedIncomeCategory
+        case "지출":
+            return selectedExpenseCategory
+        default:
+            return selectedAllCategory
+        }
+    }
 @AppStorage("selectedDateFilter") private var selectedDateFilter: String = "전체"
 @AppStorage("selectedTypeFilter") private var selectedTypeFilter: String = "전체"
 @State private var showFilterSheet = false
@@ -30,6 +43,13 @@ private var records: FetchedResults<Record>
 private var customStartDate: Date {
     get { Date(timeIntervalSince1970: customStartTimestamp) }
     set { customStartTimestamp = newValue.timeIntervalSince1970 }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    }
 }
 
 private var customEndDate: Date {
@@ -133,9 +153,9 @@ private var monthlyCategoryIncomeTotals: [String: [String: Double]] {
 private func isRecordInSelectedDateRange(_ record: Record) -> Bool {
     guard selectedDateFilter != "전체" else { return true }
     guard let recordDate = record.date else { return false }
-    let calendar = Calendar.current
+    var calendar = Calendar.current
+    calendar.timeZone = TimeZone(identifier: "Asia/Seoul")!
     let now = Date()
-
     let startOfToday = calendar.startOfDay(for: now)
 
     switch selectedDateFilter {
@@ -158,9 +178,9 @@ private func isRecordInSelectedDateRange(_ record: Record) -> Bool {
     case "직접 선택":
         let safeStartDate = min(customStartDate, customEndDate)
         let safeEndDate = max(customStartDate, customEndDate)
-        let recordDay = Calendar.current.startOfDay(for: recordDate)
-        let startDay = Calendar.current.startOfDay(for: safeStartDate)
-        let endDay = Calendar.current.startOfDay(for: safeEndDate)
+        let recordDay = calendar.startOfDay(for: recordDate)
+        let startDay = calendar.startOfDay(for: safeStartDate)
+        let endDay = calendar.startOfDay(for: safeEndDate)
         return recordDay >= startDay && recordDay <= endDay
     default:
         return true
@@ -168,16 +188,28 @@ private func isRecordInSelectedDateRange(_ record: Record) -> Bool {
 }
 
 private var filteredRecords: [Record] {
-    records.filter {
-        (selectedCategory == "전체" || ($0.category ?? "기타") == selectedCategory)
-        && (selectedTypeFilter == "전체" || ($0.type ?? "지출") == selectedTypeFilter)
-        && isRecordInSelectedDateRange($0)
+    records.filter { record in
+        let matchesCategory = currentCategory == "전체" || (record.category ?? "기타") == currentCategory
+        let matchesType: Bool = {
+            if selectedTypeFilter == "전체" {
+                return true
+            }
+            guard let type = record.type else { return false }
+            return type == selectedTypeFilter
+        }()
+        let matchesDate = isRecordInSelectedDateRange(record)
+        return matchesCategory && matchesType && matchesDate
     }
 }
 
 private var groupedRecordsByDate: [Date: [Record]] {
-    Dictionary(grouping: filteredRecords) {
-        Calendar.current.startOfDay(for: $0.date ?? Date())
+    var calendar = Calendar.current
+    calendar.timeZone = TimeZone(identifier: "Asia/Seoul")!
+
+    let filtered = filteredRecords
+    return Dictionary(grouping: filtered) { record in
+        guard let date = record.date else { return Date.distantPast }
+        return calendar.startOfDay(for: date)
     }
 }
 
@@ -222,11 +254,7 @@ private var groupedRecordSections: some View {
             } else {
                 ForEach(sortedRecordDates, id: \.self) { date in
                     if let records = groupedRecordsByDate[date] {
-                        if records.count > 1 {
-                            recordSection(for: records, date: date)
-                        } else if let record = records.first {
-                            recordRowView(record: record)
-                        }
+                        recordSection(for: records, date: date)
                     }
                 }
             }
@@ -255,13 +283,15 @@ var body: some View {
                 filterSummaryView: AnyView(
                     FilterSummaryView(
                         selectedTypeFilter: selectedTypeFilter,
-                        selectedCategory: selectedCategory,
+                        selectedCategory: currentCategory,
                         selectedDateFilter: selectedDateFilter,
                         dateRangeText: dateRangeText(),
                         onTap: { showFilterSheet = true },
                         onReset: {
                             selectedTypeFilter = "전체"
-                            selectedCategory = "전체"
+                            selectedIncomeCategory = "전체"
+                            selectedExpenseCategory = "전체"
+                            selectedAllCategory = "전체"
                             selectedDateFilter = "전체"
                             customStartTimestamp = Date().timeIntervalSince1970
                             customEndTimestamp = Date().timeIntervalSince1970
@@ -283,6 +313,9 @@ var body: some View {
                         get: { Date(timeIntervalSince1970: customEndTimestamp) },
                         set: { customEndTimestamp = $0.timeIntervalSince1970 }
                     ),
+                    selectedIncomeCategory: $selectedIncomeCategory,
+                    selectedExpenseCategory: $selectedExpenseCategory,
+                    selectedAllCategory: $selectedAllCategory,
                     categoryManager: categoryManager
                 )
             }
@@ -420,8 +453,16 @@ private var filterSummaryView: some View {
 @ViewBuilder
 private func recordSection(for records: [Record], date: Date) -> some View {
     Section {
-        SectionHeader(title: formattedDate(date))
-            .font(.system(size: 15, weight: .semibold, design: .rounded))
+        SectionHeader(
+            title: formattedDate(
+                Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day], from: date)) ?? date
+            )
+        )
+        .font(.system(size: 14, weight: .bold, design: .rounded))
+        .foregroundColor(Color.blue)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
         ForEach(records) { record in
             recordRowView(record: record)
         }

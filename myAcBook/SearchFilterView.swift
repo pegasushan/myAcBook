@@ -11,7 +11,22 @@ struct SearchFilterView: View {
     @Binding var customStartDate: Date
     @Binding var customEndDate: Date
 
+    @Binding var selectedIncomeCategory: String
+    @Binding var selectedExpenseCategory: String
+    @Binding var selectedAllCategory: String
+
     @ObservedObject var categoryManager: CategoryManager
+
+    var currentCategoryBinding: Binding<String> {
+        switch selectedType {
+        case "수입":
+            return $selectedIncomeCategory
+        case "지출":
+            return $selectedExpenseCategory
+        default:
+            return $selectedAllCategory
+        }
+    }
 
     var body: some View {
         NavigationView {
@@ -41,10 +56,19 @@ struct SearchFilterView: View {
                         Text("카테고리 선택")
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.gray)
-                        Picker(selection: $selectedCategory) {
+                        Picker(selection: currentCategoryBinding) {
                             Text("전체").tag("전체")
                                 .font(.system(size: 14, weight: .regular, design: .rounded))
-                            let categories = selectedType == "수입" ? categoryManager.incomeCategories : categoryManager.expenseCategories
+                            let categories: [String] = {
+                                switch selectedType {
+                                case "수입":
+                                    return categoryManager.incomeCategories
+                                case "지출":
+                                    return categoryManager.expenseCategories
+                                default:
+                                    return categoryManager.incomeCategories + categoryManager.expenseCategories
+                                }
+                            }()
                             ForEach(categories, id: \.self) { cat in
                                 Text(cat).tag(cat)
                                     .font(.system(size: 14, weight: .regular, design: .rounded))
@@ -84,7 +108,9 @@ struct SearchFilterView: View {
                     }
                     if selectedDate == "직접 선택" {
                         DatePicker("시작 날짜", selection: $customStartDate, displayedComponents: .date)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                         DatePicker("종료 날짜", selection: $customEndDate, displayedComponents: .date)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                     }
                 }
             }

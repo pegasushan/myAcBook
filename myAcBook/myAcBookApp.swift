@@ -22,7 +22,7 @@ struct myAcBookApp: App {
                         }
                     }
                 )
-                .task {
+                .task(id: isAppLockEnabled) {
                     if isAppLockEnabled && !authManager.isUnlocked {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             authManager.authenticate()
