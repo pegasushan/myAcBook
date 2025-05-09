@@ -57,7 +57,7 @@ struct SettingsView: View {
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("저장") {
+                Button(action: {
                     isAppLockEnabled = lockToggleValue
                     colorScheme = selectedColorScheme
                     isHapticsEnabled = hapticsValue
@@ -65,6 +65,9 @@ struct SettingsView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         dismiss()
                     }
+                }) {
+                    Text("저장")
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
             }
         }
