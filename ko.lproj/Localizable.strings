@@ -69,3 +69,8 @@
 "custom" = "직접 선택";
 "no_matching_records" = "해당 조건에 맞는 내역이 없습니다.";
 "CFBundleDisplayName" = "myAcBook";
+
+"premium_section" = "프리미엄";
+"ad_removed_done" = "광고 제거 완료 🎉";
+"remove_ads_button" = "광고 제거 (₩1,100)";
+"restore_purchase" = "구매 복원";

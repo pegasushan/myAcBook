@@ -65,3 +65,8 @@
 "category_list" = "Category List";
 "no_matching_records" = "No_matching_records";
 "CFBundleDisplayName" = "myAcBook";
+
+"premium_section" = "Premium";
+"ad_removed_done" = "Ads Removed 🎉";
+"remove_ads_button" = "Remove Ads ($0.99)";
+"restore_purchase" = "Restore Purchase";

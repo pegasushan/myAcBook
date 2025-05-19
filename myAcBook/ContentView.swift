@@ -26,6 +26,7 @@ private var records: FetchedResults<Record>
 
 @AppStorage("colorScheme") private var colorScheme: String = "system"
 @AppStorage("isHapticsEnabled") private var isHapticsEnabled: Bool = true
+@AppStorage("isAdRemoved") private var isAdRemoved: Bool = false
 
 @State private var selectedRecords = Set<Record>()
 @State private var editMode: EditMode = .inactive
@@ -382,8 +383,10 @@ var body: some View {
 
             Divider()
 
-            BannerAdView()
-                .frame(height: 50)
+            if !isAdRemoved {
+                BannerAdView()
+                    .frame(height: 50)
+            }
         }
 
         if showSplash {

@@ -44,7 +44,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		83ED7F362DDABC2900144A92 /* Exceptions for "myAcBook" folder in "myAcBook" target */ = {
+		83ED7F3E2DDAC74500144A92 /* Exceptions for "myAcBook" folder in "myAcBook" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -57,7 +57,7 @@
 		83C5FFBC2DBF3CF4005EB195 /* myAcBook */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				83ED7F362DDABC2900144A92 /* Exceptions for "myAcBook" folder in "myAcBook" target */,
+				83ED7F3E2DDAC74500144A92 /* Exceptions for "myAcBook" folder in "myAcBook" target */,
 			);
 			path = myAcBook;
 			sourceTree = "<group>";
