@@ -36,47 +36,47 @@ struct StatisticsTabView: View {
     var body: some View {
         return NavigationStack {
             VStack {
-                Picker("통계 종류", selection: $selectedStatTab) {
-                    Text("지출").tag("지출")
-                    Text("수입").tag("수입")
-                    Text("그래프").tag("그래프")
+                Picker(NSLocalizedString("statistics_type", comment: "통계 종류"), selection: $selectedStatTab) {
+                    Text(NSLocalizedString("expense", comment: "지출")).tag(NSLocalizedString("expense", comment: "지출"))
+                    Text(NSLocalizedString("income", comment: "수입")).tag(NSLocalizedString("income", comment: "수입"))
+                    Text(NSLocalizedString("graph", comment: "그래프")).tag(NSLocalizedString("graph", comment: "그래프"))
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
 
-                if selectedStatTab == "수입" {
+                if selectedStatTab == NSLocalizedString("income", comment: "수입") {
                     CategorySectionView(
                         monthlyCategoryTotals: monthlyCategoryIncomeTotals,
                         color: .green,
-                        sectionTitleSuffix: "수입",
+                        sectionTitleSuffix: NSLocalizedString("income", comment: ""),
                         formattedAmount: formattedAmount,
                         isAscendingSort: isAscendingSort,
                         onToggleSort: { isAscendingSort.toggle() }
                     )
-                } else if selectedStatTab == "지출" {
+                } else if selectedStatTab == NSLocalizedString("expense", comment: "지출") {
                     CategorySectionView(
                         monthlyCategoryTotals: monthlyCategoryExpenseTotals,
                         color: .red,
-                        sectionTitleSuffix: "지출",
+                        sectionTitleSuffix: NSLocalizedString("expense", comment: ""),
                         formattedAmount: formattedAmount,
                         isAscendingSort: isAscendingSort,
                         onToggleSort: { isAscendingSort.toggle() }
                     )
-                } else if selectedStatTab == "그래프" {
+                } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
                     VStack {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("월별 수입/지출 통계 그래프")
+                            Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                                 .padding(.horizontal)
 
-                            Toggle("막대 금액 표시", isOn: $showBarAnnotations)
+                            Toggle(NSLocalizedString("show_bar_labels", comment: "막대 금액 표시"), isOn: $showBarAnnotations)
                                 .font(.system(size: 13, weight: .regular, design: .rounded))
                                 .toggleStyle(.switch)
                                 .padding(.horizontal)
 
                             if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
                                 VStack(alignment: .center, spacing: 8) {
-                                    Text("표시할 데이터가 없습니다")
+                                    Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다"))
                                         .font(.system(size: 14, weight: .regular, design: .rounded))
                                         .foregroundColor(.gray)
                                         .frame(maxWidth: .infinity)
@@ -92,9 +92,9 @@ struct StatisticsTabView: View {
 
                                             BarMark(
                                                 x: .value("Month", month),
-                                                y: .value("금액", income)
+                                                y: .value(NSLocalizedString("amount", comment: "금액"), income)
                                             )
-                                            .position(by: .value("종류", "수입"))
+                                            .position(by: .value(NSLocalizedString("type", comment: "종류"), NSLocalizedString("income", comment: "")))
                                             .foregroundStyle(.green)
                                             .annotation(position: .top) {
                                                 if showBarAnnotations {
@@ -105,9 +105,9 @@ struct StatisticsTabView: View {
 
                                             BarMark(
                                                 x: .value("Month", month),
-                                                y: .value("금액", expense)
+                                                y: .value(NSLocalizedString("amount", comment: "금액"), expense)
                                             )
-                                            .position(by: .value("종류", "지출"))
+                                            .position(by: .value(NSLocalizedString("type", comment: "종류"), NSLocalizedString("expense", comment: "")))
                                             .foregroundStyle(.red)
                                             .annotation(position: .top) {
                                                 if showBarAnnotations {
@@ -137,14 +137,14 @@ struct StatisticsTabView: View {
                                         Circle()
                                             .fill(Color.green)
                                             .frame(width: 10, height: 10)
-                                        Text("수입")
+                                        Text(NSLocalizedString("income", comment: ""))
                                             .font(.system(size: 13, weight: .regular, design: .rounded))
                                     }
                                     HStack(spacing: 4) {
                                         Circle()
                                             .fill(Color.red)
                                             .frame(width: 10, height: 10)
-                                        Text("지출")
+                                        Text(NSLocalizedString("expense", comment: ""))
                                             .font(.system(size: 13, weight: .regular, design: .rounded))
                                     }
                                 }
@@ -158,7 +158,7 @@ struct StatisticsTabView: View {
         } // <-- This is the missing closing brace
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("통계 📊")
+                Text(NSLocalizedString("statistics_tab", comment: "통계"))
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
             }
         }
@@ -191,7 +191,7 @@ struct StatisticsTabView: View {
         if monthlyCategoryTotals.isEmpty {
             VStack {
                 Spacer()
-                Text("표시할 데이터가 없습니다")
+                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다"))
                     .font(.system(size: 14, weight: .regular, design: .rounded))
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
@@ -203,7 +203,7 @@ struct StatisticsTabView: View {
                 ForEach(sortedMonths, id: \.self) { month in
                     Section(header: VStack(alignment: .leading) {
                         HStack {
-                            Text("\(month) 월 \(sectionTitleSuffix)")
+                            Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)")
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                             Spacer()
                             Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
@@ -214,7 +214,7 @@ struct StatisticsTabView: View {
                             onToggleSort()
                         }
 
-                        Text("총 합계: \(formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0))")
+                        Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0)))
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(color)
                     }) {

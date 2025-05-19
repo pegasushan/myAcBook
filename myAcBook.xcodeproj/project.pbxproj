@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8357D5852DDAAEFD00A793E5 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 8357D5842DDAAEFD00A793E5 /* GoogleMobileAds */; };
+		837B09092DD32FA600BEC313 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 837B09052DD325F700BEC313 /* Localizable.strings */; };
+		837ED15E2DD3367F0082E0F0 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 837ED15A2DD3367F0082E0F0 /* Localizable.strings */; };
 		83BE44272DBF478D005C700E /* Record+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BE44262DBF478D005C700E /* Record+CoreDataProperties.swift */; };
 		83BE44282DBF478D005C700E /* Record+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */; };
 /* End PBXBuildFile section */
@@ -29,7 +32,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		83BD60D82DC4AE2000BAAA4D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		834D47872DD5804700328BD5 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = InfoPlist.strings; sourceTree = "<group>"; };
+		834D47882DD5804C00328BD5 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = Localizable.strings; sourceTree = "<group>"; };
+		837B09022DD325F700BEC313 /* InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = InfoPlist.strings; sourceTree = "<group>"; };
+		837B09042DD325F700BEC313 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
 		83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Record+CoreDataClass.swift"; sourceTree = "<group>"; };
 		83BE44262DBF478D005C700E /* Record+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Record+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		83C5FFBA2DBF3CF4005EB195 /* myAcBook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myAcBook.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -37,9 +43,22 @@
 		83C5FFDA2DBF3CF6005EB195 /* myAcBookUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = myAcBookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		83ED7F362DDABC2900144A92 /* Exceptions for "myAcBook" folder in "myAcBook" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 83C5FFB92DBF3CF4005EB195 /* myAcBook */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		83C5FFBC2DBF3CF4005EB195 /* myAcBook */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				83ED7F362DDABC2900144A92 /* Exceptions for "myAcBook" folder in "myAcBook" target */,
+			);
 			path = myAcBook;
 			sourceTree = "<group>";
 		};
@@ -60,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8357D5852DDAAEFD00A793E5 /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,10 +100,29 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		83090D802DD57F0400006D0B /* ko.lproj */ = {
+			isa = PBXGroup;
+			children = (
+				837ED1592DD3367F0082E0F0 /* InfoPlist.strings */,
+				837ED15A2DD3367F0082E0F0 /* Localizable.strings */,
+			);
+			path = ko.lproj;
+			sourceTree = "<group>";
+		};
+		837B08F62DD3246A00BEC313 /* en.lproj */ = {
+			isa = PBXGroup;
+			children = (
+				837B09032DD325F700BEC313 /* InfoPlist.strings */,
+				837B09052DD325F700BEC313 /* Localizable.strings */,
+			);
+			path = en.lproj;
+			sourceTree = "<group>";
+		};
 		83C5FFB12DBF3CF4005EB195 = {
 			isa = PBXGroup;
 			children = (
-				83BD60D82DC4AE2000BAAA4D /* Info.plist */,
+				83090D802DD57F0400006D0B /* ko.lproj */,
+				837B08F62DD3246A00BEC313 /* en.lproj */,
 				83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */,
 				83BE44262DBF478D005C700E /* Record+CoreDataProperties.swift */,
 				83C5FFBC2DBF3CF4005EB195 /* myAcBook */,
@@ -123,6 +162,7 @@
 			);
 			name = myAcBook;
 			packageProductDependencies = (
+				8357D5842DDAAEFD00A793E5 /* GoogleMobileAds */,
 			);
 			productName = myAcBook;
 			productReference = 83C5FFBA2DBF3CF4005EB195 /* myAcBook.app */;
@@ -202,10 +242,14 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				ko,
 				Base,
 			);
 			mainGroup = 83C5FFB12DBF3CF4005EB195;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8357D5832DDAAE5200A793E5 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 83C5FFBB2DBF3CF4005EB195 /* Products */;
 			projectDirPath = "";
@@ -223,6 +267,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				837B09092DD32FA600BEC313 /* Localizable.strings in Resources */,
+				837ED15E2DD3367F0082E0F0 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -281,6 +327,41 @@
 		};
 /* End PBXTargetDependency section */
 
+/* Begin PBXVariantGroup section */
+		837B09032DD325F700BEC313 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				837B09022DD325F700BEC313 /* InfoPlist.strings */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		837B09052DD325F700BEC313 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				837B09042DD325F700BEC313 /* Localizable.strings */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		837ED1592DD3367F0082E0F0 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				834D47872DD5804700328BD5 /* ko */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		837ED15A2DD3367F0082E0F0 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				834D47882DD5804C00328BD5 /* ko */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
 		83C5FFE22DBF3CF6005EB195 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -338,6 +419,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -392,6 +474,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -403,13 +486,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = myAcBook/myAcBook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"myAcBook/Preview Content\"";
 				DEVELOPMENT_TEAM = 4587GKBB5N;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "가계부";
+				INFOPLIST_FILE = "$(SRCROOT)/myAcBook/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = myAcBook;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -424,7 +508,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.han.myAcBook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -444,13 +528,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = myAcBook/myAcBook.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"myAcBook/Preview Content\"";
 				DEVELOPMENT_TEAM = 4587GKBB5N;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "가계부";
+				INFOPLIST_FILE = "$(SRCROOT)/myAcBook/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = myAcBook;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -465,7 +550,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.han.myAcBook;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -608,6 +693,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8357D5832DDAAE5200A793E5 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8357D5842DDAAEFD00A793E5 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8357D5832DDAAE5200A793E5 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 83C5FFB22DBF3CF4005EB195 /* Project object */;
 }

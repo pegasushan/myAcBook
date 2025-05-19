@@ -35,7 +35,7 @@ struct AccountingTabView: View {
                     }
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("가계부 🧾")
+                    Text(NSLocalizedString("app_title", comment: "앱 타이틀"))
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {

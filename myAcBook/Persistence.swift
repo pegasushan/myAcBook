@@ -11,8 +11,14 @@ struct PersistenceController {
         for i in 0..<10 {
             let newRecord = Record(context: viewContext)
             newRecord.id = UUID()
-            newRecord.category = ["식비", "교통비", "쇼핑", "여가", "기타"].randomElement()!
-            newRecord.detail = "테스트 항목 \(i + 1)"
+            newRecord.category = [
+                NSLocalizedString("food", comment: ""),
+                NSLocalizedString("transportation", comment: ""),
+                NSLocalizedString("shopping", comment: ""),
+                NSLocalizedString("leisure", comment: ""),
+                NSLocalizedString("etc", comment: "")
+            ].randomElement()!
+            newRecord.detail = String(format: NSLocalizedString("sample_detail", comment: "샘플 항목 상세"), i + 1)
             newRecord.amount = Double(Int.random(in: 1000...100000))
             newRecord.amount = floor(newRecord.amount)
             newRecord.date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) ?? Date()
@@ -22,7 +28,7 @@ struct PersistenceController {
             try viewContext.save()
         } catch {
             let nsError = error as NSError
-            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+            fatalError(String(format: NSLocalizedString("persistence_error", comment: "Core Data unresolved error"), "\(nsError)", "\(nsError.userInfo)"))
         }
         
         return result
@@ -37,7 +43,7 @@ struct PersistenceController {
         }
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
-                fatalError("Unresolved error \(error), \(error.userInfo)")
+                fatalError(String(format: NSLocalizedString("persistence_error", comment: "Core Data unresolved error"), "\(error)", "\(error.userInfo)"))
             }
         })
     }

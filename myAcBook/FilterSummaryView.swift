@@ -23,7 +23,7 @@ struct FilterSummaryView: View {
                 }) {
                     HStack {
                         Image(systemName: "line.3.horizontal.decrease.circle")
-                        Text("필터 설정")
+                        Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundColor(.blue)
@@ -32,10 +32,10 @@ struct FilterSummaryView: View {
 
                 Spacer()
             }
-            if selectedTypeFilter != "전체" || selectedDateFilter != "전체" || selectedCategory != "전체" {
+            if selectedTypeFilter != NSLocalizedString("all", comment: "") || selectedDateFilter != NSLocalizedString("all", comment: "") || selectedCategory != NSLocalizedString("all", comment: "") {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("유형:")
+                        Text(NSLocalizedString("type", comment: "유형") + ":")
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
                         Text(selectedTypeFilter)
@@ -43,15 +43,15 @@ struct FilterSummaryView: View {
                             .foregroundColor(.primary)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("카테고리:")
+                        Text(NSLocalizedString("category", comment: "카테고리") + ":")
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
-                        Text(selectedCategory.isEmpty ? "전체" : selectedCategory)
+                        Text(selectedCategory.isEmpty ? NSLocalizedString("all", comment: "") : selectedCategory)
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.primary)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("기간:")
+                        Text(NSLocalizedString("period", comment: "기간") + ":")
                             .font(.system(size: 14, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
                         Text(dateRangeText)

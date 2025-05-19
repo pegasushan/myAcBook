@@ -2,8 +2,17 @@ import Foundation
 import SwiftUI
 
 class CategoryManager: ObservableObject {
-    @Published var incomeCategories: [String] = ["급여", "부수입"]
-    @Published var expenseCategories: [String] = ["교통비", "식비", "쇼핑", "여가", "기타"]
+    @Published var incomeCategories: [String] = [
+        NSLocalizedString("salary", comment: ""),
+        NSLocalizedString("side_income", comment: "")
+    ]
+    @Published var expenseCategories: [String] = [
+        NSLocalizedString("transportation", comment: ""),
+        NSLocalizedString("food", comment: ""),
+        NSLocalizedString("shopping", comment: ""),
+        NSLocalizedString("leisure", comment: ""),
+        NSLocalizedString("etc", comment: "")
+    ]
 
     func addIncomeCategory(_ name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespaces)

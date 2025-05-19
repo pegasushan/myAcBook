@@ -1,5 +1,21 @@
 import SwiftUI
 import Charts
+import GoogleMobileAds
+// AdMob 배너 광고 뷰
+struct BannerAdView: UIViewRepresentable {
+    func makeUIView(context: Context) -> BannerView {
+        let banner = BannerView(adSize: AdSizeBanner)
+        banner.adUnitID = "ca-app-pub-7005642235163744/5831051767" // 여기에 AdMob 광고 단위 ID 입력
+        //banner.adUnitID = "ca-app-pub-3940256099942544/2934735716" //test
+        banner.rootViewController = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
+            .first
+        banner.load(Request())
+        return banner
+    }
+
+    func updateUIView(_ uiView: BannerView, context: Context) {}
+}
 
 struct ContentView: View {
 @Environment(\.managedObjectContext) private var viewContext
@@ -17,25 +33,25 @@ private var records: FetchedResults<Record>
 @State private var selectedRecord: Record? = nil
 @State private var recordToDelete: Record? = nil
 @State private var showingDeleteAlert = false
-@State private var selectedTabTitle: String = "가계부 📒"
-@State private var selectedStatTab: String = "지출"
+@State private var selectedTabTitle: String = NSLocalizedString("ledger_tab", comment: "앱 타이틀")
+@State private var selectedStatTab: String = NSLocalizedString("expense", comment: "")
 @State private var isDeleteMode = false
-@AppStorage("selectedCategory") private var selectedCategory: String = "전체"
-@State private var selectedIncomeCategory: String = "전체"
-@State private var selectedExpenseCategory: String = "전체"
-@State private var selectedAllCategory: String = "전체"
+@AppStorage("selectedCategory") private var selectedCategory: String = NSLocalizedString("all", comment: "")
+@State private var selectedIncomeCategory: String = NSLocalizedString("all", comment: "")
+@State private var selectedExpenseCategory: String = NSLocalizedString("all", comment: "")
+@State private var selectedAllCategory: String = NSLocalizedString("all", comment: "")
     private var currentCategory: String {
         switch selectedTypeFilter {
-        case "수입":
+        case NSLocalizedString("income", comment: ""):
             return selectedIncomeCategory
-        case "지출":
+        case NSLocalizedString("expense", comment: ""):
             return selectedExpenseCategory
         default:
             return selectedAllCategory
         }
     }
-@AppStorage("selectedDateFilter") private var selectedDateFilter: String = "전체"
-@AppStorage("selectedTypeFilter") private var selectedTypeFilter: String = "전체"
+@AppStorage("selectedDateFilter") private var selectedDateFilter: String = NSLocalizedString("all", comment: "")
+@AppStorage("selectedTypeFilter") private var selectedTypeFilter: String = NSLocalizedString("all", comment: "")
 @State private var showFilterSheet = false
 @AppStorage("customStartDate") private var customStartTimestamp: Double = Date().timeIntervalSince1970
 @AppStorage("customEndDate") private var customEndTimestamp: Double = Date().timeIntervalSince1970
@@ -70,21 +86,21 @@ private var customEndDate: Date {
         let now = Date()
 
         switch selectedDateFilter {
-        case "오늘":
+        case NSLocalizedString("today", comment: ""):
             return formatDateShort(now)
-        case "어제":
+        case NSLocalizedString("yesterday", comment: ""):
             if let yesterday = calendar.date(byAdding: .day, value: -1, to: now) {
                 return formatDateShort(yesterday)
             }
-        case "1주일":
+        case NSLocalizedString("week", comment: ""):
             if let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) {
                 return "\(formatDateShort(weekAgo)) ~ \(formatDateShort(now))"
             }
-        case "한달":
+        case NSLocalizedString("month", comment: ""):
             if let monthAgo = calendar.date(byAdding: .month, value: -1, to: now) {
                 return "\(formatDateShort(monthAgo)) ~ \(formatDateShort(now))"
             }
-        case "직접 선택":
+        case NSLocalizedString("custom", comment: ""):
             let sortedDates = [customStartDate, customEndDate].sorted()
             return "\(formatDateShort(sortedDates[0])) ~ \(formatDateShort(sortedDates[1]))"
         default:
@@ -96,7 +112,7 @@ private var customEndDate: Date {
 private var categoryTotals: [String: Double] {
     var totals = [String: Double]()
     for record in records {
-        let category = record.category ?? "기타"
+        let category = record.category ?? NSLocalizedString("etc", comment: "")
         totals[category, default: 0] += record.amount
     }
     return totals
@@ -106,7 +122,7 @@ private var monthlyIncomeTotals: [String: Double] {
     var totals = [String: Double]()
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM"
-    for record in records where record.type == "수입" {
+    for record in records where record.type == NSLocalizedString("income", comment: "") {
         let month = dateFormatter.string(from: record.date ?? Date())
         totals[month, default: 0] += record.amount
     }
@@ -117,7 +133,7 @@ private var monthlyExpenseTotals: [String: Double] {
     var totals = [String: Double]()
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM"
-    for record in records where record.type != "수입" {
+    for record in records where record.type != NSLocalizedString("income", comment: "") {
         let month = dateFormatter.string(from: record.date ?? Date())
         totals[month, default: 0] += record.amount
     }
@@ -129,9 +145,9 @@ private var monthlyCategoryExpenseTotals: [String: [String: Double]] {
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM"
 
-    for record in records where record.type != "수입" {
+    for record in records where record.type != NSLocalizedString("income", comment: "") {
         let month = dateFormatter.string(from: record.date ?? Date())
-        let category = record.category ?? "기타"
+        let category = record.category ?? NSLocalizedString("etc", comment: "")
         totals[month, default: [:]][category, default: 0] += record.amount
     }
     return totals
@@ -142,16 +158,16 @@ private var monthlyCategoryIncomeTotals: [String: [String: Double]] {
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM"
 
-    for record in records where record.type == "수입" {
+    for record in records where record.type == NSLocalizedString("income", comment: "") {
         let month = dateFormatter.string(from: record.date ?? Date())
-        let category = record.category ?? "기타"
+        let category = record.category ?? NSLocalizedString("etc", comment: "")
         totals[month, default: [:]][category, default: 0] += record.amount
     }
     return totals
 }
 
 private func isRecordInSelectedDateRange(_ record: Record) -> Bool {
-    guard selectedDateFilter != "전체" else { return true }
+    guard selectedDateFilter != NSLocalizedString("all", comment: "") else { return true }
     guard let recordDate = record.date else { return false }
     var calendar = Calendar.current
     calendar.timeZone = TimeZone(identifier: "Asia/Seoul")!
@@ -159,23 +175,23 @@ private func isRecordInSelectedDateRange(_ record: Record) -> Bool {
     let startOfToday = calendar.startOfDay(for: now)
 
     switch selectedDateFilter {
-    case "오늘":
+    case NSLocalizedString("today", comment: ""):
         return calendar.isDateInToday(recordDate)
-    case "어제":
+    case NSLocalizedString("yesterday", comment: ""):
         return calendar.isDateInYesterday(recordDate)
-    case "1주일":
+    case NSLocalizedString("week", comment: ""):
         if let weekAgo = calendar.date(byAdding: .day, value: -7, to: startOfToday) {
             return recordDate >= weekAgo && recordDate <= now
         } else {
             return false
         }
-    case "한달":
+    case NSLocalizedString("month", comment: ""):
         if let monthAgo = calendar.date(byAdding: .month, value: -1, to: startOfToday) {
             return recordDate >= monthAgo && recordDate <= now
         } else {
             return false
         }
-    case "직접 선택":
+    case NSLocalizedString("custom", comment: ""):
         let safeStartDate = min(customStartDate, customEndDate)
         let safeEndDate = max(customStartDate, customEndDate)
         let recordDay = calendar.startOfDay(for: recordDate)
@@ -189,9 +205,9 @@ private func isRecordInSelectedDateRange(_ record: Record) -> Bool {
 
 private var filteredRecords: [Record] {
     records.filter { record in
-        let matchesCategory = currentCategory == "전체" || (record.category ?? "기타") == currentCategory
+        let matchesCategory = currentCategory == NSLocalizedString("all", comment: "") || (record.category ?? NSLocalizedString("etc", comment: "")) == currentCategory
         let matchesType: Bool = {
-            if selectedTypeFilter == "전체" {
+            if selectedTypeFilter == NSLocalizedString("all", comment: "") {
                 return true
             }
             guard let type = record.type else { return false }
@@ -227,7 +243,7 @@ private var groupedRecordSections: some View {
                         .frame(width: 50, height: 50)
                         .foregroundColor(.secondary)
 
-                    Text("해당 조건에 맞는 내역이 없습니다.")
+                    Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
 
@@ -237,7 +253,7 @@ private var groupedRecordSections: some View {
                         HStack(spacing: 8) {
                             Image(systemName: "plus")
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            Text("새 항목 추가")
+                            Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                         }
                         .foregroundColor(.white)
@@ -274,93 +290,100 @@ var body: some View {
                 .opacity(0.6)
         }
 
-        TabView {
-            AccountingTabView(
-                selectedRecord: $selectedRecord,
-                isAddingNewRecord: $isAddingNewRecord,
-                isDeleteMode: $isDeleteMode,
-                selectedRecords: $selectedRecords,
-                filterSummaryView: AnyView(
-                    FilterSummaryView(
-                        selectedTypeFilter: selectedTypeFilter,
-                        selectedCategory: currentCategory,
-                        selectedDateFilter: selectedDateFilter,
-                        dateRangeText: dateRangeText(),
-                        onTap: { showFilterSheet = true },
-                        onReset: {
-                            selectedTypeFilter = "전체"
-                            selectedIncomeCategory = "전체"
-                            selectedExpenseCategory = "전체"
-                            selectedAllCategory = "전체"
-                            selectedDateFilter = "전체"
-                            customStartTimestamp = Date().timeIntervalSince1970
-                            customEndTimestamp = Date().timeIntervalSince1970
-                        }
-                    )
-                ),
-                recordListSection: AnyView(recordListSection)
-            )
-            .sheet(isPresented: $showFilterSheet) {
-                SearchFilterView(
-                    selectedType: $selectedTypeFilter,
-                    selectedCategory: $selectedCategory,
-                    selectedDate: $selectedDateFilter,
-                    customStartDate: Binding(
-                        get: { Date(timeIntervalSince1970: customStartTimestamp) },
-                        set: { customStartTimestamp = $0.timeIntervalSince1970 }
+        VStack(spacing: 0) {
+            TabView {
+                AccountingTabView(
+                    selectedRecord: $selectedRecord,
+                    isAddingNewRecord: $isAddingNewRecord,
+                    isDeleteMode: $isDeleteMode,
+                    selectedRecords: $selectedRecords,
+                    filterSummaryView: AnyView(
+                        FilterSummaryView(
+                            selectedTypeFilter: selectedTypeFilter,
+                            selectedCategory: currentCategory,
+                            selectedDateFilter: selectedDateFilter,
+                            dateRangeText: dateRangeText(),
+                            onTap: { showFilterSheet = true },
+                            onReset: {
+                                selectedTypeFilter = NSLocalizedString("all", comment: "")
+                                selectedIncomeCategory = NSLocalizedString("all", comment: "")
+                                selectedExpenseCategory = NSLocalizedString("all", comment: "")
+                                selectedAllCategory = NSLocalizedString("all", comment: "")
+                                selectedDateFilter = NSLocalizedString("all", comment: "")
+                                customStartTimestamp = Date().timeIntervalSince1970
+                                customEndTimestamp = Date().timeIntervalSince1970
+                            }
+                        )
                     ),
-                    customEndDate: Binding(
-                        get: { Date(timeIntervalSince1970: customEndTimestamp) },
-                        set: { customEndTimestamp = $0.timeIntervalSince1970 }
-                    ),
-                    selectedIncomeCategory: $selectedIncomeCategory,
-                    selectedExpenseCategory: $selectedExpenseCategory,
-                    selectedAllCategory: $selectedAllCategory,
-                    categoryManager: categoryManager
+                    recordListSection: AnyView(recordListSection)
                 )
+                .sheet(isPresented: $showFilterSheet) {
+                    SearchFilterView(
+                        selectedType: $selectedTypeFilter,
+                        selectedCategory: $selectedCategory,
+                        selectedDate: $selectedDateFilter,
+                        customStartDate: Binding(
+                            get: { Date(timeIntervalSince1970: customStartTimestamp) },
+                            set: { customStartTimestamp = $0.timeIntervalSince1970 }
+                        ),
+                        customEndDate: Binding(
+                            get: { Date(timeIntervalSince1970: customEndTimestamp) },
+                            set: { customEndTimestamp = $0.timeIntervalSince1970 }
+                        ),
+                        selectedIncomeCategory: $selectedIncomeCategory,
+                        selectedExpenseCategory: $selectedExpenseCategory,
+                        selectedAllCategory: $selectedAllCategory,
+                        categoryManager: categoryManager
+                    )
+                }
+                .tabItem {
+                    Label(NSLocalizedString("ledger_tab", comment: ""), systemImage: "list.bullet.rectangle")
+                }
+
+                StatisticsTabView(
+                    selectedStatTab: $selectedStatTab,
+                    monthlyIncomeTotals: monthlyIncomeTotals,
+                    monthlyExpenseTotals: monthlyExpenseTotals,
+                    monthlyCategoryIncomeTotals: monthlyCategoryIncomeTotals,
+                    monthlyCategoryExpenseTotals: monthlyCategoryExpenseTotals,
+                    formattedAmount: formattedAmount
+                )
+                .tabItem {
+                    Label(NSLocalizedString("statistics_tab", comment: ""), systemImage: "chart.pie.fill")
+                }
+
+                NavigationView {
+                    SettingsView()
+                }
+                .tabItem {
+                    Label(NSLocalizedString("settings_tab", comment: ""), systemImage: "gear")
+                }
             }
-            .tabItem {
-                Label("가계부 🧾", systemImage: "list.bullet.rectangle")
+            .sheet(isPresented: $isAddingNewRecord, onDismiss: {
+                if isHapticsEnabled {
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+            }) {
+                AddRecordView(categoryManager: categoryManager, recordToEdit: nil)
+                    .environment(\.managedObjectContext, viewContext)
+                    .presentationDetents([.large])
+            }
+            .sheet(item: $selectedRecord, onDismiss: {
+                if isHapticsEnabled {
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                }
+            }) { record in
+                AddRecordView(categoryManager: categoryManager, recordToEdit: record)
+                    .environment(\.managedObjectContext, viewContext)
+                    .presentationDetents([.large])
             }
 
-            StatisticsTabView(
-                selectedStatTab: $selectedStatTab,
-                monthlyIncomeTotals: monthlyIncomeTotals,
-                monthlyExpenseTotals: monthlyExpenseTotals,
-                monthlyCategoryIncomeTotals: monthlyCategoryIncomeTotals,
-                monthlyCategoryExpenseTotals: monthlyCategoryExpenseTotals,
-                formattedAmount: formattedAmount
-            )
-            .tabItem {
-                Label("통계 📊", systemImage: "chart.pie.fill")
-            }
+            Divider()
 
-            NavigationView {
-                SettingsView()
-            }
-            .tabItem {
-                Label("설정 ⚙️", systemImage: "gear")
-            }
-        }
-        .sheet(isPresented: $isAddingNewRecord, onDismiss: {
-            if isHapticsEnabled {
-                let generator = UINotificationFeedbackGenerator()
-                generator.notificationOccurred(.success)
-            }
-        }) {
-            AddRecordView(categoryManager: categoryManager, recordToEdit: nil)
-                .environment(\.managedObjectContext, viewContext)
-                .presentationDetents([.large])
-        }
-        .sheet(item: $selectedRecord, onDismiss: {
-            if isHapticsEnabled {
-                let generator = UINotificationFeedbackGenerator()
-                generator.notificationOccurred(.success)
-            }
-        }) { record in
-            AddRecordView(categoryManager: categoryManager, recordToEdit: record)
-                .environment(\.managedObjectContext, viewContext)
-                .presentationDetents([.large])
+            BannerAdView()
+                .frame(height: 50)
         }
 
         if showSplash {
@@ -396,28 +419,28 @@ private var filterSummaryView: some View {
             }) {
                 HStack {
                     Image(systemName: "line.3.horizontal.decrease.circle")
-                    Text("필터 설정")
+                    Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
                 }
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundColor(.blue)
             }
             Spacer()
             Button(action: {
-                selectedTypeFilter = "전체"
-                selectedCategory = "전체"
-                selectedDateFilter = "전체"
+                selectedTypeFilter = NSLocalizedString("all", comment: "")
+                selectedCategory = NSLocalizedString("all", comment: "")
+                selectedDateFilter = NSLocalizedString("all", comment: "")
                 customStartTimestamp = Date().timeIntervalSince1970
                 customEndTimestamp = Date().timeIntervalSince1970
             }) {
-                Label("초기화", systemImage: "arrow.counterclockwise")
+                Label(NSLocalizedString("reset", comment: "초기화"), systemImage: "arrow.counterclockwise")
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundColor(.red)
             }
         }
-        if selectedTypeFilter != "전체" || selectedDateFilter != "전체" || selectedCategory != "전체" {
+        if selectedTypeFilter != NSLocalizedString("all", comment: "") || selectedDateFilter != NSLocalizedString("all", comment: "") || selectedCategory != NSLocalizedString("all", comment: "") {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("유형:")
+                    Text(NSLocalizedString("type", comment: "유형") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
                     Text(selectedTypeFilter)
@@ -425,7 +448,7 @@ private var filterSummaryView: some View {
                         .foregroundColor(.primary)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("카테고리:")
+                    Text(NSLocalizedString("category", comment: "카테고리") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
                     Text(selectedCategory)
@@ -433,7 +456,7 @@ private var filterSummaryView: some View {
                         .foregroundColor(.primary)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("기간:")
+                    Text(NSLocalizedString("period", comment: "기간") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
                     Text(dateRangeText())
@@ -497,7 +520,7 @@ private func deleteSelectedRecords() {
         do {
             try viewContext.save()
         } catch {
-            print("삭제 에러: \(error.localizedDescription)")
+            print("Delete error: \(error.localizedDescription)")
         }
     }
 }
@@ -508,7 +531,7 @@ private func formattedAmount(_ amount: Double) -> String {
     numberFormatter.maximumFractionDigits = 0
     numberFormatter.groupingSeparator = ","
     let formatted = numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
-    return "\(formatted) 원"
+    return String(format: NSLocalizedString("formatted_amount", comment: "금액 포맷"), formatted)
 }
 
 private func toggleSelection(for record: Record) {

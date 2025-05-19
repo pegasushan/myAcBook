@@ -13,30 +13,30 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("환경 설정")) {
-                Picker("테마", selection: $selectedColorScheme) {
-                    Text("시스템 기본값").tag("system")
-                    Text("라이트 모드").tag("light")
-                    Text("다크 모드").tag("dark")
+            Section(header: Text(NSLocalizedString("settings_section", comment: "환경 설정"))) {
+                Picker(NSLocalizedString("theme", comment: "테마"), selection: $selectedColorScheme) {
+                    Text(NSLocalizedString("system_default", comment: "시스템 기본값")).tag("system")
+                    Text(NSLocalizedString("light_mode", comment: "라이트 모드")).tag("light")
+                    Text(NSLocalizedString("dark_mode", comment: "다크 모드")).tag("dark")
                 }
                 .pickerStyle(.segmented)
                 .font(.system(size: 15, weight: .regular, design: .rounded))
 
                 Toggle(isOn: $lockToggleValue) {
-                    Text("앱 잠금 (Face ID/암호)")
+                    Text(NSLocalizedString("app_lock", comment: "앱 잠금 (Face ID/암호)"))
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
                 .onChange(of: lockToggleValue) { _, newValue in
                     showAppLockHint = newValue
                 }
                 if showAppLockHint {
-                    Text("다음 앱 실행 시부터 적용됩니다.")
+                    Text(NSLocalizedString("lock_hint", comment: "다음 앱 실행 시부터 적용됩니다."))
                         .font(.footnote)
                         .foregroundColor(.gray)
                         .padding(.leading, 2)
                 }
                 Toggle(isOn: $hapticsValue) {
-                    Text("햅틱 피드백")
+                    Text(NSLocalizedString("haptics", comment: "햅틱 피드백"))
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
             }
@@ -53,7 +53,7 @@ struct SettingsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("설정 ⚙️")
+                Text(NSLocalizedString("settings_tab", comment: "설정"))
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -66,13 +66,13 @@ struct SettingsView: View {
                         dismiss()
                     }
                 }) {
-                    Text("저장")
+                    Text(NSLocalizedString("save", comment: "저장"))
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
             }
         }
-        .alert("설정이 저장되었습니다.", isPresented: $showSaveConfirmation) {
-            Button("확인", role: .cancel) {}
+        .alert(NSLocalizedString("settings_saved", comment: "설정이 저장되었습니다."), isPresented: $showSaveConfirmation) {
+            Button(NSLocalizedString("confirm", comment: "확인"), role: .cancel) {}
         }
     }
 }

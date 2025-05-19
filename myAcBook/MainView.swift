@@ -5,12 +5,12 @@ struct MainView: View {
         TabView {
             ContentView()
                 .tabItem {
-                    Label("가계부 🧾", systemImage: "list.bullet.rectangle.portrait")
+                    Label(NSLocalizedString("ledger_tab", comment: "가계부 탭"), systemImage: "list.bullet.rectangle.portrait")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                 }
             ChartView()
                 .tabItem {
-                    Label("통계 📊", systemImage: "chart.pie")
+                    Label(NSLocalizedString("statistics_tab", comment: "통계 탭"), systemImage: "chart.pie")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                 }
         }

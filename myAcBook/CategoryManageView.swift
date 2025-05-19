@@ -14,21 +14,21 @@ public struct CategoryManagerView: View {
             List {
                 Section(header:
                     VStack(alignment: .leading) {
-                        Text("카테고리 목록")
+                        Text(LocalizedStringKey("category_list"))
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                     }
                     .padding(.top, 8)
                 ) {
-                    if selectedType == "수입" {
+                    if selectedType == NSLocalizedString("income", comment: "") {
                         ForEach(categoryManager.incomeCategories, id: \.self) { category in
-                            Text(category)
+                            Text(LocalizedStringKey(category))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                         }
                         .onDelete(perform: categoryManager.deleteIncomeCategory)
                     } else {
                         ForEach(categoryManager.expenseCategories, id: \.self) { category in
-                            Text(category)
+                            Text(LocalizedStringKey(category))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                         }
                         .onDelete(perform: categoryManager.deleteExpenseCategory)
@@ -37,20 +37,20 @@ public struct CategoryManagerView: View {
 
                 Section(header:
                     VStack(alignment: .leading) {
-                        Text("새 카테고리 추가")
+                        Text(LocalizedStringKey("add_new_category"))
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                     }
                     .padding(.top, 12)
                 ) {
                     HStack(spacing: 12) {
-                        TextField("카테고리 이름", text: $newCategoryName)
+                        TextField(LocalizedStringKey("category_name_placeholder"), text: $newCategoryName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .font(.system(size: 15, weight: .regular, design: .rounded))
-                        Button("추가") {
+                        Button(LocalizedStringKey("add")) {
                             let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
                             if !trimmed.isEmpty {
-                                if selectedType == "수입" {
+                                if selectedType == NSLocalizedString("income", comment: "") {
                                     categoryManager.addIncomeCategory(trimmed)
                                 } else {
                                     categoryManager.addExpenseCategory(trimmed)
@@ -60,8 +60,8 @@ public struct CategoryManagerView: View {
                                 showEmptyNameAlert = true
                             }
                         }
-                        .alert("내용을 입력하세요", isPresented: $showEmptyNameAlert) {
-                            Button("확인", role: .cancel) { }
+                        .alert(LocalizedStringKey("empty_input_alert"), isPresented: $showEmptyNameAlert) {
+                            Button(LocalizedStringKey("confirm"), role: .cancel) { }
                         }
                         .buttonStyle(.bordered)
                         .font(.system(size: 15, weight: .medium, design: .rounded))
@@ -73,11 +73,11 @@ public struct CategoryManagerView: View {
             .listStyle(.insetGrouped)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("카테고리 관리")
+                    Text(LocalizedStringKey("manage_category"))
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("닫기") {
+                    Button(LocalizedStringKey("close")) {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))

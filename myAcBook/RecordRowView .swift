@@ -26,8 +26,8 @@ struct RecordRowView: View {
             }
         } label: {
             HStack(alignment: .center, spacing: 12) {
-                Image(systemName: (record.type ?? "지출") == "수입" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                    .foregroundColor((record.type ?? "지출") == "수입" ? .green : .red)
+                Image(systemName: (record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                    .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? .green : .red)
                     .font(.system(size: 15, weight: .regular, design: .rounded))
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -37,7 +37,7 @@ struct RecordRowView: View {
                                 .font(.system(size: 12, weight: .regular, design: .rounded))
                                 .foregroundColor(.secondary)
                         }
-                        Text(record.category ?? "Unknown")
+                        Text(record.category ?? NSLocalizedString("unknown", comment: "알 수 없음"))
                             .font(.system(size: 15, weight: .regular, design: .rounded))
                             .foregroundColor(.secondary)
                         if let detail = record.detail, !detail.isEmpty {

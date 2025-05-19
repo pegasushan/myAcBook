@@ -4,8 +4,8 @@ struct AddRecordView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
 
-    @State private var type: String = "지출" // ✨ 기본값 '지출'
-    @State private var category: String = "선택" // ✨ 기본값 '선택'
+    @State private var type: String = NSLocalizedString("expense", comment: "") // ✨ 기본값 로컬라이즈된 '지출'
+    @State private var category: String = NSLocalizedString("select", comment: "") // ✨ 기본값 '선택'
     @State private var detail: String = ""
     @State private var amount: String = ""
     @State private var date: Date = Date()
@@ -16,7 +16,10 @@ struct AddRecordView: View {
 
     var categoryManager: CategoryManager
 
-    let types = ["수입", "지출"]
+    let types = [
+        NSLocalizedString("income", comment: ""),
+        NSLocalizedString("expense", comment: "")
+    ]
     @State private var categories: [String] = []
 
     var recordToEdit: Record?
@@ -26,7 +29,7 @@ struct AddRecordView: View {
             Form {
                 Section {
                     HStack {
-                        Text(recordToEdit == nil ? "📥 항목 추가" : "✏️ 항목 수정")
+                        Text(recordToEdit == nil ? NSLocalizedString("add_item", comment: "") : NSLocalizedString("edit_item", comment: ""))
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
                             .padding(.vertical, 6)
                         Spacer()
@@ -34,7 +37,7 @@ struct AddRecordView: View {
                     .listRowBackground(Color.clear)
                 }
                 Section {
-                    TextField("예: 10,000", text: $amount)
+                    TextField(NSLocalizedString("example_amount", comment: ""), text: $amount)
                         .keyboardType(.decimalPad)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                         .onChange(of: amount) {
@@ -47,7 +50,7 @@ struct AddRecordView: View {
                         }
                 }
 
-                Picker("구분", selection: $type) {
+                Picker(NSLocalizedString("type_label", comment: ""), selection: $type) {
                     ForEach(types, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)) }
                 }
                 .pickerStyle(.segmented)
@@ -55,48 +58,48 @@ struct AddRecordView: View {
                 .disabled(recordToEdit != nil)
 
                 Section {
-                    Picker("카테고리", selection: $category) {
-                        Text("선택").font(.system(size: 15, weight: .regular, design: .rounded)).tag("선택")
+                    Picker(NSLocalizedString("category", comment: ""), selection: $category) {
+                        Text(NSLocalizedString("select", comment: "")).font(.system(size: 15, weight: .regular, design: .rounded)).tag(NSLocalizedString("select", comment: ""))
                         ForEach(categories, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)).tag($0) }
                     }
                     .font(.system(size: 15, weight: .regular, design: .rounded))
                     Button(action: {
                         showCategoryManager = true
                     }) {
-                        Label("카테고리 관리", systemImage: "folder")
+                        Label(NSLocalizedString("manage_category", comment: ""), systemImage: "folder")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundColor(.blue)
                     }
                 }
 
                 Section {
-                    TextField("항목에 대한 설명", text: $detail)
+                    TextField(NSLocalizedString("detail_placeholder", comment: ""), text: $detail)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
 
                 Section {
-                    DatePicker("날짜", selection: $date, displayedComponents: .date)
+                    DatePicker(NSLocalizedString("date", comment: ""), selection: $date, displayedComponents: .date)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
             }
             .alert(isPresented: $showAlert) {
-                Alert(title: Text("입력 오류"), message: Text(alertMessage), dismissButton: .default(Text("확인")))
+                Alert(title: Text(NSLocalizedString("input_error", comment: "")), message: Text(alertMessage), dismissButton: .default(Text(NSLocalizedString("confirm", comment: ""))))
             }
             .sheet(isPresented: $showCategoryManager, onDismiss: {
-                categories = type == "수입" ? categoryManager.incomeCategories : categoryManager.expenseCategories
+                categories = type == NSLocalizedString("income", comment: "") ? categoryManager.incomeCategories : categoryManager.expenseCategories
             }) {
                 CategoryManagerView(categoryManager: categoryManager, selectedType: type)
             }
             // .navigationTitle(recordToEdit == nil ? "항목 추가" : "항목 수정")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(recordToEdit == nil ? "저장" : "수정 완료") {
+                    Button(recordToEdit == nil ? NSLocalizedString("save", comment: "") : NSLocalizedString("edit_done", comment: "")) {
                         saveRecord()
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("취소") {
+                    Button(NSLocalizedString("cancel", comment: "")) {
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
@@ -104,32 +107,32 @@ struct AddRecordView: View {
             }
             .onAppear {
                 if let record = recordToEdit {
-                    type = record.type ?? "지출"
-                    category = record.category ?? "식대"
+                    type = record.type ?? NSLocalizedString("expense", comment: "")
+                    category = record.category ?? NSLocalizedString("select", comment: "")
                     detail = record.detail ?? ""
                     let formatter = NumberFormatter()
                     formatter.numberStyle = .decimal
                     amount = formatter.string(from: NSNumber(value: Int(record.amount))) ?? ""
                     date = record.date ?? Date()
                 }
-                categories = type == "수입" ? categoryManager.incomeCategories : categoryManager.expenseCategories
+                categories = type == NSLocalizedString("income", comment: "") ? categoryManager.incomeCategories : categoryManager.expenseCategories
             }
             .onChange(of: type) {
-                categories = type == "수입" ? categoryManager.incomeCategories : categoryManager.expenseCategories
+                categories = type == NSLocalizedString("income", comment: "") ? categoryManager.incomeCategories : categoryManager.expenseCategories
             }
         }
     }
 
     private func saveRecord() {
-        guard category != "선택" else {
-            alertMessage = "카테고리를 선택하세요."
+        guard category != NSLocalizedString("select", comment: "") else {
+            alertMessage = NSLocalizedString("select_category_alert", comment: "")
             showAlert = true
             return
         }
 
         let numberString = amount.replacingOccurrences(of: ",", with: "")
         guard !numberString.isEmpty, let intValue = Int(numberString), intValue > 0 else {
-            alertMessage = "금액을 올바르게 입력하세요."
+            alertMessage = NSLocalizedString("invalid_amount_alert", comment: "")
             showAlert = true
             return
         }
@@ -150,7 +153,7 @@ struct AddRecordView: View {
             try viewContext.save()
             dismiss()
         } catch {
-            print("저장 에러: \(error.localizedDescription)")
+            print("Save error: \(error.localizedDescription)")
         }
     }
 }
