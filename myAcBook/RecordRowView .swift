@@ -46,8 +46,9 @@ struct RecordRowView: View {
                                 .foregroundColor(.gray)
                         }
                         Spacer()
-                        Text(formattedAmount(record.amount))
+                        Text(((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "+ " : "- ") + formattedAmount(record.amount))
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? .blue : .red)
                     }
                 }
             }
