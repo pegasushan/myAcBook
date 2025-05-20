@@ -42,32 +42,32 @@ struct SettingsView: View {
                 }
             }
 
-            Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
-                if purchaseManager.isAdRemoved {
-                    Text(NSLocalizedString("ad_removed_done", comment: "광고 제거 완료 🎉"))
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(.green)
-                } else {
-                    Button {
-                        Task {
-                            print("🟡 광고 제거 버튼 클릭됨")
-                            await purchaseManager.purchase()
-                        }
-                    } label: {
-                        Text(NSLocalizedString("remove_ads_button", comment: "광고 제거 (₩1,100)"))
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    }
-
-                    Button {
-                        Task {
-                            await purchaseManager.restore()
-                        }
-                    } label: {
-                        Text(NSLocalizedString("restore_purchase", comment: "구매 복원"))
-                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                    }
-                }
-            }
+//            Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
+//                if purchaseManager.isAdRemoved {
+//                    Text(NSLocalizedString("ad_removed_done", comment: "광고 제거 완료 🎉"))
+//                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+//                        .foregroundColor(.green)
+//                } else {
+//                    Button {
+//                        Task {
+//                            print("🟡 광고 제거 버튼 클릭됨")
+//                            await purchaseManager.purchase()
+//                        }
+//                    } label: {
+//                        Text(NSLocalizedString("remove_ads_button", comment: "광고 제거 (₩1,100)"))
+//                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+//                    }
+//
+//                    Button {
+//                        Task {
+//                            await purchaseManager.restore()
+//                        }
+//                    } label: {
+//                        Text(NSLocalizedString("restore_purchase", comment: "구매 복원"))
+//                            .font(.system(size: 15, weight: .regular, design: .rounded))
+//                    }
+//                }
+//            }
         }
         .onAppear {
             if UserDefaults.standard.object(forKey: "isAppLockEnabled") == nil {
