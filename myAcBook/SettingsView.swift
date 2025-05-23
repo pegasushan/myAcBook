@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreData
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -11,6 +12,8 @@ struct SettingsView: View {
     @State private var hapticsValue: Bool = true
     @State private var selectedColorScheme: String = "system"
     @StateObject private var purchaseManager = PurchaseManager()
+    @State private var showCardManagerModal = false
+    @State private var showCategoryManagerModal = false
 
     var body: some View {
         Form {
@@ -41,6 +44,20 @@ struct SettingsView: View {
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
             }
+            Section(header: Text(NSLocalizedString("card_section", comment: "카드"))) {
+                Button(action: {
+                    showCardManagerModal = true
+                }) {
+                    Text(NSLocalizedString("card_management", comment: "카드 관리"))
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                }
+                Button(action: {
+                    showCategoryManagerModal = true
+                }) {
+                    Text(NSLocalizedString("category_management", comment: "카테고리 관리"))
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                }
+            }
 
 //            Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
 //                if purchaseManager.isAdRemoved {
@@ -68,6 +85,16 @@ struct SettingsView: View {
 //                    }
 //                }
 //            }
+        }
+        .sheet(isPresented: $showCardManagerModal) {
+            NavigationStack {
+                CardListView()
+            }
+        }
+        .sheet(isPresented: $showCategoryManagerModal) {
+            NavigationStack {
+                CategoryManagerView(selectedType: NSLocalizedString("expense", comment: "지출"))
+            }
         }
         .onAppear {
             if UserDefaults.standard.object(forKey: "isAppLockEnabled") == nil {

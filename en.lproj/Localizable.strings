@@ -1,3 +1,10 @@
+"card_list_header" = "Card List";
+"add_new_card_header" = "Add New Card";
+"card_name_placeholder" = "Card Name";
+"empty_card_name_alert" = "Please enter the card name.";
+"payment_type_label" = "Payment Type";
+"cash" = "Cash";
+"card" = "Card";
 "auth_reason" = "Authentication is required to access the app.";
 "app_title" = "myAcBook 🧾";
 "add_item" = "📥 Add Item";
@@ -70,3 +77,19 @@
 "ad_removed_done" = "Ads Removed 🎉";
 "remove_ads_button" = "Remove Ads ($0.99)";
 "restore_purchase" = "Restore Purchase";
+"card_section" = "Card";
+"card_management" = "Manage Cards";
+"invalid_amount_alert" = "Please enter a valid amount.";
+"select_card_alert" = "Please select a card.";
+"select_category_alert" = "Please select a category.";
+"category_management" = "Category Management";
+
+"today" = "Today";
+"yesterday" = "Yesterday";
+"week" = "1 Week";
+"month" = "1 Month";
+"custom" = "Custom";
+"select_card" = "Select_card";
+"no_cards" = "No cards available.";
+"no_categories" = "No categories available.";
+"duplicate_category_alert" = "This category already exists.";

@@ -37,9 +37,14 @@ struct RecordRowView: View {
                                 .font(.system(size: 12, weight: .regular, design: .rounded))
                                 .foregroundColor(.secondary)
                         }
-                        Text(record.category ?? NSLocalizedString("unknown", comment: "알 수 없음"))
-                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                            .foregroundColor(.secondary)
+                        HStack(spacing: 4) {
+                            Text(record.categoryRelation?.name ?? "unknown")
+                            if record.paymentType == "카드" {
+                                Text("💳")
+                            }
+                        }
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .foregroundColor(.secondary)
                         if let detail = record.detail, !detail.isEmpty {
                             Text(detail)
                                 .font(.system(size: 13, weight: .regular, design: .rounded))

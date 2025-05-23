@@ -42,14 +42,7 @@ private var records: FetchedResults<Record>
 @State private var selectedExpenseCategory: String = NSLocalizedString("all", comment: "")
 @State private var selectedAllCategory: String = NSLocalizedString("all", comment: "")
     private var currentCategory: String {
-        switch selectedTypeFilter {
-        case NSLocalizedString("income", comment: ""):
-            return selectedIncomeCategory
-        case NSLocalizedString("expense", comment: ""):
-            return selectedExpenseCategory
-        default:
-            return selectedAllCategory
-        }
+        return selectedCategory
     }
 @AppStorage("selectedDateFilter") private var selectedDateFilter: String = NSLocalizedString("all", comment: "")
 @AppStorage("selectedTypeFilter") private var selectedTypeFilter: String = NSLocalizedString("all", comment: "")
@@ -73,7 +66,7 @@ private var customEndDate: Date {
     get { Date(timeIntervalSince1970: customEndTimestamp) }
     set { customEndTimestamp = newValue.timeIntervalSince1970 }
 }
-@StateObject private var categoryManager = CategoryManager()
+// @StateObject private var categoryManager = CategoryManager.shared
 @State private var showSplash = true
 
     private func formatDateShort(_ date: Date) -> String {
@@ -113,8 +106,8 @@ private var customEndDate: Date {
 private var categoryTotals: [String: Double] {
     var totals = [String: Double]()
     for record in records {
-        let category = record.category ?? NSLocalizedString("etc", comment: "")
-        totals[category, default: 0] += record.amount
+        let categoryKey = record.categoryRelation?.name ?? "etc"
+        totals[categoryKey, default: 0] += record.amount
     }
     return totals
 }
@@ -148,8 +141,8 @@ private var monthlyCategoryExpenseTotals: [String: [String: Double]] {
 
     for record in records where record.type != NSLocalizedString("income", comment: "") {
         let month = dateFormatter.string(from: record.date ?? Date())
-        let category = record.category ?? NSLocalizedString("etc", comment: "")
-        totals[month, default: [:]][category, default: 0] += record.amount
+        let categoryKey = record.categoryRelation?.name ?? "etc"
+        totals[month, default: [:]][categoryKey, default: 0] += record.amount
     }
     return totals
 }
@@ -161,8 +154,20 @@ private var monthlyCategoryIncomeTotals: [String: [String: Double]] {
 
     for record in records where record.type == NSLocalizedString("income", comment: "") {
         let month = dateFormatter.string(from: record.date ?? Date())
-        let category = record.category ?? NSLocalizedString("etc", comment: "")
-        totals[month, default: [:]][category, default: 0] += record.amount
+        let categoryKey = record.categoryRelation?.name ?? "etc"
+        totals[month, default: [:]][categoryKey, default: 0] += record.amount
+    }
+    return totals
+}
+
+private var monthlyCardExpenseTotals: [String: [String: Double]] {
+    var totals = [String: [String: Double]]()
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "yyyy-MM"
+    for record in records where record.type == NSLocalizedString("expense", comment: "") && record.paymentType == NSLocalizedString("card", comment: "") {
+        let month = dateFormatter.string(from: record.date ?? Date())
+        let cardName = record.card?.name ?? "알 수 없음"
+        totals[month, default: [:]][cardName, default: 0] += record.amount
     }
     return totals
 }
@@ -206,7 +211,8 @@ private func isRecordInSelectedDateRange(_ record: Record) -> Bool {
 
 private var filteredRecords: [Record] {
     records.filter { record in
-        let matchesCategory = currentCategory == NSLocalizedString("all", comment: "") || (record.category ?? NSLocalizedString("etc", comment: "")) == currentCategory
+        let recordCategoryKey = record.categoryRelation?.name ?? "etc"
+        let matchesCategory = currentCategory == NSLocalizedString("all", comment: "") || recordCategoryKey == currentCategory
         let matchesType: Bool = {
             if selectedTypeFilter == NSLocalizedString("all", comment: "") {
                 return true
@@ -334,7 +340,16 @@ var body: some View {
                         selectedIncomeCategory: $selectedIncomeCategory,
                         selectedExpenseCategory: $selectedExpenseCategory,
                         selectedAllCategory: $selectedAllCategory,
-                        categoryManager: categoryManager
+                        onReset: {
+                            selectedTypeFilter = NSLocalizedString("all", comment: "")
+                            selectedIncomeCategory = NSLocalizedString("all", comment: "")
+                            selectedExpenseCategory = NSLocalizedString("all", comment: "")
+                            selectedAllCategory = NSLocalizedString("all", comment: "")
+                            selectedCategory = NSLocalizedString("all", comment: "")
+                            selectedDateFilter = NSLocalizedString("all", comment: "")
+                            customStartTimestamp = Date().timeIntervalSince1970
+                            customEndTimestamp = Date().timeIntervalSince1970
+                        }
                     )
                 }
                 .tabItem {
@@ -342,12 +357,13 @@ var body: some View {
                 }
 
                 StatisticsTabView(
-                    selectedStatTab: $selectedStatTab,
                     monthlyIncomeTotals: monthlyIncomeTotals,
                     monthlyExpenseTotals: monthlyExpenseTotals,
                     monthlyCategoryIncomeTotals: monthlyCategoryIncomeTotals,
                     monthlyCategoryExpenseTotals: monthlyCategoryExpenseTotals,
-                    formattedAmount: formattedAmount
+                    monthlyCardExpenseTotals: monthlyCardExpenseTotals,
+                    formattedAmount: formattedAmount,
+                    allCards: Array(try! viewContext.fetch(Card.fetchRequest())) as! [Card]
                 )
                 .tabItem {
                     Label(NSLocalizedString("statistics_tab", comment: ""), systemImage: "chart.pie.fill")
@@ -366,7 +382,7 @@ var body: some View {
                     generator.notificationOccurred(.success)
                 }
             }) {
-                AddRecordView(categoryManager: categoryManager, recordToEdit: nil)
+                AddRecordView(recordToEdit: nil)
                     .environment(\.managedObjectContext, viewContext)
                     .presentationDetents([.large])
             }
@@ -376,7 +392,7 @@ var body: some View {
                     generator.notificationOccurred(.success)
                 }
             }) { record in
-                AddRecordView(categoryManager: categoryManager, recordToEdit: record)
+                AddRecordView(recordToEdit: record)
                     .environment(\.managedObjectContext, viewContext)
                     .presentationDetents([.large])
             }
@@ -402,6 +418,7 @@ var body: some View {
                 }
         }
     }
+    // .onAppear removed: CategoryManager is no longer used
 }
 
 private var recordListSection: some View {
@@ -415,21 +432,20 @@ private var recordListSection: some View {
 
 private var filterSummaryView: some View {
     VStack(alignment: .leading, spacing: 6) {
-        // 필터 설정 버튼과 초기화 버튼을 HStack으로 분리 배치
         HStack {
             Button(action: {
                 showFilterSheet = true
             }) {
-                HStack {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                    Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
-                }
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundColor(.blue)
+                Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.blue)
             }
             Spacer()
             Button(action: {
                 selectedTypeFilter = NSLocalizedString("all", comment: "")
+                selectedIncomeCategory = NSLocalizedString("all", comment: "")
+                selectedExpenseCategory = NSLocalizedString("all", comment: "")
+                selectedAllCategory = NSLocalizedString("all", comment: "")
                 selectedCategory = NSLocalizedString("all", comment: "")
                 selectedDateFilter = NSLocalizedString("all", comment: "")
                 customStartTimestamp = Date().timeIntervalSince1970
@@ -440,13 +456,13 @@ private var filterSummaryView: some View {
                     .foregroundColor(.red)
             }
         }
-        if selectedTypeFilter != NSLocalizedString("all", comment: "") || selectedDateFilter != NSLocalizedString("all", comment: "") || selectedCategory != NSLocalizedString("all", comment: "") {
+        Group {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(NSLocalizedString("type", comment: "유형") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
-                    Text(selectedTypeFilter)
+                    Text(selectedTypeFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : selectedTypeFilter)
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
                 }
@@ -454,7 +470,7 @@ private var filterSummaryView: some View {
                     Text(NSLocalizedString("category", comment: "카테고리") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
-                    Text(selectedCategory)
+                    Text(selectedCategory == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : selectedCategory)
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
                 }
@@ -462,7 +478,7 @@ private var filterSummaryView: some View {
                     Text(NSLocalizedString("period", comment: "기간") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.secondary)
-                    Text(dateRangeText())
+                    Text(selectedDateFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : dateRangeText())
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
                 }
@@ -512,6 +528,18 @@ private func recordRowView(record: Record) -> some View {
         RoundedRectangle(cornerRadius: 12)
             .fill(Color(.systemBackground).opacity(0.95))
     )
+    .onTapGesture {
+        print("📝 Record tapped for edit:")
+        print("- id: \(record.id?.uuidString ?? "nil")")
+        print("- type: \(record.type ?? "nil")")
+        print("- amount: \(record.amount)")
+        print("- date: \(formattedDate(record.date ?? Date()))")
+        print("- detail: \(record.detail ?? "nil")")
+        print("- paymentType: \(record.paymentType ?? "nil")")
+        print("- card: \(record.card?.name ?? "nil")")
+        print("- category: \(record.categoryRelation?.name ?? "nil")")
+        selectedRecord = record
+    }
 }
 
 private func deleteSelectedRecords() {
@@ -551,3 +579,4 @@ private func formattedDate(_ date: Date) -> String {
     return formatter.string(from: date)
 }
 }
+

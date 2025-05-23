@@ -74,3 +74,22 @@
 "ad_removed_done" = "광고 제거 완료 🎉";
 "remove_ads_button" = "광고 제거 (₩1,100)";
 "restore_purchase" = "구매 복원";
+"card_section" = "카드";
+"card_management" = "카드 관리";
+"invalid_amount_alert" = "금액을 입력해주세요.";
+"select_card_alert" = "카드를 선택해주세요.";
+"select_category_alert" = "카테고리를 선택해주세요.";
+"category_management" = "카테고리 관리";
+
+"card_list_header" = "카드 목록";
+"add_new_card_header" = "새 카드 추가";
+"card_name_placeholder" = "카드 이름";
+"empty_card_name_alert" = "카드 이름을 입력해주세요.";
+
+"payment_type_label" = "지출 구분";
+"cash" = "현금";
+"card" = "카드";
+"select_card" = "카드 선택";
+"no_cards" = "카드가 없습니다.";
+"no_categories" = "카테고리가 없습니다.";
+"duplicate_category_alert" = "이미 존재하는 카테고리입니다.";    

@@ -3,7 +3,7 @@ import Charts
 
 struct ChartView: View {
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Record.category, ascending: true)],
+        sortDescriptors: [NSSortDescriptor(keyPath: \Record.categoryRelation?.name, ascending: true)],
         animation: .default)
     private var records: FetchedResults<Record>
 
@@ -39,7 +39,9 @@ struct ChartView: View {
     // ✨ 지출만 그룹핑
     private var groupedRecords: [CategoryGroup] {
         let expenseRecords = records.filter { $0.type == "지출" }
-        let grouped = Dictionary(grouping: expenseRecords) { $0.category ?? NSLocalizedString("etc", comment: "기타") }
+        let grouped = Dictionary(grouping: expenseRecords) {
+            NSLocalizedString($0.categoryRelation?.name ?? "etc", comment: "")
+        }
         return grouped.map { (category, records) in
             CategoryGroup(category: category, totalAmount: records.reduce(0) { $0 + $1.amount })
         }

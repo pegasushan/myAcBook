@@ -12,6 +12,10 @@
 		837ED15E2DD3367F0082E0F0 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 837ED15A2DD3367F0082E0F0 /* Localizable.strings */; };
 		83BE44272DBF478D005C700E /* Record+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BE44262DBF478D005C700E /* Record+CoreDataProperties.swift */; };
 		83BE44282DBF478D005C700E /* Record+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */; };
+		83D132652DDD578400E00581 /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D132632DDD578400E00581 /* Card+CoreDataClass.swift */; };
+		83D132662DDD578400E00581 /* Card+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D132642DDD578400E00581 /* Card+CoreDataProperties.swift */; };
+		83D1326A2DDDA40100E00581 /* AppCategory+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D132692DDDA3F200E00581 /* AppCategory+CoreDataClass.swift */; };
+		83D1326C2DDDA40D00E00581 /* AppCategory+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D1326B2DDDA40A00E00581 /* AppCategory+CoreDataProperties.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +45,10 @@
 		83C5FFBA2DBF3CF4005EB195 /* myAcBook.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = myAcBook.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		83C5FFD02DBF3CF6005EB195 /* myAcBookTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = myAcBookTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		83C5FFDA2DBF3CF6005EB195 /* myAcBookUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = myAcBookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		83D132632DDD578400E00581 /* Card+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataClass.swift"; sourceTree = "<group>"; };
+		83D132642DDD578400E00581 /* Card+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Card+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		83D132692DDDA3F200E00581 /* AppCategory+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppCategory+CoreDataClass.swift"; sourceTree = "<group>"; };
+		83D1326B2DDDA40A00E00581 /* AppCategory+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppCategory+CoreDataProperties.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -121,6 +129,10 @@
 		83C5FFB12DBF3CF4005EB195 = {
 			isa = PBXGroup;
 			children = (
+				83D1326B2DDDA40A00E00581 /* AppCategory+CoreDataProperties.swift */,
+				83D132692DDDA3F200E00581 /* AppCategory+CoreDataClass.swift */,
+				83D132632DDD578400E00581 /* Card+CoreDataClass.swift */,
+				83D132642DDD578400E00581 /* Card+CoreDataProperties.swift */,
 				83090D802DD57F0400006D0B /* ko.lproj */,
 				837B08F62DD3246A00BEC313 /* en.lproj */,
 				83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */,
@@ -293,8 +305,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				83D132652DDD578400E00581 /* Card+CoreDataClass.swift in Sources */,
+				83D132662DDD578400E00581 /* Card+CoreDataProperties.swift in Sources */,
+				83D1326A2DDDA40100E00581 /* AppCategory+CoreDataClass.swift in Sources */,
 				83BE44272DBF478D005C700E /* Record+CoreDataProperties.swift in Sources */,
 				83BE44282DBF478D005C700E /* Record+CoreDataClass.swift in Sources */,
+				83D1326C2DDDA40D00E00581 /* AppCategory+CoreDataProperties.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

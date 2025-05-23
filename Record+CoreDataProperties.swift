@@ -2,7 +2,7 @@
 //  Record+CoreDataProperties.swift
 //  myAcBook
 //
-//  Created by 한상욱 on 4/28/25.
+//  Created by 한상욱 on 5/21/25.
 //
 //
 
@@ -16,12 +16,15 @@ extension Record {
         return NSFetchRequest<Record>(entityName: "Record")
     }
 
-    @NSManaged public var id: UUID?
+    @NSManaged public var amount: Double
     @NSManaged public var date: Date?
     @NSManaged public var detail: String?
-    @NSManaged public var amount: Double
-    @NSManaged public var category: String?
-    @NSManaged public var type: String? // ✨ 새로 추가해야 함
+    @NSManaged public var id: UUID?
+    @NSManaged public var type: String?
+    @NSManaged public var paymentType: String?
+    @NSManaged public var card: Card?
+    @NSManaged public var categoryRelation: AppCategory?
+
 }
 
 extension Record : Identifiable {

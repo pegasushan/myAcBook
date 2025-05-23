@@ -1,3 +1,4 @@
+import CoreData
 // SearchFilterView.swift
 
 import SwiftUI
@@ -15,16 +16,67 @@ struct SearchFilterView: View {
     @Binding var selectedExpenseCategory: String
     @Binding var selectedAllCategory: String
 
-    @ObservedObject var categoryManager: CategoryManager
+    var onReset: () -> Void
+
+    @State private var fetchedCategories: [AppCategory] = []
 
     var currentCategoryBinding: Binding<String> {
         switch selectedType {
-        case NSLocalizedString("income", comment: "수입"):
+        case "수입":
             return $selectedIncomeCategory
-        case NSLocalizedString("expense", comment: "지출"):
+        case "지출":
             return $selectedExpenseCategory
         default:
             return $selectedAllCategory
+        }
+    }
+
+    init(
+        selectedType: Binding<String>,
+        selectedCategory: Binding<String>,
+        selectedDate: Binding<String>,
+        customStartDate: Binding<Date>,
+        customEndDate: Binding<Date>,
+        selectedIncomeCategory: Binding<String>,
+        selectedExpenseCategory: Binding<String>,
+        selectedAllCategory: Binding<String>,
+        onReset: @escaping () -> Void
+    ) {
+        self._selectedType = selectedType
+        self._selectedCategory = selectedCategory
+        self._selectedDate = selectedDate
+        self._customStartDate = customStartDate
+        self._customEndDate = customEndDate
+        self._selectedIncomeCategory = selectedIncomeCategory
+        self._selectedExpenseCategory = selectedExpenseCategory
+        self._selectedAllCategory = selectedAllCategory
+        self.onReset = onReset
+    }
+
+    private func internalType(for displayType: String) -> String {
+        if displayType == NSLocalizedString("income", comment: "") {
+            return "income"
+        } else if displayType == NSLocalizedString("expense", comment: "") {
+            return "expense"
+        } else if displayType == NSLocalizedString("all", comment: "") {
+            return "all"
+        } else {
+            return displayType
+        }
+    }
+
+    private func loadCategories(for type: String) {
+        let request: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \AppCategory.name, ascending: true)]
+
+        if internalType(for: type) != "all" {
+            let internalTypeValue = internalType(for: type)
+            request.predicate = NSPredicate(format: "type == %@", internalTypeValue)
+        }
+
+        if let result = try? PersistenceController.shared.container.viewContext.fetch(request) {
+            self.fetchedCategories = result
+            print("불러온 카테고리: \(result.map { $0.name ?? "nil" })")
         }
     }
 
@@ -39,7 +91,7 @@ struct SearchFilterView: View {
                 Section(header: Text(NSLocalizedString("type", comment: "유형"))
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)) {
-                    Picker(NSLocalizedString("type", comment: "유형"), selection: $selectedType) {
+                    Picker("유형", selection: $selectedType) {
                         Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
                             .font(.system(size: 15, weight: .regular, design: .rounded))
                         Text(NSLocalizedString("income", comment: "수입")).tag(NSLocalizedString("income", comment: "수입"))
@@ -59,16 +111,7 @@ struct SearchFilterView: View {
                         Picker(selection: currentCategoryBinding) {
                             Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
                                 .font(.system(size: 14, weight: .regular, design: .rounded))
-                            let categories: [String] = {
-                                switch selectedType {
-                                case NSLocalizedString("income", comment: "수입"):
-                                    return categoryManager.incomeCategories
-                                case NSLocalizedString("expense", comment: "지출"):
-                                    return categoryManager.expenseCategories
-                                default:
-                                    return categoryManager.incomeCategories + categoryManager.expenseCategories
-                                }
-                            }()
+                            let categories: [String] = fetchedCategories.map { $0.name ?? "" }
                             ForEach(categories, id: \.self) { cat in
                                 Text(cat).tag(cat)
                                     .font(.system(size: 14, weight: .regular, design: .rounded))
@@ -125,13 +168,33 @@ struct SearchFilterView: View {
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
+                ToolbarItem(placement: .destructiveAction) {
+                    Button(NSLocalizedString("reset", comment: "초기화")) {
+                        onReset()
+                    }
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.red)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(NSLocalizedString("apply", comment: "적용")) {
+                        selectedCategory = currentCategoryBinding.wrappedValue
                         dismiss()
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
             }
+        }
+        .onAppear {
+            if selectedDate.isEmpty {
+                selectedDate = NSLocalizedString("all", comment: "전체")
+            }
+            if selectedAllCategory.isEmpty {
+                selectedAllCategory = NSLocalizedString("all", comment: "전체")
+            }
+            loadCategories(for: selectedType)
+        }
+        .onChange(of: selectedType) { _, newValue in
+            loadCategories(for: newValue)
         }
     }
 }
