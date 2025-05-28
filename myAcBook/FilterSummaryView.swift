@@ -32,7 +32,10 @@ struct FilterSummaryView: View {
 
                 Spacer()
             }
-            HStack(alignment: .firstTextBaseline, spacing: 16) {
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 16, alignment: .leading),
+                GridItem(.flexible(), spacing: 16, alignment: .leading)
+            ], spacing: 8) {
                 HStack(spacing: 4) {
                     Text(NSLocalizedString("type", comment: "유형") + ":")
                         .foregroundColor(.secondary)

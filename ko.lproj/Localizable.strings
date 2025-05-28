@@ -93,3 +93,8 @@
 "no_cards" = "카드가 없습니다.";
 "no_categories" = "카테고리가 없습니다.";
 "duplicate_category_alert" = "이미 존재하는 카테고리입니다.";    
+
+"premium_section" = "프리미엄";
+"ad_removed_done" = "광고 제거 완료 🎉";
+"remove_ads_button" = "광고 제거 (₩1,100)";
+"restore_purchase" = "구매 복원";

@@ -6,11 +6,13 @@ struct myAcBookApp: App {
     @AppStorage("colorScheme") private var colorScheme: String = "system"
     @AppStorage("isAppLockEnabled") private var isAppLockEnabled: Bool = false
     @StateObject var authManager = AuthManager()
+    @StateObject var purchaseManager = PurchaseManager.shared
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(purchaseManager)
                 .preferredColorScheme(
                     colorScheme == "light" ? .light :
                     colorScheme == "dark" ? .dark : nil
@@ -28,6 +30,9 @@ struct myAcBookApp: App {
                             authManager.authenticate()
                         }
                     }
+                }
+                .task {
+                    await purchaseManager.restore()
                 }
         }
     }

@@ -19,6 +19,7 @@ struct BannerAdView: UIViewRepresentable {
 
 struct ContentView: View {
 @Environment(\.managedObjectContext) private var viewContext
+@EnvironmentObject var purchaseManager: IAPManager
 @FetchRequest(
     sortDescriptors: [NSSortDescriptor(keyPath: \Record.date, ascending: false)],
     animation: .default)
@@ -399,10 +400,8 @@ var body: some View {
 
             Divider()
 
-            if !isAdRemoved {
-                BannerAdView()
-                    .frame(height: 50)
-            }
+            BannerAdContainerView()
+                .frame(height: 50)
         }
 
         if showSplash {
@@ -495,16 +494,13 @@ private var filterSummaryView: some View {
 @ViewBuilder
 private func recordSection(for records: [Record], date: Date) -> some View {
     Section {
-        SectionHeader(
-            title: formattedDate(
-                Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day], from: date)) ?? date
-            )
-        )
-        .font(.system(size: 14, weight: .bold, design: .rounded))
-        .foregroundColor(Color.blue)
+        Text(formattedDate(
+            Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day], from: date)) ?? date
+        ))
+        .font(.system(size: 16, weight: .semibold, design: .rounded))
+        .foregroundColor(Color.accentColor)
+        .padding(.horizontal, 16)
         .padding(.top, 12)
-        .padding(.bottom, 4)
-        .frame(maxWidth: .infinity, alignment: .leading)
         ForEach(records) { record in
             recordRowView(record: record)
         }
@@ -580,3 +576,17 @@ private func formattedDate(_ date: Date) -> String {
 }
 }
 
+
+struct BannerAdContainerView: View {
+    @EnvironmentObject var purchaseManager: PurchaseManager
+
+    var body: some View {
+        Group {
+            if !purchaseManager.isAdRemoved {
+                BannerAdView()
+            } else {
+                EmptyView()
+            }
+        }
+    }
+}

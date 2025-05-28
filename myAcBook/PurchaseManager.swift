@@ -10,6 +10,7 @@ import StoreKit
 
 @MainActor
 class PurchaseManager: ObservableObject {
+    static let shared = PurchaseManager()
     @Published var isAdRemoved: Bool = UserDefaults.standard.bool(forKey: "isAdRemoved")
     private var product: Product?
 

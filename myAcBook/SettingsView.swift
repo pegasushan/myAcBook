@@ -11,7 +11,7 @@ struct SettingsView: View {
     @State private var showSaveConfirmation = false
     @State private var hapticsValue: Bool = true
     @State private var selectedColorScheme: String = "system"
-    @StateObject private var purchaseManager = PurchaseManager()
+    @EnvironmentObject var purchaseManager: PurchaseManager
     @State private var showCardManagerModal = false
     @State private var showCategoryManagerModal = false
 
@@ -59,32 +59,42 @@ struct SettingsView: View {
                 }
             }
 
-//            Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
-//                if purchaseManager.isAdRemoved {
-//                    Text(NSLocalizedString("ad_removed_done", comment: "광고 제거 완료 🎉"))
-//                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-//                        .foregroundColor(.green)
-//                } else {
-//                    Button {
-//                        Task {
-//                            print("🟡 광고 제거 버튼 클릭됨")
-//                            await purchaseManager.purchase()
-//                        }
-//                    } label: {
-//                        Text(NSLocalizedString("remove_ads_button", comment: "광고 제거 (₩1,100)"))
-//                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-//                    }
-//
-//                    Button {
-//                        Task {
-//                            await purchaseManager.restore()
-//                        }
-//                    } label: {
-//                        Text(NSLocalizedString("restore_purchase", comment: "구매 복원"))
-//                            .font(.system(size: 15, weight: .regular, design: .rounded))
-//                    }
-//                }
-//            }
+            Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
+                if purchaseManager.isAdRemoved {
+                    Text(NSLocalizedString("ad_removed_done", comment: "광고 제거 완료 🎉"))
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(.green)
+                } else {
+                    Button {
+                        Task {
+                            print("🟡 광고 제거 버튼 클릭됨")
+                            await purchaseManager.purchase()
+                        }
+                    } label: {
+                        Text(String(format: NSLocalizedString("remove_ads_button", comment: "광고 제거 (%@)"), "₩1,100"))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    }
+
+                    Button {
+                        Task {
+                            await purchaseManager.restore()
+                        }
+                    } label: {
+                        Text(NSLocalizedString("restore_purchase", comment: "구매 복원"))
+                            .font(.system(size: 15, weight: .regular, design: .rounded))
+                    }
+                }
+
+                Button {
+                    UserDefaults.standard.set(false, forKey: "isPremiumUser")
+                    purchaseManager.isAdRemoved = false
+                    print("🔁 광고 제거 상태 초기화됨")
+                } label: {
+                    Text("초기화 (테스트용)")
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .foregroundColor(.red)
+                }
+            }
         }
         .sheet(isPresented: $showCardManagerModal) {
             NavigationStack {
