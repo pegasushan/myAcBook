@@ -1,7 +1,7 @@
 import CoreData
 
 /// 옵션: 앱 실행 시 모든 기존 데이터를 삭제할지 여부
-let shouldClearAllData = false
+let shouldClearAllData = true
 
 /// 옵션: 샘플 데이터를 삽입할지 여부
 let shouldGenerateSampleData = false

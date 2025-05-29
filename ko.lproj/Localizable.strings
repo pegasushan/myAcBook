@@ -72,7 +72,7 @@
 
 "premium_section" = "프리미엄";
 "ad_removed_done" = "광고 제거 완료 🎉";
-"remove_ads_button" = "광고 제거 (₩1,100)";
+"remove_ads_button" = "광고 제거 (%@)";
 "restore_purchase" = "구매 복원";
 "card_section" = "카드";
 "card_management" = "카드 관리";
@@ -92,9 +92,11 @@
 "select_card" = "카드 선택";
 "no_cards" = "카드가 없습니다.";
 "no_categories" = "카테고리가 없습니다.";
-"duplicate_category_alert" = "이미 존재하는 카테고리입니다.";    
+"duplicate_category_alert" = "이미 존재하는 카테고리입니다.";
 
-"premium_section" = "프리미엄";
-"ad_removed_done" = "광고 제거 완료 🎉";
-"remove_ads_button" = "광고 제거 (₩1,100)";
-"restore_purchase" = "구매 복원";
+"unit_billion" = "억";
+"unit_ten_million" = "천만";
+"unit_million" = "백만";
+"unit_ten_thousand" = "만";
+"unit_thousand" = "천";
+"management_section" = "항목 관리";

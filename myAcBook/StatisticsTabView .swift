@@ -299,15 +299,15 @@ func formattedCompactNumber(_ value: Double) -> String {
 
     switch absValue {
     case 1_000_000_000...:
-        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000_000))억"
+        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000_000))" + NSLocalizedString("unit_billion", comment: "억")
     case 10_000_000...:
-        return "\(sign)₩\(String(format: "%.0f", absValue / 10_000_000))천만"
+        return "\(sign)₩\(String(format: "%.0f", absValue / 10_000_000))" + NSLocalizedString("unit_ten_million", comment: "천만")
     case 1_000_000...:
-        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000))백만"
+        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000))" + NSLocalizedString("unit_million", comment: "백만")
     case 10_000...:
-        return "\(sign)₩\(String(format: "%.0f", absValue / 10_000))만"
+        return "\(sign)₩\(String(format: "%.0f", absValue / 10_000))" + NSLocalizedString("unit_ten_thousand", comment: "만")
     case 1_000...:
-        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000))천"
+        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000))" + NSLocalizedString("unit_thousand", comment: "천")
     default:
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency

@@ -44,7 +44,7 @@ struct SettingsView: View {
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
             }
-            Section(header: Text(NSLocalizedString("card_section", comment: "카드"))) {
+            Section(header: Text(NSLocalizedString("management_section", comment: "항목 관리"))) {
                 Button(action: {
                     showCardManagerModal = true
                 }) {
@@ -85,15 +85,17 @@ struct SettingsView: View {
                     }
                 }
 
-                Button {
-                    UserDefaults.standard.set(false, forKey: "isPremiumUser")
-                    purchaseManager.isAdRemoved = false
-                    print("🔁 광고 제거 상태 초기화됨")
-                } label: {
-                    Text("초기화 (테스트용)")
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .foregroundColor(.red)
-                }
+//                #if DEBUG
+//                Button {
+//                    UserDefaults.standard.set(false, forKey: "isPremiumUser")
+//                    purchaseManager.isAdRemoved = false
+//                    print("🔁 광고 제거 상태 초기화됨")
+//                } label: {
+//                    Text("초기화 (테스트용)")
+//                        .font(.system(size: 15, weight: .regular, design: .rounded))
+//                        .foregroundColor(.red)
+//                }
+//                #endif
             }
         }
         .sheet(isPresented: $showCardManagerModal) {

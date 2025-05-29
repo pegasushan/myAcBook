@@ -31,9 +31,6 @@ struct myAcBookApp: App {
                         }
                     }
                 }
-                .task {
-                    await purchaseManager.restore()
-                }
         }
     }
 }

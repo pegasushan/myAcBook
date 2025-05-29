@@ -93,3 +93,10 @@
 "no_cards" = "No cards available.";
 "no_categories" = "No categories available.";
 "duplicate_category_alert" = "This category already exists.";
+
+"unit_billion" = "B";
+"unit_ten_million" = "10M";
+"unit_million" = "M";
+"unit_ten_thousand" = "10K";
+"unit_thousand" = "K";
+"management_section" = "Management";

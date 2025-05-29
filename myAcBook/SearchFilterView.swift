@@ -188,6 +188,12 @@ struct SearchFilterView: View {
             if selectedDate.isEmpty {
                 selectedDate = NSLocalizedString("all", comment: "전체")
             }
+            if selectedIncomeCategory.isEmpty {
+                selectedIncomeCategory = NSLocalizedString("all", comment: "전체")
+            }
+            if selectedExpenseCategory.isEmpty {
+                selectedExpenseCategory = NSLocalizedString("all", comment: "전체")
+            }
             if selectedAllCategory.isEmpty {
                 selectedAllCategory = NSLocalizedString("all", comment: "전체")
             }
