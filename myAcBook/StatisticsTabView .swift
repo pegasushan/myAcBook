@@ -45,6 +45,7 @@ struct StatisticsTabView: View {
                     .padding(.top, 8)
                 contentView
             }
+            .background(Color("BackgroundSolidColor"))
         }
     }
 
@@ -62,7 +63,7 @@ struct StatisticsTabView: View {
             if selectedStatTab == NSLocalizedString("income", comment: "수입") {
                 CategorySectionView(
                     monthlyCategoryTotals: monthlyCategoryIncomeTotals,
-                    color: Color.green,
+                    color: Color("IncomeColor"),
                     sectionTitleSuffix: NSLocalizedString("income", comment: ""),
                     formattedAmount: formattedAmount,
                     isAscendingSort: isAscendingSort,
@@ -106,7 +107,7 @@ struct StatisticsTabView: View {
 
                     CategorySectionView(
                         monthlyCategoryTotals: filteredTotals,
-                        color: .red,
+                        color: Color("ExpenseColor"),
                         sectionTitleSuffix: NSLocalizedString(selectedExpenseView, comment: ""),
                         formattedAmount: formattedAmount,
                         isAscendingSort: isAscendingSort,
@@ -147,7 +148,7 @@ struct StatisticsTabView: View {
                                             y: .value(NSLocalizedString("amount", comment: "금액"), income)
                                         )
                                         .position(by: .value(NSLocalizedString("type", comment: "종류"), NSLocalizedString("income", comment: "")))
-                                        .foregroundStyle(.green)
+                                        .foregroundStyle(Color("IncomeColor"))
                                         .annotation(position: .top) {
                                             if showBarAnnotations {
                                                 Text(formattedCompactNumber(income))
@@ -160,7 +161,7 @@ struct StatisticsTabView: View {
                                             y: .value(NSLocalizedString("amount", comment: "금액"), expense)
                                         )
                                         .position(by: .value(NSLocalizedString("type", comment: "종류"), NSLocalizedString("expense", comment: "")))
-                                        .foregroundStyle(.red)
+                                        .foregroundStyle(Color("ExpenseColor"))
                                         .annotation(position: .top) {
                                             if showBarAnnotations {
                                                 Text(formattedCompactNumber(expense))
@@ -187,14 +188,14 @@ struct StatisticsTabView: View {
                             HStack(spacing: 16) {
                                 HStack(spacing: 4) {
                                     Circle()
-                                        .fill(Color.green)
+                                        .fill(Color("IncomeColor"))
                                         .frame(width: 10, height: 10)
                                     Text(NSLocalizedString("income", comment: ""))
                                         .font(.system(size: 13, weight: .regular, design: .rounded))
                                 }
                                 HStack(spacing: 4) {
                                     Circle()
-                                        .fill(Color.red)
+                                        .fill(Color("ExpenseColor"))
                                         .frame(width: 10, height: 10)
                                     Text(NSLocalizedString("expense", comment: ""))
                                         .font(.system(size: 13, weight: .regular, design: .rounded))
@@ -207,7 +208,6 @@ struct StatisticsTabView: View {
                     Spacer()
                 }
             }
-        }
         }
     }
 
@@ -292,27 +292,27 @@ struct StatisticsTabView: View {
         }
     }
 
+    func formattedCompactNumber(_ value: Double) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
 
-func formattedCompactNumber(_ value: Double) -> String {
-    let absValue = abs(value)
-    let sign = value < 0 ? "-" : ""
-
-    switch absValue {
-    case 1_000_000_000...:
-        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000_000))" + NSLocalizedString("unit_billion", comment: "억")
-    case 10_000_000...:
-        return "\(sign)₩\(String(format: "%.0f", absValue / 10_000_000))" + NSLocalizedString("unit_ten_million", comment: "천만")
-    case 1_000_000...:
-        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000))" + NSLocalizedString("unit_million", comment: "백만")
-    case 10_000...:
-        return "\(sign)₩\(String(format: "%.0f", absValue / 10_000))" + NSLocalizedString("unit_ten_thousand", comment: "만")
-    case 1_000...:
-        return "\(sign)₩\(String(format: "%.1f", absValue / 1_000))" + NSLocalizedString("unit_thousand", comment: "천")
-    default:
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "KRW"
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "\(sign)₩\(Int(absValue))"
+        switch absValue {
+        case 1_000_000_000...:
+            return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000_000))" + NSLocalizedString("unit_billion", comment: "억")
+        case 10_000_000...:
+            return "\(sign)₩\(String(format: "%.0f", absValue / 10_000_000))" + NSLocalizedString("unit_ten_million", comment: "천만")
+        case 1_000_000...:
+            return "\(sign)₩\(String(format: "%.1f", absValue / 1_000_000))" + NSLocalizedString("unit_million", comment: "백만")
+        case 10_000...:
+            return "\(sign)₩\(String(format: "%.0f", absValue / 10_000))" + NSLocalizedString("unit_ten_thousand", comment: "만")
+        case 1_000...:
+            return "\(sign)₩\(String(format: "%.1f", absValue / 1_000))" + NSLocalizedString("unit_thousand", comment: "천")
+        default:
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .currency
+            formatter.currencyCode = "KRW"
+            formatter.maximumFractionDigits = 0
+            return formatter.string(from: NSNumber(value: value)) ?? "\(sign)₩\(Int(absValue))"
+        }
     }
 }

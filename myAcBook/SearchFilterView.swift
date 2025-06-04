@@ -82,125 +82,138 @@ struct SearchFilterView: View {
 
     var body: some View {
         NavigationView {
-            Form {
-                Section {
-                    EmptyView()
-                        .frame(height: 8)
-                }
-
-                Section(header: Text(NSLocalizedString("type", comment: "유형"))
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor(.secondary)) {
-                    Picker("유형", selection: $selectedType) {
-                        Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
-                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                        Text(NSLocalizedString("income", comment: "수입")).tag(NSLocalizedString("income", comment: "수입"))
-                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                        Text(NSLocalizedString("expense", comment: "지출")).tag(NSLocalizedString("expense", comment: "지출"))
-                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                }
-                .padding(.bottom, 8)
-
-                Section {
-                    VStack(alignment: .leading) {
-                        Text(NSLocalizedString("select_category", comment: "카테고리 선택"))
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                            .foregroundColor(.gray)
-                        Picker(selection: currentCategoryBinding) {
+            ZStack {
+                Color("BackgroundSolidColor").ignoresSafeArea()
+                VStack(spacing: 18) {
+                    // 유형 필터
+                    FilterCard {
+                        HStack(spacing: 8) {
+                            Image(systemName: "slider.horizontal.3")
+                                .foregroundColor(Color("HighlightColor"))
+                            Text(NSLocalizedString("type", comment: "유형"))
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Spacer()
+                        }
+                        Picker("", selection: $selectedType) {
                             Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
-                                .font(.system(size: 14, weight: .regular, design: .rounded))
-                            let categories: [String] = fetchedCategories.map { $0.name ?? "" }
-                            ForEach(categories, id: \.self) { cat in
+                            Text(NSLocalizedString("income", comment: "수입")).tag(NSLocalizedString("income", comment: "수입"))
+                            Text(NSLocalizedString("expense", comment: "지출")).tag(NSLocalizedString("expense", comment: "지출"))
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .accentColor(Color("HighlightColor"))
+                    }
+                    // 카테고리 필터
+                    FilterCard {
+                        HStack(spacing: 8) {
+                            Image(systemName: "tag")
+                                .foregroundColor(Color("HighlightColor"))
+                            Text(NSLocalizedString("select_category", comment: "카테고리 선택"))
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Spacer()
+                        }
+                        Picker("", selection: currentCategoryBinding) {
+                            Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
+                            ForEach(fetchedCategories.map { $0.name ?? "" }, id: \.self) { cat in
                                 Text(cat).tag(cat)
-                                    .font(.system(size: 14, weight: .regular, design: .rounded))
                             }
-                        } label: {
-                            Text(NSLocalizedString("category", comment: "카테고리")).font(.system(size: 14, weight: .regular, design: .rounded))
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                    }
+                    // 기간 필터
+                    FilterCard {
+                        HStack(spacing: 8) {
+                            Image(systemName: "calendar")
+                                .foregroundColor(Color("HighlightColor"))
+                            Text(NSLocalizedString("period", comment: "기간"))
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Spacer()
+                        }
+                        Picker("", selection: $selectedDate) {
+                            Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
+                            Text(NSLocalizedString("today", comment: "오늘")).tag(NSLocalizedString("today", comment: "오늘"))
+                            Text(NSLocalizedString("yesterday", comment: "어제")).tag(NSLocalizedString("yesterday", comment: "어제"))
+                            Text(NSLocalizedString("week", comment: "1주일")).tag(NSLocalizedString("week", comment: "1주일"))
+                            Text(NSLocalizedString("month", comment: "한달")).tag(NSLocalizedString("month", comment: "한달"))
+                            Text(NSLocalizedString("custom", comment: "직접 선택")).tag(NSLocalizedString("custom", comment: "직접 선택"))
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        if selectedDate == NSLocalizedString("custom", comment: "직접 선택") {
+                            DatePicker(NSLocalizedString("start_date", comment: "시작 날짜"), selection: $customStartDate, displayedComponents: .date)
+                            DatePicker(NSLocalizedString("end_date", comment: "종료 날짜"), selection: $customEndDate, displayedComponents: .date)
                         }
                     }
+                    Spacer()
                 }
-                .headerProminence(.increased)
-                .padding(.bottom, 8)
-
-                Section(header: Text(NSLocalizedString("period", comment: "기간"))
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .foregroundColor(.secondary)) {
-                    Picker(selection: $selectedDate) {
-                        Text(NSLocalizedString("all", comment: "전체"))
-                            .font(.system(size: 10, weight: .regular, design: .rounded))
-                            .tag(NSLocalizedString("all", comment: "전체"))
-                        Text(NSLocalizedString("today", comment: "오늘"))
-                            .font(.system(size: 10, weight: .regular, design: .rounded))
-                            .tag(NSLocalizedString("today", comment: "오늘"))
-                        Text(NSLocalizedString("yesterday", comment: "어제"))
-                            .font(.system(size: 10, weight: .regular, design: .rounded))
-                            .tag(NSLocalizedString("yesterday", comment: "어제"))
-                        Text(NSLocalizedString("week", comment: "1주일"))
-                            .font(.system(size: 10, weight: .regular, design: .rounded))
-                            .tag(NSLocalizedString("week", comment: "1주일"))
-                        Text(NSLocalizedString("month", comment: "한달"))
-                            .font(.system(size: 10, weight: .regular, design: .rounded))
-                            .tag(NSLocalizedString("month", comment: "한달"))
-                        Text(NSLocalizedString("custom", comment: "직접 선택"))
-                            .font(.system(size: 10, weight: .regular, design: .rounded))
-                            .tag(NSLocalizedString("custom", comment: "직접 선택"))
-                    } label: {
-                        Text(NSLocalizedString("period", comment: "기간")).font(.system(size: 14, weight: .regular, design: .rounded))
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
+                // 하단 고정 적용/초기화 버튼
+                VStack {
+                    Spacer()
+                    HStack {
+                        Button(NSLocalizedString("reset", comment: "초기화")) {
+                            onReset()
+                        }
+                        .foregroundColor(Color("ExpenseColor"))
+                        Spacer()
+                        Button(action: {
+                            selectedCategory = currentCategoryBinding.wrappedValue
+                            dismiss()
+                        }) {
+                            Text(NSLocalizedString("apply", comment: "적용"))
+                                .font(.system(size: 17, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: 120)
+                                .padding(.vertical, 12)
+                                .background(Color("HighlightColor"))
+                                .cornerRadius(12)
+                        }
                     }
-                    if selectedDate == NSLocalizedString("custom", comment: "직접 선택") {
-                        DatePicker(NSLocalizedString("start_date", comment: "시작 날짜"), selection: $customStartDate, displayedComponents: .date)
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                        DatePicker(NSLocalizedString("end_date", comment: "종료 날짜"), selection: $customEndDate, displayedComponents: .date)
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
                 }
             }
+            .navigationBarTitle(Text(NSLocalizedString("filter_setting", comment: "필터 설정")), displayMode: .inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button(NSLocalizedString("cancel", comment: "취소")) {
                         dismiss()
                     }
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                }
-                ToolbarItem(placement: .destructiveAction) {
-                    Button(NSLocalizedString("reset", comment: "초기화")) {
-                        onReset()
-                    }
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.red)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(NSLocalizedString("apply", comment: "적용")) {
-                        selectedCategory = currentCategoryBinding.wrappedValue
-                        dismiss()
-                    }
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 }
             }
-        }
-        .onAppear {
-            if selectedDate.isEmpty {
-                selectedDate = NSLocalizedString("all", comment: "전체")
+            .onAppear {
+                if selectedDate.isEmpty {
+                    selectedDate = NSLocalizedString("all", comment: "전체")
+                }
+                if selectedIncomeCategory.isEmpty {
+                    selectedIncomeCategory = NSLocalizedString("all", comment: "전체")
+                }
+                if selectedExpenseCategory.isEmpty {
+                    selectedExpenseCategory = NSLocalizedString("all", comment: "전체")
+                }
+                if selectedAllCategory.isEmpty {
+                    selectedAllCategory = NSLocalizedString("all", comment: "전체")
+                }
+                loadCategories(for: selectedType)
             }
-            if selectedIncomeCategory.isEmpty {
-                selectedIncomeCategory = NSLocalizedString("all", comment: "전체")
+            .onChange(of: selectedType) { _, newValue in
+                loadCategories(for: newValue)
             }
-            if selectedExpenseCategory.isEmpty {
-                selectedExpenseCategory = NSLocalizedString("all", comment: "전체")
-            }
-            if selectedAllCategory.isEmpty {
-                selectedAllCategory = NSLocalizedString("all", comment: "전체")
-            }
-            loadCategories(for: selectedType)
-        }
-        .onChange(of: selectedType) { _, newValue in
-            loadCategories(for: newValue)
         }
     }
 }
+
+struct FilterCard<Content: View>: View {
+    let content: Content
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            content
+        }
+        .padding(16)
+        .background(Color("SectionBGColor"))
+        .cornerRadius(14)
+    }
+}
+

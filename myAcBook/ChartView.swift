@@ -8,24 +8,27 @@ struct ChartView: View {
     private var records: FetchedResults<Record>
 
     var body: some View {
-        VStack {
-            if groupedRecords.isEmpty {
-                Text(NSLocalizedString("no_data", comment: "데이터가 없습니다."))
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
-            } else {
-                Chart {
-                    ForEach(groupedRecords, id: \.category) { group in
-                        BarMark(
-                            x: .value(NSLocalizedString("category", comment: "카테고리"), group.category),
-                            y: .value(NSLocalizedString("amount", comment: "금액"), group.totalAmount)
-                        )
-                        .foregroundStyle(by: .value(NSLocalizedString("category", comment: "카테고리"), group.category))
+        ZStack {
+            Color("BackgroundSolidColor").ignoresSafeArea()
+            VStack {
+                if groupedRecords.isEmpty {
+                    Text(NSLocalizedString("no_data", comment: "데이터가 없습니다."))
+                        .foregroundColor(Color("HighlightColor"))
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                } else {
+                    Chart {
+                        ForEach(groupedRecords, id: \.category) { group in
+                            BarMark(
+                                x: .value(NSLocalizedString("category", comment: "카테고리"), group.category),
+                                y: .value(NSLocalizedString("amount", comment: "금액"), group.totalAmount)
+                            )
+                            .foregroundStyle(by: .value(NSLocalizedString("category", comment: "카테고리"), group.category))
+                        }
                     }
+                    .chartLegend(.visible)
+                    .frame(height: 300)
+                    .padding()
                 }
-                .chartLegend(.visible)
-                .frame(height: 300)
-                .padding()
             }
         }
         .toolbar {

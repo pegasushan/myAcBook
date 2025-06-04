@@ -27,7 +27,7 @@ struct RecordRowView: View {
         } label: {
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: (record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                    .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? .green : .red)
+                    .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
                     .font(.system(size: 15, weight: .regular, design: .rounded))
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -53,7 +53,7 @@ struct RecordRowView: View {
                         Spacer()
                         Text(((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "+ " : "- ") + formattedAmount(record.amount))
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? .blue : .red)
+                            .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
                     }
                 }
             }
@@ -61,8 +61,8 @@ struct RecordRowView: View {
             .padding(.horizontal)
             .background(
                 selectedRecords.contains(record)
-                ? Color.blue.opacity(0.15)
-                : Color(.systemBackground)
+                ? Color("IncomeColor").opacity(0.15)
+                : Color("SectionBGColor")
             )
             .cornerRadius(12)
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)

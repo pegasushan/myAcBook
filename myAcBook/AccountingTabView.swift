@@ -15,16 +15,17 @@ struct AccountingTabView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color.clear
-
+                Color("BackgroundSolidColor").ignoresSafeArea()
                 List {
                     filterSummaryView
                     recordListSection
                 }
-                .listStyle(.insetGrouped)
-                .listRowBackground(Color.clear)
-                .background(Color.clear)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .listRowBackground(Color("BackgroundSolidColor"))
+                .background(Color("BackgroundSolidColor"))
             }
+            .background(Color("BackgroundSolidColor"))
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
@@ -43,7 +44,7 @@ struct AccountingTabView: View {
                         if selectedRecords.isEmpty {
                             Text("선택")
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color("HighlightColor"))
                         } else {
                             Button(action: {
                                 withAnimation {
@@ -56,7 +57,7 @@ struct AccountingTabView: View {
                             }) {
                                 Text("선택 삭제 (\(selectedRecords.count))")
                                     .font(.system(size: 15, weight: .regular, design: .rounded))
-                                    .foregroundColor(.red)
+                                    .foregroundColor(Color("ExpenseColor"))
                             }
                         }
                     } else {

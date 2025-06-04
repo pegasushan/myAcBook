@@ -6,7 +6,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            Color("SectionBGColor")
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
@@ -17,7 +17,7 @@ struct SplashView: View {
 
                 Text(NSLocalizedString("app_title", comment: "앱 타이틀"))
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
-                    .foregroundColor(.primary)
+                    .foregroundColor(Color("HighlightColor"))
             }
             .scaleEffect(scale)
             .opacity(opacity)

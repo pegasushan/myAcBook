@@ -26,7 +26,7 @@ struct FilterSummaryView: View {
                         Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color("HighlightColor"))
                 }
                 .contentShape(Rectangle())
 
@@ -58,7 +58,7 @@ struct FilterSummaryView: View {
             .font(.system(size: 14, weight: .regular, design: .rounded))
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(Color("SectionBGColor"))
         .cornerRadius(12)
     }
 }

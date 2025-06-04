@@ -19,25 +19,39 @@ public struct CategoryManagerView: View {
     @State private var selectedFilter: String
     @State private var showDuplicateAlert = false
 
-public init(selectedType: String) {
-    self.selectedType = selectedType
+    private var filteredCategories: [AppCategory] {
+        let nonEmpty = Array(categories.filter { !($0.name?.isEmpty ?? true) })
+        return nonEmpty.filter { $0.type == selectedFilter }
+    }
 
-    let normalized = (selectedType == NSLocalizedString("income", comment: "수입")) ? "income" :
-                     (selectedType == NSLocalizedString("expense", comment: "지출")) ? "expense" :
-                     selectedType
+    public init(selectedType: String) {
+        self.selectedType = selectedType
 
-    _selectedFilter = State(initialValue: normalized)
+        let normalized = (selectedType == NSLocalizedString("income", comment: "수입")) ? "income" :
+                         (selectedType == NSLocalizedString("expense", comment: "지출")) ? "expense" :
+                         selectedType
 
-    print("📌 전달받은 selectedType: \(selectedType), normalized: \(normalized)")
+        _selectedFilter = State(initialValue: normalized)
 
-    _categories = FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \AppCategory.name, ascending: true)],
-        predicate: nil
-    )
-}
+        print("📌 전달받은 selectedType: \(selectedType), normalized: \(normalized)")
+
+        _categories = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(keyPath: \AppCategory.name, ascending: true)],
+            predicate: nil
+        )
+    }
 
     public var body: some View {
         VStack {
+            // 상단 타이틀
+            HStack(spacing: 10) {
+                // Image(systemName: "folder.fill") // 이모티콘 제거
+                // 상단 텍스트도 이미 제거됨
+            }
+            .padding(.top, 24)
+            .padding(.bottom, 8)
+            // 리스트와 타이틀 사이 여백
+            Spacer().frame(height: 8)
             Picker("Type Filter", selection: $selectedFilter) {
                 Text(LocalizedStringKey("income")).tag("income")
                 Text(LocalizedStringKey("expense")).tag("expense")
@@ -46,40 +60,31 @@ public init(selectedType: String) {
             .padding(.horizontal)
             List {
                 Section(header:
-                    VStack(alignment: .leading) {
-                        Text(LocalizedStringKey("category_list"))
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.top, 8)
+                    Text(NSLocalizedString("category_list", comment: "카테고리 목록"))
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color("HighlightColor"))
+                        .padding(.top, 8)
                 ) {
-                    if categories.filter({ $0.type == selectedFilter && !($0.name?.isEmpty ?? true) }).isEmpty {
+                    if filteredCategories.isEmpty {
                         Text(LocalizedStringKey("no_categories"))
                             .foregroundColor(.gray)
                             .font(.system(size: 14, weight: .medium, design: .rounded))
                     }
-                    ForEach(categories.filter {
-                        !($0.name?.isEmpty ?? true) &&
-                        $0.type == selectedFilter
-                    }) { category in
+                    ForEach(filteredCategories.compactMap { $0.id != nil ? $0 : nil }, id: \.id) { category in
                         HStack {
                             Text(LocalizedStringKey(category.name ?? ""))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                             Spacer()
                             Text(category.type == "income" ? NSLocalizedString("income", comment: "") : NSLocalizedString("expense", comment: ""))
                                 .font(.system(size: 14, weight: .regular, design: .rounded))
-                                .foregroundColor(.gray)
+                                .foregroundColor(Color("HighlightColor"))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
-                                .background(Color(.systemGray6))
+                                .background(Color("SectionBGColor"))
                                 .cornerRadius(6)
                         }
                     }
                     .onDelete { indexSet in
-                        let filteredCategories = categories.filter {
-                            !($0.name?.isEmpty ?? true) &&
-                            $0.type == selectedFilter
-                        }
                         for index in indexSet {
                             let categoryToDelete = filteredCategories[index]
                             if let context = categoryToDelete.managedObjectContext {
@@ -91,18 +96,19 @@ public init(selectedType: String) {
                 }
 
                 Section(header:
-                    VStack(alignment: .leading) {
-                        Text(LocalizedStringKey("add_new_category"))
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.top, 12)
+                    Text(NSLocalizedString("add_new_category", comment: "카테고리 추가"))
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color("HighlightColor"))
+                        .padding(.top, 12)
                 ) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "folder.fill")
+                            .foregroundColor(.gray)
                         TextField(LocalizedStringKey("category_name_placeholder"), text: $newCategoryName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .font(.system(size: 15, weight: .regular, design: .rounded))
-                        Button(LocalizedStringKey("add")) {
+                        Spacer()
+                        Button(action: {
                             let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
                             print("➕ 추가 시도: '\(trimmed)', 타입: \(selectedType)")
                             if !trimmed.isEmpty {
@@ -131,22 +137,35 @@ public init(selectedType: String) {
                             } else {
                                 showEmptyNameAlert = true
                             }
+                        }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.blue)
+                                .padding(6)
+                                .background(Color.white.opacity(0.7))
+                                .clipShape(Circle())
                         }
+                        .buttonStyle(PlainButtonStyle())
                         .alert(LocalizedStringKey("empty_input_alert"), isPresented: $showEmptyNameAlert) {
                             Button(LocalizedStringKey("confirm"), role: .cancel) { }
                         }
                         .alert(LocalizedStringKey("duplicate_category_alert"), isPresented: $showDuplicateAlert) {
                             Button(LocalizedStringKey("confirm"), role: .cancel) { }
                         }
-                        .buttonStyle(.bordered)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
                     }
                     .padding(.vertical, 4)
                 }
             }
             .padding(.top, 8)
             .listStyle(.insetGrouped)
+            .listRowBackground(Color("BackgroundSolidColor"))
+            .scrollContentBackground(.hidden)
+            .background(Color("BackgroundSolidColor"))
+            .onAppear {
+                UITableView.appearance().backgroundColor = UIColor.clear
+            }
         }
+        .background(Color("BackgroundSolidColor"))
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(NSLocalizedString("manage_category", comment: "카테고리 관리"))

@@ -1,5 +1,20 @@
 import SwiftUI
 import CoreData
+import Combine
+
+// 키보드 상태 감지용 ObservableObject
+class KeyboardObserver: ObservableObject {
+    @Published var isKeyboardVisible: Bool = false
+    private var cancellables: Set<AnyCancellable> = []
+    init() {
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .sink { [weak self] _ in self?.isKeyboardVisible = true }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .sink { [weak self] _ in self?.isKeyboardVisible = false }
+            .store(in: &cancellables)
+    }
+}
 
 struct AddRecordView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -18,6 +33,7 @@ struct AddRecordView: View {
     @State private var paymentType: String = "현금"
     @State private var selectedCard: Card?
     @StateObject private var cardViewModel = CardViewModel(context: PersistenceController.shared.container.viewContext)
+    @StateObject private var keyboard = KeyboardObserver()
 
     let types = [
         NSLocalizedString("income", comment: ""),
@@ -31,160 +47,214 @@ struct AddRecordView: View {
     var body: some View {
         let expenseText = NSLocalizedString("expense", comment: "")
         NavigationView {
-            Form {
-                Section {
-                    HStack {
-                        Text(recordToEdit == nil ? NSLocalizedString("add_item", comment: "") : NSLocalizedString("edit_item", comment: ""))
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .padding(.vertical, 6)
-                        Spacer()
-                    }
-                    .listRowBackground(Color.clear)
-                }
-                Section {
-                    TextField(NSLocalizedString("example_amount", comment: ""), text: $amount)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .onChange(of: amount) {
-                            let numberString = amount.replacingOccurrences(of: ",", with: "")
-                            if let value = Int(numberString) {
-                                let formatter = NumberFormatter()
-                                formatter.numberStyle = .decimal
-                                amount = formatter.string(from: NSNumber(value: value)) ?? ""
+            ZStack {
+                Color("BackgroundSolidColor").ignoresSafeArea()
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // 금액 입력란 강조
+                            HStack {
+                                Image(systemName: "wonsign.circle.fill")
+                                    .foregroundColor(Color("HighlightColor"))
+                                    .font(.system(size: 28, weight: .bold))
+                                TextField(NSLocalizedString("example_amount", comment: ""), text: $amount)
+                                    .keyboardType(.decimalPad)
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .padding(12)
+                                    .background(Color.white.opacity(0.7))
+                                    .cornerRadius(12)
+                                    .onChange(of: amount) {
+                                        let numberString = amount.replacingOccurrences(of: ",", with: "")
+                                        if let value = Int(numberString) {
+                                            let formatter = NumberFormatter()
+                                            formatter.numberStyle = .decimal
+                                            amount = formatter.string(from: NSNumber(value: value)) ?? ""
+                                        }
+                                    }
                             }
+                            .padding(.horizontal)
+                            // 유형 선택
+                            HStack {
+                                Image(systemName: "arrow.2.squarepath")
+                                    .foregroundColor(.gray)
+                                Picker(NSLocalizedString("type_label", comment: ""), selection: $type) {
+                                    ForEach(types, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)) }
+                                }
+                                .pickerStyle(.segmented)
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
+                                .disabled(recordToEdit != nil)
+                            }
+                            .padding(.horizontal)
+                            // 결제수단/카드
+                            if type == expenseText {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "creditcard")
+                                            .foregroundColor(.gray)
+                                        Picker(NSLocalizedString("payment_type_label", comment: "지출 구분"), selection: $paymentType) {
+                                            Text(NSLocalizedString("cash", comment: "현금")).tag(NSLocalizedString("cash", comment: "현금"))
+                                            Text(NSLocalizedString("card", comment: "카드")).tag(NSLocalizedString("card", comment: "카드"))
+                                        }
+                                        .pickerStyle(SegmentedPickerStyle())
+                                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                                    }
+                                    if paymentType == NSLocalizedString("card", comment: "카드") {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "creditcard.fill")
+                                                .foregroundColor(.gray)
+                                            Picker(NSLocalizedString("select_card", comment: "카드 선택"), selection: $selectedCard) {
+                                                Text(NSLocalizedString("카드선택", comment: "카드선택")).tag(nil as Card?)
+                                                ForEach(cardViewModel.cards, id: \.self) { card in
+                                                    Text(card.name ?? "").tag(card as Card?)
+                                                }
+                                            }
+                                            .font(.system(size: 15, weight: .regular, design: .rounded))
+                                            Spacer()
+                                            Button(action: { showCardManager = true }) {
+                                                Image(systemName: "plus")
+                                                    .font(.system(size: 18, weight: .bold))
+                                                    .foregroundColor(.blue)
+                                                    .padding(6)
+                                                    .background(Color.white.opacity(0.7))
+                                                    .clipShape(Circle())
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                        .padding(.top, 2)
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            // 카테고리
+                            HStack(spacing: 8) {
+                                Image(systemName: "folder.fill")
+                                    .foregroundColor(.gray)
+                                Picker(NSLocalizedString("category", comment: ""), selection: $selectedCategory) {
+                                    Text(NSLocalizedString("카테고리 선택", comment: "카테고리 선택")).tag(nil as AppCategory?)
+                                    ForEach(fetchedCategories, id: \.self) { category in
+                                        Text(category.name ?? "").tag(category as AppCategory?)
+                                    }
+                                }
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
+                                Spacer()
+                                Button(action: { showCategoryManager = true }) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.blue)
+                                        .padding(6)
+                                        .background(Color.white.opacity(0.7))
+                                        .clipShape(Circle())
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                            .padding(.horizontal)
+                            // 상세내용
+                            HStack {
+                                Image(systemName: "text.alignleft")
+                                    .foregroundColor(.gray)
+                                TextField(NSLocalizedString("detail_placeholder", comment: ""), text: $detail)
+                                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                                    .padding(10)
+                                    .background(Color.white.opacity(0.7))
+                                    .cornerRadius(8)
+                            }
+                            .padding(.horizontal)
+                            // 날짜
+                            HStack {
+                                Image(systemName: "calendar")
+                                    .foregroundColor(.gray)
+                                DatePicker(NSLocalizedString("date", comment: ""), selection: $date, displayedComponents: .date)
+                                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                            }
+                            .padding(.horizontal)
                         }
-                }
-
-                Picker(NSLocalizedString("type_label", comment: ""), selection: $type) {
-                    ForEach(types, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)) }
-                }
-                .pickerStyle(.segmented)
-                .font(.system(size: 15, weight: .regular, design: .rounded))
-                .disabled(recordToEdit != nil)
-
-                if type == expenseText {
-                    Section {
-                        Picker(NSLocalizedString("payment_type_label", comment: "지출 구분"), selection: $paymentType) {
-                            Text(NSLocalizedString("cash", comment: "현금")).tag(NSLocalizedString("cash", comment: "현금"))
-                            Text(NSLocalizedString("card", comment: "카드")).tag(NSLocalizedString("card", comment: "카드"))
+                        .padding(.vertical, 24)
+                    }
+                    // 하단 저장 버튼 (키보드가 올라올 때는 숨김)
+                    if !keyboard.isKeyboardVisible {
+                        Button(action: {
+                            saveRecord()
+                        }) {
+                            Text(recordToEdit == nil ? NSLocalizedString("save", comment: "저장") : NSLocalizedString("edit_done", comment: "수정 완료"))
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color("HighlightColor"))
+                                .cornerRadius(16)
+                                .shadow(radius: 4)
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 16)
                         }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-
-                        if paymentType == NSLocalizedString("card", comment: "카드") {
-                            Picker(NSLocalizedString("select_card", comment: "카드 선택"), selection: $selectedCard) {
-                                Text(NSLocalizedString("select", comment: "")).tag(nil as Card?)
-                                ForEach(cardViewModel.cards, id: \.self) { card in
-                                    Text(card.name ?? "").tag(card as Card?)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .animation(.easeInOut, value: keyboard.isKeyboardVisible)
+                    }
+                }
+                .alert(isPresented: $showAlert) {
+                    Alert(title: Text(NSLocalizedString("input_error", comment: "")), message: Text(alertMessage), dismissButton: .default(Text(NSLocalizedString("confirm", comment: ""))))
+                }
+                .sheet(isPresented: $showCategoryManager, onDismiss: {
+                    fetchCategories()
+                }) {
+                    NavigationStack {
+                        CategoryManagerView(selectedType: type)
+                            .toolbar {
+                                ToolbarItem(placement: .principal) {
+                                    Text(NSLocalizedString("manage_category", comment: "카테고리 관리"))
+                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 }
                             }
-                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                            Button(action: {
-                                print("🧾 현재 카드 수: \(cardViewModel.cards.count)")
-                                for card in cardViewModel.cards {
-                                    print("💳 카드: \(card.name ?? "nil") id: \(card.id?.uuidString ?? "nil")")
+                    }
+                }
+                .sheet(isPresented: $showCardManager, onDismiss: {
+                    cardViewModel.fetchCards()
+                }) {
+                    NavigationStack {
+                        CardListView()
+                            .toolbar {
+                                ToolbarItem(placement: .principal) {
+                                    Text(NSLocalizedString("card_management", comment: "카드 관리"))
+                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 }
-                                showCardManager = true
-                            }) {
-                                Label(NSLocalizedString("card_management", comment: "카드 관리"), systemImage: "creditcard")
-                                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                                    .foregroundColor(.blue)
                             }
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(recordToEdit == nil ? NSLocalizedString("save", comment: "") : NSLocalizedString("edit_done", comment: "")) {
+                            saveRecord()
                         }
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
-                }
-
-                Section {
-                    Picker(NSLocalizedString("category", comment: ""), selection: $selectedCategory) {
-                        Text(NSLocalizedString("select", comment: "")).tag(nil as AppCategory?)
-                        ForEach(fetchedCategories, id: \.self) { category in
-                            Text(category.name ?? "").tag(category as AppCategory?)
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(NSLocalizedString("cancel", comment: "")) {
+                            dismiss()
                         }
-                    }
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
-                    Button(action: {
-                        showCategoryManager = true
-                    }) {
-                        Label(NSLocalizedString("manage_category", comment: ""), systemImage: "folder")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(.blue)
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
                 }
-
-                Section {
-                    TextField(NSLocalizedString("detail_placeholder", comment: ""), text: $detail)
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                }
-
-                Section {
-                    DatePicker(NSLocalizedString("date", comment: ""), selection: $date, displayedComponents: .date)
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                }
-            }
-            .alert(isPresented: $showAlert) {
-                Alert(title: Text(NSLocalizedString("input_error", comment: "")), message: Text(alertMessage), dismissButton: .default(Text(NSLocalizedString("confirm", comment: ""))))
-            }
-            .sheet(isPresented: $showCategoryManager, onDismiss: {
-                fetchCategories()
-            }) {
-                NavigationStack {
-                    CategoryManagerView(selectedType: type)
-                        .toolbar {
-                            ToolbarItem(placement: .principal) {
-                                Text(NSLocalizedString("manage_category", comment: "카테고리 관리"))
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            }
-                        }
-                }
-            }
-            .sheet(isPresented: $showCardManager, onDismiss: {
-                cardViewModel.fetchCards()
-            }) {
-                NavigationStack {
-                    CardListView()
-                        .toolbar {
-                            ToolbarItem(placement: .principal) {
-                                Text(NSLocalizedString("card_management", comment: "카드 관리"))
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            }
-                        }
-                }
-            }
-            // .navigationTitle(recordToEdit == nil ? "항목 추가" : "항목 수정")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(recordToEdit == nil ? NSLocalizedString("save", comment: "") : NSLocalizedString("edit_done", comment: "")) {
-                        saveRecord()
+                .onAppear {
+                    if let record = recordToEdit {
+                        type = record.type ?? NSLocalizedString("expense", comment: "")
+                        detail = record.detail ?? ""
+                        let formatter = NumberFormatter()
+                        formatter.numberStyle = .decimal
+                        amount = formatter.string(from: NSNumber(value: Int(record.amount))) ?? ""
+                        date = record.date ?? Date()
+                        paymentType = record.paymentType ?? "현금"
+                        selectedCard = record.card
+                        selectedCategory = record.categoryRelation
+                    } else {
+                        type = NSLocalizedString("expense", comment: "")
+                        selectedCategory = nil
                     }
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    fetchCategories()
                 }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(NSLocalizedString("cancel", comment: "")) {
-                        dismiss()
-                    }
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .onChange(of: type) {
+                    fetchCategories()
                 }
             }
-            .onAppear {
-                if let record = recordToEdit {
-                    type = record.type ?? NSLocalizedString("expense", comment: "")
-                    detail = record.detail ?? ""
-                    let formatter = NumberFormatter()
-                    formatter.numberStyle = .decimal
-                    amount = formatter.string(from: NSNumber(value: Int(record.amount))) ?? ""
-                    date = record.date ?? Date()
-                    paymentType = record.paymentType ?? "현금"
-                    selectedCard = record.card
-                    selectedCategory = record.categoryRelation
-                } else {
-                    type = NSLocalizedString("expense", comment: "")
-                    selectedCategory = nil
-                }
-                fetchCategories()
-            }
-            .onChange(of: type) {
-                fetchCategories()
-            }
+            .background(Color("BackgroundSolidColor"))
         }
     }
 

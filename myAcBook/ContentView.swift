@@ -42,18 +42,20 @@ private var records: FetchedResults<Record>
 @State private var selectedIncomeCategory: String = NSLocalizedString("all", comment: "")
 @State private var selectedExpenseCategory: String = NSLocalizedString("all", comment: "")
 @State private var selectedAllCategory: String = NSLocalizedString("all", comment: "")
-    private var currentCategory: String {
-        return selectedCategory
-    }
 @AppStorage("selectedDateFilter") private var selectedDateFilter: String = NSLocalizedString("all", comment: "")
 @AppStorage("selectedTypeFilter") private var selectedTypeFilter: String = NSLocalizedString("all", comment: "")
 @State private var showFilterSheet = false
 @AppStorage("customStartDate") private var customStartTimestamp: Double = Date().timeIntervalSince1970
 @AppStorage("customEndDate") private var customEndTimestamp: Double = Date().timeIntervalSince1970
+@State private var showSettingsSheet = false
+@State private var customStartDate: Date
+@State private var customEndDate: Date
 
-private var customStartDate: Date {
-    get { Date(timeIntervalSince1970: customStartTimestamp) }
-    set { customStartTimestamp = newValue.timeIntervalSince1970 }
+init() {
+    let start = UserDefaults.standard.double(forKey: "customStartDate")
+    let end = UserDefaults.standard.double(forKey: "customEndDate")
+    _customStartDate = State(initialValue: start > 0 ? Date(timeIntervalSince1970: start) : Date())
+    _customEndDate = State(initialValue: end > 0 ? Date(timeIntervalSince1970: end) : Date())
 }
 
 struct ContentView_Previews: PreviewProvider {
@@ -63,46 +65,9 @@ struct ContentView_Previews: PreviewProvider {
     }
 }
 
-private var customEndDate: Date {
-    get { Date(timeIntervalSince1970: customEndTimestamp) }
-    set { customEndTimestamp = newValue.timeIntervalSince1970 }
+private var currentCategory: String {
+    return selectedCategory
 }
-// @StateObject private var categoryManager = CategoryManager.shared
-@State private var showSplash = true
-
-    private func formatDateShort(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/d"
-        return formatter.string(from: date)
-    }
-
-    private func dateRangeText() -> String {
-        let calendar = Calendar.current
-        let now = Date()
-
-        switch selectedDateFilter {
-        case NSLocalizedString("today", comment: ""):
-            return formatDateShort(now)
-        case NSLocalizedString("yesterday", comment: ""):
-            if let yesterday = calendar.date(byAdding: .day, value: -1, to: now) {
-                return formatDateShort(yesterday)
-            }
-        case NSLocalizedString("week", comment: ""):
-            if let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) {
-                return "\(formatDateShort(weekAgo)) ~ \(formatDateShort(now))"
-            }
-        case NSLocalizedString("month", comment: ""):
-            if let monthAgo = calendar.date(byAdding: .month, value: -1, to: now) {
-                return "\(formatDateShort(monthAgo)) ~ \(formatDateShort(now))"
-            }
-        case NSLocalizedString("custom", comment: ""):
-            let sortedDates = [customStartDate, customEndDate].sorted()
-            return "\(formatDateShort(sortedDates[0])) ~ \(formatDateShort(sortedDates[1]))"
-        default:
-            return selectedDateFilter
-        }
-        return selectedDateFilter
-    }
 
 private var categoryTotals: [String: Double] {
     var totals = [String: Double]()
@@ -242,190 +207,130 @@ private var sortedRecordDates: [Date] {
 }
 
 private var groupedRecordSections: some View {
-    AnyView(
-        Group {
-            if filteredRecords.isEmpty {
-                VStack(spacing: 20) {
-                    Image(systemName: "tray")
-                        .resizable()
-                        .frame(width: 50, height: 50)
-                        .foregroundColor(.secondary)
-
-                    Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
-                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
-
-                    Button(action: {
-                        isAddingNewRecord = true
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 20)
-                        .background(Color.accentColor)
-                        .clipShape(Capsule())
-                        .shadow(radius: 4)
+    Group {
+        if filteredRecords.isEmpty {
+            VStack(spacing: 20) {
+                Image(systemName: "tray")
+                    .resizable()
+                    .frame(width: 50, height: 50)
+                    .foregroundColor(.secondary)
+                Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .foregroundColor(.secondary)
+                Button(action: {
+                    isAddingNewRecord = true
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
+                    .foregroundColor(.white)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
+                    .background(Color("HighlightColor"))
+                    .clipShape(Capsule())
+                    .shadow(radius: 4)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
-                .multilineTextAlignment(.center)
-            } else {
+            }
+            .padding(.horizontal, 16)
+        } else {
+            List {
                 ForEach(sortedRecordDates, id: \.self) { date in
                     if let records = groupedRecordsByDate[date] {
                         recordSection(for: records, date: date)
                     }
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color("BackgroundSolidColor"))
+            .listRowBackground(Color("BackgroundSolidColor"))
+            .listRowSeparator(.hidden)
         }
-    )
+    }
 }
 
 var body: some View {
-    ZStack {
-        GeometryReader { geometry in
-            Image("BackgroundGlass")
-                .resizable()
-                .scaledToFill()
-                .frame(width: geometry.size.width, height: geometry.size.height)
-                .clipped()
-                .ignoresSafeArea()
-                .opacity(0.6)
-        }
-
-        VStack(spacing: 0) {
-            TabView {
-                AccountingTabView(
-                    selectedRecord: $selectedRecord,
-                    isAddingNewRecord: $isAddingNewRecord,
-                    isDeleteMode: $isDeleteMode,
-                    selectedRecords: $selectedRecords,
-                    filterSummaryView: AnyView(
-                        FilterSummaryView(
-                            selectedTypeFilter: selectedTypeFilter,
-                            selectedCategory: currentCategory,
-                            selectedDateFilter: selectedDateFilter,
-                            dateRangeText: dateRangeText(),
-                            onTap: { showFilterSheet = true },
-                            onReset: {
-                                selectedTypeFilter = NSLocalizedString("all", comment: "")
-                                selectedIncomeCategory = NSLocalizedString("all", comment: "")
-                                selectedExpenseCategory = NSLocalizedString("all", comment: "")
-                                selectedAllCategory = NSLocalizedString("all", comment: "")
-                                selectedDateFilter = NSLocalizedString("all", comment: "")
-                                customStartTimestamp = Date().timeIntervalSince1970
-                                customEndTimestamp = Date().timeIntervalSince1970
-                            }
-                        )
-                    ),
-                    recordListSection: AnyView(recordListSection)
-                )
-                .sheet(isPresented: $showFilterSheet) {
-                    SearchFilterView(
-                        selectedType: $selectedTypeFilter,
-                        selectedCategory: $selectedCategory,
-                        selectedDate: $selectedDateFilter,
-                        customStartDate: Binding(
-                            get: { Date(timeIntervalSince1970: customStartTimestamp) },
-                            set: { customStartTimestamp = $0.timeIntervalSince1970 }
-                        ),
-                        customEndDate: Binding(
-                            get: { Date(timeIntervalSince1970: customEndTimestamp) },
-                            set: { customEndTimestamp = $0.timeIntervalSince1970 }
-                        ),
-                        selectedIncomeCategory: $selectedIncomeCategory,
-                        selectedExpenseCategory: $selectedExpenseCategory,
-                        selectedAllCategory: $selectedAllCategory,
-                        onReset: {
-                            selectedTypeFilter = NSLocalizedString("all", comment: "")
-                            selectedIncomeCategory = NSLocalizedString("all", comment: "")
-                            selectedExpenseCategory = NSLocalizedString("all", comment: "")
-                            selectedAllCategory = NSLocalizedString("all", comment: "")
-                            selectedCategory = NSLocalizedString("all", comment: "")
-                            selectedDateFilter = NSLocalizedString("all", comment: "")
-                            customStartTimestamp = Date().timeIntervalSince1970
-                            customEndTimestamp = Date().timeIntervalSince1970
-                        }
-                    )
-                }
-                .tabItem {
-                    Label(NSLocalizedString("ledger_tab", comment: ""), systemImage: "list.bullet.rectangle")
-                }
-
-                StatisticsTabView(
-                    monthlyIncomeTotals: monthlyIncomeTotals,
-                    monthlyExpenseTotals: monthlyExpenseTotals,
-                    monthlyCategoryIncomeTotals: monthlyCategoryIncomeTotals,
-                    monthlyCategoryExpenseTotals: monthlyCategoryExpenseTotals,
-                    monthlyCardExpenseTotals: monthlyCardExpenseTotals,
-                    formattedAmount: formattedAmount,
-                    allCards: Array(try! viewContext.fetch(Card.fetchRequest())) as! [Card]
-                )
-                .tabItem {
-                    Label(NSLocalizedString("statistics_tab", comment: ""), systemImage: "chart.pie.fill")
-                }
-
-                NavigationView {
-                    SettingsView()
-                }
-                .tabItem {
-                    Label(NSLocalizedString("settings_tab", comment: ""), systemImage: "gear")
-                }
-            }
-            .sheet(isPresented: $isAddingNewRecord, onDismiss: {
-                if isHapticsEnabled {
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
-                }
-            }) {
-                AddRecordView(recordToEdit: nil)
-                    .environment(\.managedObjectContext, viewContext)
-                    .presentationDetents([.large])
-            }
-            .sheet(item: $selectedRecord, onDismiss: {
-                if isHapticsEnabled {
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
-                }
-            }) { record in
-                AddRecordView(recordToEdit: record)
-                    .environment(\.managedObjectContext, viewContext)
-                    .presentationDetents([.large])
-            }
-
-            Divider()
-
-            BannerAdContainerView()
-                .frame(height: 50)
-        }
-
-        if showSplash {
-            SplashView()
-                .transition(.opacity)
-                .zIndex(1)
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                        withAnimation {
-                            showSplash = false
-                        }
+    NavigationView {
+        ZStack {
+            Color("BackgroundSolidColor").ignoresSafeArea()
+            VStack(spacing: 0) {
+                FilterSummaryView(
+                    selectedTypeFilter: selectedTypeFilter,
+                    selectedCategory: currentCategory,
+                    selectedDateFilter: selectedDateFilter,
+                    dateRangeText: dateRangeText(),
+                    onTap: { showFilterSheet = true },
+                    onReset: {
+                        selectedTypeFilter = NSLocalizedString("all", comment: "")
+                        selectedIncomeCategory = NSLocalizedString("all", comment: "")
+                        selectedExpenseCategory = NSLocalizedString("all", comment: "")
+                        selectedAllCategory = NSLocalizedString("all", comment: "")
+                        selectedDateFilter = NSLocalizedString("all", comment: "")
+                        customStartTimestamp = Date().timeIntervalSince1970
+                        customEndTimestamp = Date().timeIntervalSince1970
                     }
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
+                Spacer(minLength: 0)
+                groupedRecordSections
+                Spacer(minLength: 0)
+                BannerAdContainerView()
+                    .frame(height: 50)
+                    .padding(.bottom, 8)
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+        .navigationBarTitle(Text(NSLocalizedString("ledger_tab", comment: "가계부")), displayMode: .inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showSettingsSheet = true
+                }) {
+                    Image(systemName: "gearshape")
                 }
+            }
+        }
+        .sheet(isPresented: $isAddingNewRecord) {
+            AddRecordView()
+        }
+        .sheet(isPresented: $showFilterSheet) {
+            SearchFilterView(
+                selectedType: $selectedTypeFilter,
+                selectedCategory: $selectedCategory,
+                selectedDate: $selectedDateFilter,
+                customStartDate: $customStartDate,
+                customEndDate: $customEndDate,
+                selectedIncomeCategory: $selectedIncomeCategory,
+                selectedExpenseCategory: $selectedExpenseCategory,
+                selectedAllCategory: $selectedAllCategory,
+                onReset: {
+                    selectedTypeFilter = NSLocalizedString("all", comment: "")
+                    selectedIncomeCategory = NSLocalizedString("all", comment: "")
+                    selectedExpenseCategory = NSLocalizedString("all", comment: "")
+                    selectedAllCategory = NSLocalizedString("all", comment: "")
+                    selectedDateFilter = NSLocalizedString("all", comment: "")
+                    customStartTimestamp = Date().timeIntervalSince1970
+                    customEndTimestamp = Date().timeIntervalSince1970
+                }
+            )
+        }
+        .sheet(isPresented: $showSettingsSheet) {
+            SettingsView()
         }
     }
-    // .onAppear removed: CategoryManager is no longer used
 }
 
 private var recordListSection: some View {
     Section {
         groupedRecordSections
     }
-    .listRowInsets(EdgeInsets())
-    .listRowBackground(Color(.systemBackground))
+    .listRowBackground(Color("BackgroundSolidColor"))
     .font(.system(size: 14, weight: .regular, design: .rounded))
 }
 
@@ -485,7 +390,7 @@ private var filterSummaryView: some View {
         }
     }
     .padding()
-    .background(Color(.systemBackground))
+    .background(Color("SectionBGColor"))
     .cornerRadius(12)
     .font(.system(size: 14, weight: .regular, design: .rounded))
 }
@@ -498,15 +403,19 @@ private func recordSection(for records: [Record], date: Date) -> some View {
             Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day], from: date)) ?? date
         ))
         .font(.system(size: 16, weight: .semibold, design: .rounded))
-        .foregroundColor(Color.accentColor)
+        .foregroundColor(Color("HighlightColor"))
         .padding(.horizontal, 16)
         .padding(.top, 12)
         ForEach(records) { record in
             recordRowView(record: record)
+                .listRowBackground(Color("BackgroundSolidColor"))
+                .listRowSeparator(.hidden)
         }
     }
     .headerProminence(.increased)
     .font(.system(size: 14, weight: .regular, design: .rounded))
+    .listRowBackground(Color("BackgroundSolidColor"))
+    .listRowSeparator(.hidden)
 }
 
 @ViewBuilder
@@ -522,7 +431,7 @@ private func recordRowView(record: Record) -> some View {
     )
     .background(
         RoundedRectangle(cornerRadius: 12)
-            .fill(Color(.systemBackground).opacity(0.95))
+            .fill(Color("SectionBGColor").opacity(0.95))
     )
     .onTapGesture {
         print("📝 Record tapped for edit:")
@@ -573,6 +482,42 @@ private func formattedDate(_ date: Date) -> String {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy/M/d"
     return formatter.string(from: date)
+}
+
+private func dateRangeText() -> String {
+    let calendar = Calendar.current
+    let now = Date()
+
+    switch selectedDateFilter {
+    case NSLocalizedString("today", comment: ""):
+        return formatDateShort(now)
+    case NSLocalizedString("yesterday", comment: ""):
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now) {
+            return formatDateShort(yesterday)
+        }
+    case NSLocalizedString("week", comment: ""):
+        if let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) {
+            return "\(formatDateShort(weekAgo)) ~ \(formatDateShort(now))"
+        }
+    case NSLocalizedString("month", comment: ""):
+        if let monthAgo = calendar.date(byAdding: .month, value: -1, to: now) {
+            return "\(formatDateShort(monthAgo)) ~ \(formatDateShort(now))"
+        }
+    case NSLocalizedString("custom", comment: ""):
+        let sortedDates = [customStartDate, customEndDate].sorted()
+        return "\(formatDateShort(sortedDates[0])) ~ \(formatDateShort(sortedDates[1]))"
+    default:
+        return selectedDateFilter
+    }
+    return selectedDateFilter
+}
+
+private var formatDateShort: (Date) -> String {
+    { date in
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d"
+        return formatter.string(from: date)
+    }
 }
 }
 

@@ -15,12 +15,12 @@ struct SectionHeader: View {
             Text(title)
                 .font(.caption)
                 .fontWeight(.semibold)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color("HighlightColor"))
             Spacer()
         }
         .padding(.top, 8)
         .padding(.bottom, 4)
         .padding(.horizontal)
-        .background(Color(.systemGroupedBackground))
+        .background(Color("SectionBGColor"))
     }
 }
