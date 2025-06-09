@@ -10,6 +10,12 @@ struct StatisticsTabView: View {
     let monthlyCardExpenseTotals: [String: [String: Double]]
     let formattedAmount: (Double) -> String
     let allCards: [Card]
+    let selectedTypeFilter: String
+    let selectedCategory: String
+    let selectedDateFilter: String
+    let dateRangeText: String
+    let onTap: () -> Void
+    let onReset: () -> Void
     @State private var isAscendingSort = false
     @State private var graphOffset: Int = 0
     @State private var showBarAnnotations: Bool = true
@@ -40,9 +46,6 @@ struct StatisticsTabView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                Text(NSLocalizedString("statistics_tab", comment: "통계"))
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .padding(.top, 8)
                 contentView
             }
             .background(Color("BackgroundSolidColor"))
@@ -70,6 +73,7 @@ struct StatisticsTabView: View {
                     onToggleSort: { isAscendingSort.toggle() },
                     allCards: allCards
                 )
+                .background(Color("BackgroundSolidColor").ignoresSafeArea())
             } else if selectedStatTab == NSLocalizedString("expense", comment: "지출") {
                 VStack {
                     Picker("Expense View", selection: $selectedExpenseView) {
@@ -114,6 +118,7 @@ struct StatisticsTabView: View {
                         onToggleSort: { isAscendingSort.toggle() },
                         allCards: allCards
                     )
+                    .background(Color("BackgroundSolidColor").ignoresSafeArea())
                 }
             } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
                 VStack {
@@ -250,45 +255,56 @@ struct StatisticsTabView: View {
                 Spacer()
             }
             .frame(maxHeight: .infinity)
+            .background(Color("BackgroundSolidColor"))
         } else {
-            List {
-                ForEach(sortedMonths, id: \.self) { month in
-                    // Debug: print keys for card statistics grouping per month
-                    // print("📊 \(month) 카드 통계 keys: \(monthlyCategoryTotals[month]!.keys)")
-                    Section(header: VStack(alignment: .leading) {
-                        HStack {
-                            Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            Spacer()
-                            Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
-                                .font(.system(size: 13))
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            onToggleSort()
-                        }
-
-                        Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0)))
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                            .foregroundColor(color)
-                    }) {
-                        ForEach(Array(monthlyCategoryTotals[month]!.keys), id: \.self) { key in
+            ScrollView {
+                VStack(spacing: 24) {
+                    ForEach(sortedMonths, id: \.self) { month in
+                        VStack(alignment: .leading, spacing: 0) {
                             HStack {
-                                Text(cardNameMap.first(where: { $0.value == key })?.value ?? key)
-                                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                                Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                                 Spacer()
-                                Text(formattedAmount(monthlyCategoryTotals[month]![key] ?? 0))
-                                    .font(.system(size: 14, weight: .regular, design: .rounded))
-                                    .foregroundColor(color)
+                                Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
+                                    .font(.system(size: 13))
                             }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onToggleSort()
+                            }
+                            Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0)))
+                                .font(.system(size: 14, weight: .regular, design: .rounded))
+                                .foregroundColor(color)
+                            VStack(spacing: 10) {
+                                ForEach(Array(monthlyCategoryTotals[month]!.keys), id: \.self) { key in
+                                    HStack {
+                                        Text(cardNameMap.first(where: { $0.value == key })?.value ?? key)
+                                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                                        Spacer()
+                                        Text(formattedAmount(monthlyCategoryTotals[month]![key] ?? 0))
+                                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                                            .foregroundColor(color)
+                                    }
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 14)
+                                }
+                            }
+                            .background(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(Color("SectionBGColor"))
+                            )
+                            .padding(.horizontal, 4)
+                            .padding(.top, 4)
+                            .padding(.bottom, 8)
                         }
-                    }
-                    .onAppear {
-                        // Debug: print keys for card statistics grouping per month
-                        print("📊 \(month) 카드 통계 keys: \(monthlyCategoryTotals[month]!.keys)")
+                        .padding(.vertical, 8)
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
             }
+            .background(Color("BackgroundSolidColor"))
         }
     }
 

@@ -18,7 +18,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text(NSLocalizedString("settings_section", comment: "환경 설정"))) {
+                Section {
                     Picker(NSLocalizedString("theme", comment: "테마"), selection: $selectedColorScheme) {
                         Text(NSLocalizedString("system_default", comment: "시스템 기본값")).tag("system")
                         Text(NSLocalizedString("light_mode", comment: "라이트 모드")).tag("light")

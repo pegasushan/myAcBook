@@ -25,47 +25,45 @@ struct RecordRowView: View {
                 selectedRecord = record
             }
         } label: {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 16) {
                 Image(systemName: (record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                     .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
-
+                    .font(.system(size: 18, weight: .regular, design: .rounded))
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
+                    HStack(spacing: 8) {
                         if let date = record.date {
                             Text(formattedDate(date))
                                 .font(.system(size: 12, weight: .regular, design: .rounded))
                                 .foregroundColor(.secondary)
                         }
-                        HStack(spacing: 4) {
+                        HStack(spacing: 6) {
                             Text(record.categoryRelation?.name ?? "unknown")
+                                .foregroundColor(Color("HighlightColor"))
                             if record.paymentType == "카드" {
                                 Text("💳")
+                                    .foregroundColor(.secondary)
                             }
                         }
                         .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
-                        if let detail = record.detail, !detail.isEmpty {
-                            Text(detail)
-                                .font(.system(size: 13, weight: .regular, design: .rounded))
-                                .foregroundColor(.gray)
-                        }
-                        Spacer()
-                        Text(((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "+ " : "- ") + formattedAmount(record.amount))
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
+                    }
+                    if let detail = record.detail, !detail.isEmpty {
+                        Text(detail)
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .foregroundColor(.primary)
+                            .padding(.top, 2)
                     }
                 }
+                Spacer()
+                Text(((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "+ " : "- ") + formattedAmount(record.amount))
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
             .background(
-                selectedRecords.contains(record)
-                ? Color("IncomeColor").opacity(0.15)
-                : Color("SectionBGColor")
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(selectedRecords.contains(record) && isDeleteMode ? Color.blue.opacity(0.12) : Color("SectionBGColor"))
             )
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
         .padding(.vertical, 4)

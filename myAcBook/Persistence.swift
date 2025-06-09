@@ -246,8 +246,12 @@ struct PersistenceController {
                 newRecord.amount = Double(Int.random(in: 3000...80000))
                 newRecord.date = date
                 newRecord.detail = expenseDetails.randomElement() ?? "지출"
-                if let category = expenseCategories.randomElement() {
+                if let category = expenseCategories.first(where: { ($0.name ?? "").isEmpty == false }) ?? expenseCategories.randomElement() {
                     newRecord.categoryRelation = category
+                } else {
+                    print("❗️카테고리 없는 지출 테스트 데이터 생성을 건너뜀")
+                    container.viewContext.delete(newRecord)
+                    continue
                 }
                 if let card = cards.randomElement(), Bool.random() {
                     newRecord.card = card
@@ -265,8 +269,12 @@ struct PersistenceController {
                 newRecord.date = date
                 newRecord.detail = incomeDetails.randomElement() ?? "수입"
                 let incomeCategories = categories.filter { $0.type == "income" }
-                if let category = incomeCategories.randomElement() {
+                if let category = incomeCategories.first(where: { ($0.name ?? "").isEmpty == false }) ?? incomeCategories.randomElement() {
                     newRecord.categoryRelation = category
+                } else {
+                    print("❗️카테고리 없는 수입 테스트 데이터 생성을 건너뜀")
+                    container.viewContext.delete(newRecord)
+                    continue
                 }
                 newRecord.paymentType = NSLocalizedString("cash", comment: "현금")
             }

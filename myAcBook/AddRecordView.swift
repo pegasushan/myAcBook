@@ -170,24 +170,19 @@ struct AddRecordView: View {
                         }
                         .padding(.vertical, 24)
                     }
-                    // 하단 저장 버튼 (키보드가 올라올 때는 숨김)
-                    if !keyboard.isKeyboardVisible {
-                        Button(action: {
-                            saveRecord()
-                        }) {
-                            Text(recordToEdit == nil ? NSLocalizedString("save", comment: "저장") : NSLocalizedString("edit_done", comment: "수정 완료"))
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(Color("HighlightColor"))
-                                .cornerRadius(16)
-                                .shadow(radius: 4)
-                                .padding(.horizontal, 24)
-                                .padding(.bottom, 16)
-                        }
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .animation(.easeInOut, value: keyboard.isKeyboardVisible)
+                    Button(action: {
+                        saveRecord()
+                    }) {
+                        Text(recordToEdit == nil ? NSLocalizedString("save", comment: "저장") : NSLocalizedString("edit_done", comment: "수정 완료"))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color("HighlightColor"))
+                            .cornerRadius(16)
+                            .shadow(radius: 4)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 16)
                     }
                 }
                 .alert(isPresented: $showAlert) {
@@ -217,22 +212,6 @@ struct AddRecordView: View {
                                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 }
                             }
-                    }
-                }
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(recordToEdit == nil ? NSLocalizedString("save", comment: "") : NSLocalizedString("edit_done", comment: "")) {
-                            saveRecord()
-                        }
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(Color("HighlightColor"))
-                    }
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(NSLocalizedString("cancel", comment: "")) {
-                            dismiss()
-                        }
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.red)
                     }
                 }
                 .onAppear {

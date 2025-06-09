@@ -59,6 +59,12 @@ struct FilterSummaryView: View {
         }
         .padding()
         .background(Color("SectionBGColor"))
-        .cornerRadius(12)
+        .cornerRadius(14)
+        .shadow(color: Color.black.opacity(0.07), radius: 6, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+        )
+        .padding(.vertical, 8)
     }
 }

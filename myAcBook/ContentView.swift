@@ -50,12 +50,18 @@ private var records: FetchedResults<Record>
 @State private var showSettingsSheet = false
 @State private var customStartDate: Date
 @State private var customEndDate: Date
+@State private var showStatistics = false
 
-init() {
+var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String) -> Void)? = nil
+
+init(
+    onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String) -> Void)? = nil
+) {
     let start = UserDefaults.standard.double(forKey: "customStartDate")
     let end = UserDefaults.standard.double(forKey: "customEndDate")
     _customStartDate = State(initialValue: start > 0 ? Date(timeIntervalSince1970: start) : Date())
     _customEndDate = State(initialValue: end > 0 ? Date(timeIntervalSince1970: end) : Date())
+    self.onStatisticsDataChanged = onStatisticsDataChanged
 }
 
 struct ContentView_Previews: PreviewProvider {
@@ -216,7 +222,7 @@ private var groupedRecordSections: some View {
                     .foregroundColor(.secondary)
                 Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
                     .font(.system(size: 14, weight: .regular, design: .rounded))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.primary)
                 Button(action: {
                     isAddingNewRecord = true
                 }) {
@@ -259,6 +265,37 @@ var body: some View {
         ZStack {
             Color("BackgroundSolidColor").ignoresSafeArea()
             VStack(spacing: 0) {
+                HStack(alignment: .center) {
+                    Button(action: {
+                        isDeleteMode.toggle()
+                        selectedRecords.removeAll()
+                    }) {
+                        Image(systemName: "minus")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(Color.red))
+                            .shadow(radius: 2)
+                    }
+                    Spacer()
+                    Text(NSLocalizedString("ledger_tab", comment: "가계부"))
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Button(action: {
+                        isAddingNewRecord = true
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(Color.blue))
+                            .shadow(radius: 2)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 32)
+                .padding(.bottom, 8)
                 FilterSummaryView(
                     selectedTypeFilter: selectedTypeFilter,
                     selectedCategory: currentCategory,
@@ -279,41 +316,51 @@ var body: some View {
                 .padding(.top, 24)
                 .padding(.bottom, 12)
                 groupedRecordSections
-                Spacer(minLength: 0)
-                BannerAdContainerView()
-                    .frame(height: 50)
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 16)
+                if isDeleteMode {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            withAnimation {
+                                for record in selectedRecords {
+                                    viewContext.delete(record)
+                                }
+                                selectedRecords.removeAll()
+                                try? viewContext.save()
+                            }
+                        }) {
+                            Text("선택 삭제 (\(selectedRecords.count))")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 20)
+                                .background(Color.red)
+                                .cornerRadius(10)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
             }
             .frame(maxHeight: .infinity, alignment: .top)
         }
-        .navigationBarTitle(Text(NSLocalizedString("ledger_tab", comment: "가계부")), displayMode: .inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    isDeleteMode.toggle()
-                    selectedRecords.removeAll()
-                }) {
-                    Image(systemName: "minus")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(Color.red))
-                        .shadow(radius: 2)
-                }
+        .onAppear {
+            if UserDefaults.standard.bool(forKey: "hasLaunchedBefore") == false {
+                selectedTypeFilter = NSLocalizedString("all", comment: "")
+                selectedCategory = NSLocalizedString("all", comment: "")
+                selectedDateFilter = NSLocalizedString("all", comment: "")
+                customStartTimestamp = Date().timeIntervalSince1970
+                customEndTimestamp = Date().timeIntervalSince1970
+                UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
             }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    isAddingNewRecord = true
-                }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(Color.blue))
-                        .shadow(radius: 2)
-                }
-            }
+            notifyStatisticsDataChanged()
         }
+        .onChange(of: records.count) { notifyStatisticsDataChanged() }
+        .onChange(of: selectedTypeFilter) { notifyStatisticsDataChanged() }
+        .onChange(of: selectedCategory) { notifyStatisticsDataChanged() }
+        .onChange(of: selectedDateFilter) { notifyStatisticsDataChanged() }
+        .onChange(of: customStartDate) { notifyStatisticsDataChanged() }
+        .onChange(of: customEndDate) { notifyStatisticsDataChanged() }
         .sheet(isPresented: $isAddingNewRecord) {
             AddRecordView()
         }
@@ -338,7 +385,29 @@ var body: some View {
                 }
             )
         }
+        .sheet(isPresented: Binding<Bool>(
+            get: { selectedRecord != nil },
+            set: { if !$0 { selectedRecord = nil } }
+        )) {
+            if let record = selectedRecord {
+                AddRecordView(recordToEdit: record)
+            }
+        }
     }
+}
+
+private func notifyStatisticsDataChanged() {
+    onStatisticsDataChanged?(
+        monthlyIncomeTotals,
+        monthlyExpenseTotals,
+        monthlyCategoryIncomeTotals,
+        monthlyCategoryExpenseTotals,
+        monthlyCardExpenseTotals,
+        selectedTypeFilter,
+        currentCategory,
+        selectedDateFilter,
+        dateRangeText()
+    )
 }
 
 private var recordListSection: some View {
@@ -380,7 +449,7 @@ private var filterSummaryView: some View {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(NSLocalizedString("type", comment: "유형") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.primary)
                     Text(selectedTypeFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : selectedTypeFilter)
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
@@ -388,7 +457,7 @@ private var filterSummaryView: some View {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(NSLocalizedString("category", comment: "카테고리") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.primary)
                     Text(selectedCategory == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : selectedCategory)
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
@@ -396,7 +465,7 @@ private var filterSummaryView: some View {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(NSLocalizedString("period", comment: "기간") + ":")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.primary)
                     Text(selectedDateFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : dateRangeText())
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                         .foregroundColor(.primary)
@@ -413,7 +482,7 @@ private var filterSummaryView: some View {
 
 @ViewBuilder
 private func recordSection(for records: [Record], date: Date) -> some View {
-    Section {
+    VStack(alignment: .leading, spacing: 0) {
         Text(formattedDate(
             Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day], from: date)) ?? date
         ))
@@ -421,16 +490,19 @@ private func recordSection(for records: [Record], date: Date) -> some View {
         .foregroundColor(Color("HighlightColor"))
         .padding(.horizontal, 16)
         .padding(.top, 12)
-        ForEach(records) { record in
-            recordRowView(record: record)
-                .listRowBackground(Color("BackgroundSolidColor"))
-                .listRowSeparator(.hidden)
+        VStack(spacing: 0) {
+            ForEach(records) { record in
+                recordRowView(record: record)
+            }
         }
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color("SectionBGColor"))
+        )
+        .padding(.horizontal, 4)
+        .padding(.bottom, 8)
     }
-    .headerProminence(.increased)
-    .font(.system(size: 14, weight: .regular, design: .rounded))
-    .listRowBackground(Color("BackgroundSolidColor"))
-    .listRowSeparator(.hidden)
+    .padding(.bottom, 8)
 }
 
 @ViewBuilder
@@ -460,6 +532,18 @@ private func recordRowView(record: Record) -> some View {
         print("- category: \(record.categoryRelation?.name ?? "nil")")
         selectedRecord = record
     }
+    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+        if !isDeleteMode {
+            Button(role: .destructive) {
+                withAnimation {
+                    viewContext.delete(record)
+                    try? viewContext.save()
+                }
+            } label: {
+                Label(NSLocalizedString("delete", comment: "삭제"), systemImage: "trash")
+            }
+        }
+    }
 }
 
 private func deleteSelectedRecords() {
@@ -482,7 +566,7 @@ private func formattedAmount(_ amount: Double) -> String {
     numberFormatter.maximumFractionDigits = 0
     numberFormatter.groupingSeparator = ","
     let formatted = numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
-    return String(format: NSLocalizedString("formatted_amount", comment: "금액 포맷"), formatted)
+    return formatted
 }
 
 private func toggleSelection(for record: Record) {
@@ -550,3 +634,4 @@ struct BannerAdContainerView: View {
         }
     }
 }
+
