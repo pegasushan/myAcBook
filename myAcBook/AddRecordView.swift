@@ -224,13 +224,15 @@ struct AddRecordView: View {
                         Button(recordToEdit == nil ? NSLocalizedString("save", comment: "") : NSLocalizedString("edit_done", comment: "")) {
                             saveRecord()
                         }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(Color("HighlightColor"))
                     }
                     ToolbarItem(placement: .cancellationAction) {
                         Button(NSLocalizedString("cancel", comment: "")) {
                             dismiss()
                         }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.red)
                     }
                 }
                 .onAppear {

@@ -16,6 +16,7 @@ struct CardListView: View {
     @State private var editingCard: Card?
     @State private var newName: String = ""
     @State private var showEmptyNameAlert = false
+    @State private var showDuplicateAlert = false
 
     var body: some View {
         NavigationStack {
@@ -79,8 +80,12 @@ struct CardListView: View {
                                 Button(action: {
                                     let trimmed = newName.trimmingCharacters(in: .whitespaces)
                                     if !trimmed.isEmpty {
-                                        cardViewModel.addCard(name: trimmed)
-                                        newName = ""
+                                        let added = cardViewModel.addCard(name: trimmed)
+                                        if added {
+                                            newName = ""
+                                        } else {
+                                            showDuplicateAlert = true
+                                        }
                                     } else {
                                         showEmptyNameAlert = true
                                     }
@@ -92,10 +97,6 @@ struct CardListView: View {
                                         .background(Color.white.opacity(0.7))
                                         .clipShape(Circle())
                                 }
-                                .alert(NSLocalizedString("empty_card_name_alert", comment: "카드 이름을 입력해주세요."), isPresented: $showEmptyNameAlert) {
-                                    Button(NSLocalizedString("confirm", comment: "확인"), role: .cancel) { }
-                                }
-                                .buttonStyle(PlainButtonStyle())
                             }
                             .padding(.vertical, 4)
                         }
@@ -105,6 +106,10 @@ struct CardListView: View {
                     .background(Color("BackgroundSolidColor"))
                     .onAppear {
                         UITableView.appearance().backgroundColor = UIColor.clear
+                        cardViewModel.removeDuplicateCards()
+                        for card in cardViewModel.cards {
+                            print("카드 이름: \(card.name ?? "이름없음"), id: \(card.id?.uuidString ?? "nil"), 생성일: \(card.createdAt?.description ?? "nil")")
+                        }
                     }
                 }
             }
@@ -122,6 +127,12 @@ struct CardListView: View {
                     }
                 }
             }
+        }
+        .alert("이미 같은 이름의 카드가 있습니다.", isPresented: $showDuplicateAlert) {
+            Button("확인", role: .cancel) { }
+        }
+        .alert(NSLocalizedString("empty_card_name_alert", comment: "카드 이름을 입력해주세요."), isPresented: $showEmptyNameAlert) {
+            Button(NSLocalizedString("confirm", comment: "확인"), role: .cancel) { }
         }
     }
 }

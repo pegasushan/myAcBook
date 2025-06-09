@@ -277,7 +277,7 @@ var body: some View {
                 )
                 .padding(.horizontal, 16)
                 .padding(.top, 24)
-                Spacer(minLength: 0)
+                .padding(.bottom, 12)
                 groupedRecordSections
                 Spacer(minLength: 0)
                 BannerAdContainerView()
@@ -288,11 +288,29 @@ var body: some View {
         }
         .navigationBarTitle(Text(NSLocalizedString("ledger_tab", comment: "가계부")), displayMode: .inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    isDeleteMode.toggle()
+                    selectedRecords.removeAll()
+                }) {
+                    Image(systemName: "minus")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(Color.red))
+                        .shadow(radius: 2)
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    showSettingsSheet = true
+                    isAddingNewRecord = true
                 }) {
-                    Image(systemName: "gearshape")
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(Color.blue))
+                        .shadow(radius: 2)
                 }
             }
         }
@@ -319,9 +337,6 @@ var body: some View {
                     customEndTimestamp = Date().timeIntervalSince1970
                 }
             )
-        }
-        .sheet(isPresented: $showSettingsSheet) {
-            SettingsView()
         }
     }
 }

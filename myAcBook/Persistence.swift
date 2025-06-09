@@ -165,20 +165,14 @@ struct PersistenceController {
                     let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
                     cardFetch.predicate = NSPredicate(format: "name == %@", cardName)
                     if let existingCard = try? viewContext.fetch(cardFetch).first {
-                        if existingCard.name == nil || existingCard.name != cardName {
-                            existingCard.name = cardName
-                        }
                         newRecord.card = existingCard
                         _ = newRecord.card?.name  // Force Core Data to load the relationship
-                        let displayDate = newRecord.date ?? Date()
-                        print("✅ \(displayDate) 기존 카드 연결됨: \(existingCard.name ?? "알 수 없음")")
                     } else {
                         let newCard = Card(context: viewContext)
                         newCard.id = UUID()
                         newCard.name = cardName
                         newRecord.card = newCard
                         _ = newRecord.card?.name  // Force Core Data to load the relationship
-                        print("✅ \(newRecord.date ?? Date()) 새 카드 생성 및 연결됨: \(newCard.name ?? "알 수 없음")")
                     }
                     newRecord.paymentType = NSLocalizedString("card", comment: "카드")
                 } else {
@@ -206,6 +200,82 @@ struct PersistenceController {
                 let nsError = error as NSError
                 fatalError(String(format: NSLocalizedString("persistence_error", comment: "Core Data unresolved error"), "\(nsError)", "\(nsError.userInfo)"))
             }
+        }
+
+        // 앱 최초 실행 시 기본 카테고리 자동 입력
+        let defaultCategories: [(String, String)] = [
+            ("급여", "income"),
+            ("부수입", "income"),
+            ("식대", "expense"),
+            ("음료", "expense"),
+            ("쇼핑", "expense")
+        ]
+        let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+        let existingCategories = (try? container.viewContext.fetch(categoryFetch)) ?? []
+        for (name, type) in defaultCategories {
+            let exists = existingCategories.contains { ($0.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines) == name && ($0.type ?? "") == type }
+            if !exists {
+                let category = AppCategory(context: container.viewContext)
+                category.id = UUID()
+                category.name = name
+                category.type = type
+            }
+        }
+        do {
+            try container.viewContext.save()
+        } catch {
+            print("❌ 기본 카테고리 저장 실패: \(error)")
+        }
+
+        // 앱 실행 시 테스트 데이터 자동 추가 (더 자연스럽게 개선)
+        let cards = (try? container.viewContext.fetch(Card.fetchRequest())) ?? []
+        let categories = (try? container.viewContext.fetch(AppCategory.fetchRequest())) ?? []
+        let now = Date()
+        let calendar = Calendar.current
+        let expenseDetails = ["점심 식사", "저녁 회식", "카페", "편의점 커피", "온라인 쇼핑", "마트 장보기", "택시", "영화관", "의류 구매"]
+        let incomeDetails = ["월급", "용돈", "프리랜서 수입", "보너스"]
+        for dayOffset in 0..<15 {
+            let date = calendar.date(byAdding: .day, value: -dayOffset, to: now) ?? now
+            // 지출: 하루 1~3건
+            let expenseCount = Int.random(in: 1...3)
+            let expenseCategories = categories.filter { $0.type == "expense" }
+            for _ in 0..<expenseCount {
+                let newRecord = Record(context: container.viewContext)
+                newRecord.id = UUID()
+                newRecord.type = NSLocalizedString("expense", comment: "지출")
+                newRecord.amount = Double(Int.random(in: 3000...80000))
+                newRecord.date = date
+                newRecord.detail = expenseDetails.randomElement() ?? "지출"
+                if let category = expenseCategories.randomElement() {
+                    newRecord.categoryRelation = category
+                }
+                if let card = cards.randomElement(), Bool.random() {
+                    newRecord.card = card
+                    newRecord.paymentType = NSLocalizedString("card", comment: "카드")
+                } else {
+                    newRecord.paymentType = NSLocalizedString("cash", comment: "현금")
+                }
+            }
+            // 수입: 5일에 한 번만 생성
+            if dayOffset % 5 == 0 {
+                let newRecord = Record(context: container.viewContext)
+                newRecord.id = UUID()
+                newRecord.type = NSLocalizedString("income", comment: "수입")
+                newRecord.amount = Double(Int.random(in: 50000...3000000))
+                newRecord.date = date
+                newRecord.detail = incomeDetails.randomElement() ?? "수입"
+                let incomeCategories = categories.filter { $0.type == "income" }
+                if let category = incomeCategories.randomElement() {
+                    newRecord.categoryRelation = category
+                }
+                newRecord.paymentType = NSLocalizedString("cash", comment: "현금")
+            }
+        }
+        do {
+            try container.viewContext.save()
+            print("✅ 자연스러운 테스트 데이터 자동 추가 완료")
+        } catch {
+            print("❌ 테스트 데이터 저장 실패: \(error)")
         }
     }
 }
