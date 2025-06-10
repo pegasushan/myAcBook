@@ -27,23 +27,21 @@ struct RecordRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     if let date = record.date {
-                        Text(formattedDate(date))
-                            .font(.system(size: 12, weight: .regular, design: .rounded))
+                        Text(formattedDate(date)).appBody()
                             .foregroundColor(.secondary)
                     }
                     HStack(spacing: 6) {
-                        Text(record.categoryRelation?.name ?? "unknown")
+                        Text(record.categoryRelation?.name ?? "unknown").appBody()
                             .foregroundColor(Color("HighlightColor"))
                         if record.paymentType == "카드" {
-                            Text("💳")
+                            Text("💳").appBody()
                                 .foregroundColor(.secondary)
                         }
                     }
                     .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
                 if let detail = record.detail, !detail.isEmpty {
-                    Text(detail)
-                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                    Text(detail).appBody()
                         .foregroundColor(.primary)
                         .padding(.top, 2)
                 }

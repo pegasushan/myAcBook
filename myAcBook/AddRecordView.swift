@@ -16,6 +16,61 @@ class KeyboardObserver: ObservableObject {
     }
 }
 
+struct CustomDropdown: View {
+    @Binding var selectedIndex: Int?
+    let options: [String]
+    let placeholder: String
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: { withAnimation { isExpanded.toggle() } }) {
+                HStack {
+                    Text(selectedIndex.flatMap { options[safe: $0] } ?? placeholder)
+                        .foregroundColor(.primary)
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                    Spacer()
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.gray)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color.white).shadow(radius: 1))
+            }
+            if isExpanded {
+                VStack(spacing: 0) {
+                    ForEach(options.indices, id: \.self) { idx in
+                        Button(action: {
+                            selectedIndex = idx
+                            withAnimation { isExpanded = false }
+                        }) {
+                            HStack {
+                                Text(options[idx])
+                                    .foregroundColor(.primary)
+                                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                        }
+                        .background(Color.white)
+                        .contentShape(Rectangle())
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color.white).shadow(radius: 1))
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(), value: isExpanded)
+    }
+}
+
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}
+
 struct AddRecordView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
@@ -61,6 +116,12 @@ struct AddRecordView: View {
 
     var recordToEdit: Record?
 
+    @State private var showCardDropdown = false
+    @State private var showCategoryDropdown = false
+
+    @State private var selectedCategoryIndex: Int? = nil
+    @State private var selectedCardIndex: Int? = nil
+
     var body: some View {
         let expenseText = NSLocalizedString("expense", comment: "")
         NavigationView {
@@ -68,7 +129,7 @@ struct AddRecordView: View {
                 customBGColor.ignoresSafeArea()
                 VStack(spacing: 0) {
                     ScrollView {
-                        VStack(spacing: 20) {
+                        VStack(spacing: 28) {
                             // 금액 입력란 강조
                             HStack {
                                 Image(systemName: "wonsign.circle.fill")
@@ -119,14 +180,8 @@ struct AddRecordView: View {
                                         HStack(spacing: 8) {
                                             Image(systemName: "creditcard.fill")
                                                 .foregroundColor(.gray)
-                                            Picker(NSLocalizedString("select_card", comment: "카드 선택"), selection: $selectedCard) {
-                                                Text(NSLocalizedString("카드선택", comment: "카드선택")).tag(nil as Card?)
-                                                ForEach(cardViewModel.cards, id: \.self) { card in
-                                                    Text(card.name ?? "").tag(card as Card?)
-                                                }
-                                            }
-                                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                                            Spacer()
+                                            CustomDropdown(selectedIndex: $selectedCardIndex, options: cardViewModel.cards.map { $0.name ?? "" }, placeholder: NSLocalizedString("카드선택", comment: "카드선택"))
+                                                .frame(maxWidth: .infinity)
                                             Button(action: { showCardManager = true }) {
                                                 Image(systemName: "plus")
                                                     .font(.system(size: 18, weight: .bold))
@@ -137,7 +192,7 @@ struct AddRecordView: View {
                                             }
                                             .buttonStyle(PlainButtonStyle())
                                         }
-                                        .padding(.top, 2)
+                                        .padding(.top, 12)
                                     }
                                 }
                                 .padding(.horizontal)
@@ -146,14 +201,8 @@ struct AddRecordView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "folder.fill")
                                     .foregroundColor(.gray)
-                                Picker(NSLocalizedString("category", comment: ""), selection: $selectedCategory) {
-                                    Text(NSLocalizedString("카테고리 선택", comment: "카테고리 선택")).tag(nil as AppCategory?)
-                                    ForEach(fetchedCategories, id: \.self) { category in
-                                        Text(category.name ?? "").tag(category as AppCategory?)
-                                    }
-                                }
-                                .font(.system(size: 15, weight: .regular, design: .rounded))
-                                Spacer()
+                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.map { $0.name ?? "" }, placeholder: NSLocalizedString("카테고리 선택", comment: "카테고리 선택"))
+                                    .frame(maxWidth: .infinity)
                                 Button(action: { showCategoryManager = true }) {
                                     Image(systemName: "plus")
                                         .font(.system(size: 18, weight: .bold))
@@ -185,7 +234,8 @@ struct AddRecordView: View {
                             }
                             .padding(.horizontal)
                         }
-                        .padding(.vertical, 24)
+                        .padding(.top, 48)
+                        .padding(.bottom, 32)
                     }
                     Button(action: {
                         saveRecord()
@@ -242,6 +292,12 @@ struct AddRecordView: View {
                         paymentType = record.paymentType ?? "현금"
                         selectedCard = record.card
                         selectedCategory = record.categoryRelation
+                        if let card = record.card, let idx = cardViewModel.cards.firstIndex(where: { $0.objectID == card.objectID }) {
+                            selectedCardIndex = idx
+                        }
+                        if let category = record.categoryRelation, let idx = fetchedCategories.firstIndex(where: { $0.objectID == category.objectID }) {
+                            selectedCategoryIndex = idx
+                        }
                     } else {
                         type = NSLocalizedString("expense", comment: "")
                         selectedCategory = nil
@@ -250,6 +306,28 @@ struct AddRecordView: View {
                 }
                 .onChange(of: type) {
                     fetchCategories()
+                }
+                .onChange(of: selectedCategoryIndex) {
+                    if let idx = selectedCategoryIndex, fetchedCategories.indices.contains(idx) {
+                        selectedCategory = fetchedCategories[idx]
+                    }
+                }
+                .onChange(of: selectedCardIndex) {
+                    if let idx = selectedCardIndex, cardViewModel.cards.indices.contains(idx) {
+                        selectedCard = cardViewModel.cards[idx]
+                    }
+                }
+                .onChange(of: fetchedCategories) {
+                    if let selected = selectedCategory,
+                       let idx = fetchedCategories.firstIndex(where: { $0.objectID == selected.objectID }) {
+                        selectedCategoryIndex = idx
+                    }
+                }
+                .onChange(of: cardViewModel.cards) {
+                    if let selected = selectedCard,
+                       let idx = cardViewModel.cards.firstIndex(where: { $0.objectID == selected.objectID }) {
+                        selectedCardIndex = idx
+                    }
                 }
             }
             .background(Color("BackgroundSolidColor"))

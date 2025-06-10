@@ -14,7 +14,7 @@ struct ChartView: View {
                 if groupedRecords.isEmpty {
                     Text(NSLocalizedString("no_data", comment: "데이터가 없습니다."))
                         .foregroundColor(Color("HighlightColor"))
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .appBody()
                 } else {
                     Chart {
                         ForEach(groupedRecords, id: \.category) { group in

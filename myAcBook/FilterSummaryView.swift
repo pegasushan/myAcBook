@@ -41,7 +41,7 @@ struct FilterSummaryView: View {
                 }) {
                     HStack {
                         Image(systemName: "line.3.horizontal.decrease.circle")
-                        Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
+                        Text(NSLocalizedString("filter_setting", comment: "필터 설정")).appBody()
                     }
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundColor(Color("HighlightColor"))
@@ -55,20 +55,17 @@ struct FilterSummaryView: View {
                 GridItem(.flexible(), spacing: 16, alignment: .leading)
             ], spacing: 8) {
                 HStack(spacing: 4) {
-                    Text(NSLocalizedString("type", comment: "유형") + ":")
-                        .foregroundColor(.secondary)
+                    Text(NSLocalizedString("type", comment: "유형") + ":" ).appCaption()
                     Text(selectedTypeFilter.isEmpty || selectedTypeFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : NSLocalizedString(selectedTypeFilter, comment: ""))
                         .foregroundColor((!selectedTypeFilter.isEmpty && selectedTypeFilter != NSLocalizedString("all", comment: "")) ? highlightColor : .primary)
                 }
                 HStack(spacing: 4) {
-                    Text(NSLocalizedString("category", comment: "카테고리") + ":")
-                        .foregroundColor(.secondary)
+                    Text(NSLocalizedString("category", comment: "카테고리") + ":" ).appCaption()
                     Text(selectedCategory.isEmpty || selectedCategory == NSLocalizedString("all", comment: "전체") ? NSLocalizedString("all", comment: "전체") : NSLocalizedString(selectedCategory, comment: ""))
                         .foregroundColor((!selectedCategory.isEmpty && selectedCategory != NSLocalizedString("all", comment: "전체")) ? highlightColor : .primary)
                 }
                 HStack(spacing: 4) {
-                    Text(NSLocalizedString("period", comment: "기간") + ":")
-                        .foregroundColor(.secondary)
+                    Text(NSLocalizedString("period", comment: "기간") + ":" ).appCaption()
                     Text(selectedDateFilter.isEmpty || selectedDateFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : dateRangeText)
                         .foregroundColor((!selectedDateFilter.isEmpty && selectedDateFilter != NSLocalizedString("all", comment: "")) ? highlightColor : .primary)
                 }
@@ -84,5 +81,9 @@ struct FilterSummaryView: View {
                 .stroke(isDefaultFilter ? Color.gray.opacity(0.15) : activeBorder, lineWidth: isDefaultFilter ? 1 : 2)
         )
         .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTap()
+        }
     }
 }

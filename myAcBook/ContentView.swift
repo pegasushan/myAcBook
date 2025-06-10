@@ -323,8 +323,7 @@ var body: some View {
                     }
                     Spacer()
                     ZStack {
-                        Text("myAcBook")
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                        Text("myAcBook").appTitle()
                             .foregroundColor(Color(red: 0.18, green: 0.32, blue: 0.55))
                             .shadow(color: .black.opacity(0.12), radius: 2, x: 0, y: 1)
                     }

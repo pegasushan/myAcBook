@@ -79,7 +79,7 @@ public struct CategoryManagerView: View {
                 Section(header:
                     Text(NSLocalizedString("category_list", comment: "카테고리 목록"))
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color("HighlightColor"))
+                        .foregroundColor(.primary)
                         .padding(.top, 8)
                 ) {
                     if filteredCategories.isEmpty {
@@ -94,7 +94,7 @@ public struct CategoryManagerView: View {
                             Spacer()
                             Text(category.type == "income" ? NSLocalizedString("income", comment: "") : NSLocalizedString("expense", comment: ""))
                                 .font(.system(size: 14, weight: .regular, design: .rounded))
-                                .foregroundColor(Color("HighlightColor"))
+                                .foregroundColor(.primary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
                                 .background(Color("SectionBGColor"))
@@ -115,7 +115,7 @@ public struct CategoryManagerView: View {
                 Section(header:
                     Text(NSLocalizedString("add_new_category", comment: "카테고리 추가"))
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color("HighlightColor"))
+                        .foregroundColor(.primary)
                         .padding(.top, 12)
                 ) {
                     HStack(spacing: 8) {
@@ -185,14 +185,9 @@ public struct CategoryManagerView: View {
         .background(customBGColor)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text(NSLocalizedString("manage_category", comment: "카테고리 관리"))
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(LocalizedStringKey("close")) {
-                    dismiss()
-                }
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                Text(NSLocalizedString("category_management", comment: "카테고리 관리"))
+                    .appSectionTitle()
+                    .foregroundColor(.primary)
             }
         }
     }

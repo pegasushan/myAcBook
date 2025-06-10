@@ -18,6 +18,7 @@ struct SplashView: View {
                 Text(NSLocalizedString("app_title", comment: "앱 타이틀"))
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .foregroundColor(Color("HighlightColor"))
+                    .appTitle()
             }
             .scaleEffect(scale)
             .opacity(opacity)

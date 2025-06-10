@@ -43,6 +43,9 @@ struct SearchFilterView: View {
         colorScheme == .light ? Color(red: 1.0, green: 0.5, blue: 0.7) : Color(red: 0.9, green: 0.4, blue: 0.6)
     }
 
+    @State private var selectedCategoryIndex: Int? = nil
+    @State private var selectedDateIndex: Int? = nil
+
     init(
         selectedType: Binding<String>,
         selectedCategory: Binding<String>,
@@ -105,8 +108,7 @@ struct SearchFilterView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "slider.horizontal.3")
                                 .foregroundColor(selectedType != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
-                            Text(NSLocalizedString("type", comment: "유형"))
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Text(NSLocalizedString("type", comment: "유형")).appBody()
                                 .foregroundColor(selectedType != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
                             Spacer()
                         }
@@ -126,18 +128,20 @@ struct SearchFilterView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "tag")
                                 .foregroundColor(currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
-                            Text(NSLocalizedString("select_category", comment: "카테고리 선택"))
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Text(NSLocalizedString("select_category", comment: "카테고리 선택")).appBody()
                                 .foregroundColor(currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
                             Spacer()
                         }
-                        Picker("", selection: currentCategoryBinding) {
-                            Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
-                            ForEach(fetchedCategories.map { $0.name ?? "" }, id: \.self) { cat in
-                                Text(cat).tag(cat)
+                        CustomDropdown(selectedIndex: $selectedCategoryIndex, options: [NSLocalizedString("all", comment: "전체")] + fetchedCategories.map { $0.name ?? "" }, placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"))
+                            .onChange(of: selectedCategoryIndex) {
+                                if let idx = selectedCategoryIndex {
+                                    if idx == 0 {
+                                        currentCategoryBinding.wrappedValue = NSLocalizedString("all", comment: "전체")
+                                    } else if fetchedCategories.indices.contains(idx - 1) {
+                                        currentCategoryBinding.wrappedValue = fetchedCategories[idx - 1].name ?? ""
+                                    }
+                                }
                             }
-                        }
-                        .pickerStyle(MenuPickerStyle())
                     }
                     // 기간 필터
                     FilterCard(
@@ -147,20 +151,17 @@ struct SearchFilterView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "calendar")
                                 .foregroundColor(selectedDate != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
-                            Text(NSLocalizedString("period", comment: "기간"))
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Text(NSLocalizedString("period", comment: "기간")).appBody()
                                 .foregroundColor(selectedDate != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
                             Spacer()
                         }
-                        Picker("", selection: $selectedDate) {
-                            Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
-                            Text(NSLocalizedString("today", comment: "오늘")).tag(NSLocalizedString("today", comment: "오늘"))
-                            Text(NSLocalizedString("yesterday", comment: "어제")).tag(NSLocalizedString("yesterday", comment: "어제"))
-                            Text(NSLocalizedString("week", comment: "1주일")).tag(NSLocalizedString("week", comment: "1주일"))
-                            Text(NSLocalizedString("month", comment: "한달")).tag(NSLocalizedString("month", comment: "한달"))
-                            Text(NSLocalizedString("custom", comment: "직접 선택")).tag(NSLocalizedString("custom", comment: "직접 선택"))
-                        }
-                        .pickerStyle(MenuPickerStyle())
+                        let dateOptions = [NSLocalizedString("all", comment: "전체"), NSLocalizedString("today", comment: "오늘"), NSLocalizedString("yesterday", comment: "어제"), NSLocalizedString("week", comment: "1주일"), NSLocalizedString("month", comment: "한달"), NSLocalizedString("custom", comment: "직접 선택")]
+                        CustomDropdown(selectedIndex: $selectedDateIndex, options: dateOptions, placeholder: NSLocalizedString("period", comment: "기간"))
+                            .onChange(of: selectedDateIndex) {
+                                if let idx = selectedDateIndex, dateOptions.indices.contains(idx) {
+                                    selectedDate = dateOptions[idx]
+                                }
+                            }
                         if selectedDate == NSLocalizedString("custom", comment: "직접 선택") {
                             DatePicker(NSLocalizedString("start_date", comment: "시작 날짜"), selection: $customStartDate, displayedComponents: .date)
                             DatePicker(NSLocalizedString("end_date", comment: "종료 날짜"), selection: $customEndDate, displayedComponents: .date)
@@ -190,8 +191,13 @@ struct SearchFilterView: View {
                     }
                 }
             }
-            .navigationBarTitle(Text(NSLocalizedString("filter_setting", comment: "필터 설정")), displayMode: .inline)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(NSLocalizedString("filter_setting", comment: "필터 설정"))
+                        .appSectionTitle()
+                        .foregroundColor(.primary)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: { onReset() }) {
                         Image(systemName: "arrow.counterclockwise")
@@ -214,6 +220,19 @@ struct SearchFilterView: View {
                     selectedAllCategory = NSLocalizedString("all", comment: "전체")
                 }
                 loadCategories(for: selectedType)
+                // 카테고리 인덱스
+                if let idx = fetchedCategories.firstIndex(where: { $0.name == currentCategoryBinding.wrappedValue }) {
+                    selectedCategoryIndex = idx + 1
+                } else {
+                    selectedCategoryIndex = 0
+                }
+                // 기간 인덱스
+                let dateOptions = [NSLocalizedString("all", comment: "전체"), NSLocalizedString("today", comment: "오늘"), NSLocalizedString("yesterday", comment: "어제"), NSLocalizedString("week", comment: "1주일"), NSLocalizedString("month", comment: "한달"), NSLocalizedString("custom", comment: "직접 선택")]
+                if let idx = dateOptions.firstIndex(of: selectedDate) {
+                    selectedDateIndex = idx
+                } else {
+                    selectedDateIndex = 0
+                }
             }
             .onChange(of: selectedType) { _, newValue in
                 loadCategories(for: newValue)

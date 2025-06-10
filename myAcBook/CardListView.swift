@@ -10,11 +10,11 @@ import SwiftUI
 struct CardListView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("customBGColor") private var customBGColorHex: String = "#FEEAF2"
+    @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
     @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
-    @AppStorage("customCardColor") private var customCardColorHex: String = "#FFFFFF"
+    @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
     @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
-    @AppStorage("customSectionColor") private var customSectionColorHex: String = "#F6F7FA"
+    @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
     @Environment(\.colorScheme) var colorScheme
     @StateObject private var cardViewModel = CardViewModel(context: PersistenceController.shared.container.viewContext)
@@ -26,13 +26,13 @@ struct CardListView: View {
     @State private var showDuplicateAlert = false
 
     var customBGColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
     }
     var customCardColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
+        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
     }
     var customSectionColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
     }
 
     var body: some View {
@@ -53,18 +53,18 @@ struct CardListView: View {
                         Section(header:
                             Text(NSLocalizedString("card_list_header", comment: "카드 목록"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundColor(Color("HighlightColor"))
+                                .foregroundColor(.primary)
                                 .padding(.bottom, 2)
                         ) {
                             if cardViewModel.cards.isEmpty {
                                 Text(NSLocalizedString("no_cards", comment: "카드가 없습니다."))
-                                    .foregroundColor(Color("HighlightColor"))
+                                    .foregroundColor(.primary)
                                     .font(.system(size: 14, weight: .regular, design: .rounded))
                             }
                             ForEach(cardViewModel.cards, id: \.self) { card in
                                 Text(card.name ?? "")
                                     .font(.system(size: 15, weight: .regular, design: .rounded))
-                                    .foregroundColor(Color("HighlightColor"))
+                                    .foregroundColor(.primary)
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             cardViewModel.deleteCard(card: card)
@@ -84,7 +84,7 @@ struct CardListView: View {
                         Section(header:
                             Text(NSLocalizedString("add_new_card_header", comment: "새 카드 추가"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundColor(Color("HighlightColor"))
+                                .foregroundColor(.primary)
                                 .padding(.bottom, 2)
                         ) {
                             HStack(spacing: 12) {
@@ -133,15 +133,8 @@ struct CardListView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(NSLocalizedString("card_management", comment: "카드 관리"))
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Text(NSLocalizedString("close", comment: "닫기"))
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    }
+                        .appSectionTitle()
+                        .foregroundColor(.primary)
                 }
             }
         }

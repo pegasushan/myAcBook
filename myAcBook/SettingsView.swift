@@ -105,7 +105,7 @@ struct SettingsView: View {
                         .font(.system(size: 15, weight: .regular, design: .rounded))
 
                         Toggle(isOn: $lockToggleValue) {
-                            Text(NSLocalizedString("app_lock", comment: "앱 잠금 (Face ID/암호)"))
+                            Text(NSLocalizedString("app_lock", comment: "앱 잠금 (Face ID/암호"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                         }
                         .onChange(of: lockToggleValue) { _, newValue in
@@ -128,12 +128,14 @@ struct SettingsView: View {
                         }) {
                             Text(NSLocalizedString("card_management", comment: "카드 관리"))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
+                                .foregroundColor(.primary)
                         }
                         Button(action: {
                             showCategoryManagerModal = true
                         }) {
                             Text(NSLocalizedString("category_management", comment: "카테고리 관리"))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
+                                .foregroundColor(.primary)
                         }
                     }
                     Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
@@ -150,6 +152,7 @@ struct SettingsView: View {
                             } label: {
                                 Text(String(format: NSLocalizedString("remove_ads_button", comment: "광고 제거 (%@)"), "₩1,100"))
                                     .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.primary)
                             }
 
                             Button {
@@ -159,6 +162,7 @@ struct SettingsView: View {
                             } label: {
                                 Text(NSLocalizedString("restore_purchase", comment: "구매 복원"))
                                     .font(.system(size: 15, weight: .regular, design: .rounded))
+                                    .foregroundColor(.primary)
                             }
                         }
                     }

@@ -140,9 +140,7 @@ struct StatisticsTabView: View {
             } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
                 VStack {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .padding(.horizontal)
+                        Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프")).appSectionTitle()
 
                         Toggle(NSLocalizedString("show_bar_labels", comment: "막대 금액 표시"), isOn: $showBarAnnotations)
                             .font(.system(size: 13, weight: .regular, design: .rounded))
@@ -152,8 +150,7 @@ struct StatisticsTabView: View {
                         if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
                             VStack {
                                 Spacer()
-                                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다"))
-                                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
                                     .foregroundColor(.gray)
                                     .multilineTextAlignment(.center)
                                 Spacer()
@@ -175,8 +172,7 @@ struct StatisticsTabView: View {
                                         .foregroundStyle(Color("IncomeColor"))
                                         .annotation(position: .top) {
                                             if showBarAnnotations {
-                                                Text(formattedCompactNumber(income))
-                                                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                                                Text(formattedCompactNumber(income)).appBody()
                                             }
                                         }
 
@@ -188,8 +184,7 @@ struct StatisticsTabView: View {
                                         .foregroundStyle(Color("ExpenseColor"))
                                         .annotation(position: .top) {
                                             if showBarAnnotations {
-                                                Text(formattedCompactNumber(expense))
-                                                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                                                Text(formattedCompactNumber(expense)).appBody()
                                             }
                                         }
                                     }
@@ -200,7 +195,7 @@ struct StatisticsTabView: View {
                                         AxisTick()
                                         AxisValueLabel {
                                             if let doubleValue = value.as(Double.self) {
-                                                Text(formattedCompactNumber(doubleValue))
+                                                Text(formattedCompactNumber(doubleValue)).appBody()
                                             }
                                         }
                                     }
@@ -267,8 +262,7 @@ struct StatisticsTabView: View {
         if monthlyCategoryTotals.isEmpty {
             VStack {
                 Spacer()
-                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다"))
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
                 Spacer()
@@ -316,8 +310,7 @@ struct StatisticsTabView: View {
             let values = keys.map { totals[$0] ?? 0 }
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)").appSectionTitle()
                     Spacer()
                     Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
                         .font(.system(size: 13))
@@ -326,9 +319,7 @@ struct StatisticsTabView: View {
                 .onTapGesture {
                     onToggleSort()
                 }
-                Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(values.reduce(0, +))))
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
-                    .foregroundColor(color)
+                Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(values.reduce(0, +)))).appBody()
                 VStack(spacing: 0) {
                     ForEach(keys.indices, id: \.self) { index in
                         if index != 0 {
@@ -368,11 +359,9 @@ struct StatisticsTabView: View {
         var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
         var body: some View {
             HStack {
-                Text(cardNameMap.first(where: { $0.value == key })?.value ?? key)
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                Text(cardNameMap.first(where: { $0.value == key })?.value ?? key).appBody()
                 Spacer()
-                Text(formattedAmount(value))
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                Text(formattedAmount(value)).appBody()
                     .foregroundColor(color)
             }
             .padding(.vertical, 10)
