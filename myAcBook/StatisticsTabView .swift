@@ -3,6 +3,13 @@ import SwiftUI
 import Charts
 
 struct StatisticsTabView: View {
+    @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
+    @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
+    @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+    @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
+    @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
+    @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+    @Environment(\.colorScheme) var colorScheme
     let monthlyIncomeTotals: [String: Double]
     let monthlyExpenseTotals: [String: Double]
     let monthlyCategoryIncomeTotals: [String: [String: Double]]
@@ -21,6 +28,16 @@ struct StatisticsTabView: View {
     @State private var showBarAnnotations: Bool = true
     @State private var selectedExpenseView: String = "all"
     @State private var selectedStatTab: String = NSLocalizedString("graph", comment: "그래프")
+
+    var customBGColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+    }
+    var customCardColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
+    }
+    var customSectionColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+    }
 
     var sortedMonths: [String] {
         let dateFormatter = DateFormatter()
@@ -48,7 +65,7 @@ struct StatisticsTabView: View {
             VStack {
                 contentView
             }
-            .background(Color("BackgroundSolidColor"))
+            .background(customBGColor)
         }
     }
 
@@ -73,7 +90,7 @@ struct StatisticsTabView: View {
                     onToggleSort: { isAscendingSort.toggle() },
                     allCards: allCards
                 )
-                .background(Color("BackgroundSolidColor").ignoresSafeArea())
+                .background(customBGColor).ignoresSafeArea()
             } else if selectedStatTab == NSLocalizedString("expense", comment: "지출") {
                 VStack {
                     Picker("Expense View", selection: $selectedExpenseView) {
@@ -118,7 +135,7 @@ struct StatisticsTabView: View {
                         onToggleSort: { isAscendingSort.toggle() },
                         allCards: allCards
                     )
-                    .background(Color("BackgroundSolidColor").ignoresSafeArea())
+                    .background(customBGColor).ignoresSafeArea()
                 }
             } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
                 VStack {
@@ -133,14 +150,16 @@ struct StatisticsTabView: View {
                             .padding(.horizontal)
 
                         if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
-                            VStack(alignment: .center, spacing: 8) {
+                            VStack {
+                                Spacer()
                                 Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다"))
                                     .font(.system(size: 14, weight: .regular, design: .rounded))
                                     .foregroundColor(.gray)
-                                    .frame(maxWidth: .infinity)
                                     .multilineTextAlignment(.center)
+                                Spacer()
                             }
-                            .frame(height: 250, alignment: .top)
+                            .frame(maxHeight: .infinity)
+                            .background(customBGColor)
                         } else {
                             ScrollView(.horizontal) {
                                 Chart {
@@ -255,56 +274,115 @@ struct StatisticsTabView: View {
                 Spacer()
             }
             .frame(maxHeight: .infinity)
-            .background(Color("BackgroundSolidColor"))
+            .background(customBGColor)
         } else {
             ScrollView {
                 VStack(spacing: 24) {
                     ForEach(sortedMonths, id: \.self) { month in
-                        VStack(alignment: .leading, spacing: 0) {
-                            HStack {
-                                Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)")
-                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                Spacer()
-                                Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
-                                    .font(.system(size: 13))
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                onToggleSort()
-                            }
-                            Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(monthlyCategoryTotals[month]?.values.reduce(0, +) ?? 0)))
-                                .font(.system(size: 14, weight: .regular, design: .rounded))
-                                .foregroundColor(color)
-                            VStack(spacing: 10) {
-                                ForEach(Array(monthlyCategoryTotals[month]!.keys), id: \.self) { key in
-                                    HStack {
-                                        Text(cardNameMap.first(where: { $0.value == key })?.value ?? key)
-                                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                                        Spacer()
-                                        Text(formattedAmount(monthlyCategoryTotals[month]![key] ?? 0))
-                                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                                            .foregroundColor(color)
-                                    }
-                                    .padding(.vertical, 10)
-                                    .padding(.horizontal, 14)
-                                }
-                            }
-                            .background(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(Color("SectionBGColor"))
-                            )
-                            .padding(.horizontal, 4)
-                            .padding(.top, 4)
-                            .padding(.bottom, 8)
-                        }
-                        .padding(.vertical, 8)
+                        StatMonthSectionView(
+                            month: month,
+                            totals: monthlyCategoryTotals[month] ?? [:],
+                            color: color,
+                            cardNameMap: cardNameMap,
+                            formattedAmount: formattedAmount,
+                            sectionTitleSuffix: sectionTitleSuffix,
+                            isAscendingSort: isAscendingSort,
+                            onToggleSort: onToggleSort
+                        )
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 16)
             }
-            .background(Color("BackgroundSolidColor"))
+            .background(customBGColor)
+        }
+    }
+
+    struct StatMonthSectionView: View {
+        let month: String
+        let totals: [String: Double]
+        let color: Color
+        let cardNameMap: [UUID: String]
+        let formattedAmount: (Double) -> String
+        let sectionTitleSuffix: String
+        let isAscendingSort: Bool
+        let onToggleSort: () -> Void
+        @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+        @Environment(\.colorScheme) var colorScheme
+        var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
+        var body: some View {
+            let keys = Array(totals.keys)
+            let values = keys.map { totals[$0] ?? 0 }
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    Spacer()
+                    Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
+                        .font(.system(size: 13))
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    onToggleSort()
+                }
+                Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(values.reduce(0, +))))
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .foregroundColor(color)
+                VStack(spacing: 0) {
+                    ForEach(keys.indices, id: \.self) { index in
+                        if index != 0 {
+                            Divider()
+                                .padding(.vertical, 2)
+                        }
+                        let key = keys[index]
+                        StatRowView(
+                            key: key,
+                            value: values[index],
+                            color: color,
+                            cardNameMap: cardNameMap,
+                            formattedAmount: formattedAmount
+                        )
+                    }
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(colorScheme == .light ? customLightCardColor : Color("SectionBGColor"))
+                )
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+            }
+            .padding(.vertical, 8)
+        }
+    }
+
+    struct StatRowView: View {
+        let key: String
+        let value: Double
+        let color: Color
+        let cardNameMap: [UUID: String]
+        let formattedAmount: (Double) -> String
+        @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+        @Environment(\.colorScheme) var colorScheme
+        var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
+        var body: some View {
+            HStack {
+                Text(cardNameMap.first(where: { $0.value == key })?.value ?? key)
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                Spacer()
+                Text(formattedAmount(value))
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .foregroundColor(color)
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(colorScheme == .light ? customLightCardColor : Color("SectionBGColor"))
+            )
+            .padding(.vertical, 6)
+            .padding(.horizontal, 2)
         }
     }
 

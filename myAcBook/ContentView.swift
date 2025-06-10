@@ -25,7 +25,7 @@ struct ContentView: View {
     animation: .default)
 private var records: FetchedResults<Record>
 
-@AppStorage("colorScheme") private var colorScheme: String = "system"
+@AppStorage("colorScheme") private var colorSchemeSetting: String = "system"
 @AppStorage("isHapticsEnabled") private var isHapticsEnabled: Bool = true
 @AppStorage("isAdRemoved") private var isAdRemoved: Bool = false
 
@@ -51,6 +51,25 @@ private var records: FetchedResults<Record>
 @State private var customStartDate: Date
 @State private var customEndDate: Date
 @State private var showStatistics = false
+
+@AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
+@AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
+@AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+@AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
+@AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
+@AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+
+@Environment(\.colorScheme) var colorScheme
+
+var customBGColor: Color {
+    colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+}
+var customCardColor: Color {
+    colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
+}
+var customSectionColor: Color {
+    colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+}
 
 var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String) -> Void)? = nil
 
@@ -244,18 +263,43 @@ private var groupedRecordSections: some View {
             }
             .padding(.horizontal, 16)
         } else {
-            List {
-                ForEach(sortedRecordDates, id: \.self) { date in
-                    if let records = groupedRecordsByDate[date] {
-                        recordSection(for: records, date: date)
+            ScrollView {
+                VStack(spacing: 2) {
+                    ForEach(sortedRecordDates, id: \.self) { date in
+                        if let records = groupedRecordsByDate[date] {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(formattedDate(
+                                    Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day], from: date)) ?? date
+                                ))
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundColor(Color("HighlightColor"))
+                                .padding(.horizontal, 16)
+                                .padding(.top, 12)
+                                VStack(spacing: 0) {
+                                    ForEach(records.indices, id: \.self) { index in
+                                        if index != 0 {
+                                            Divider()
+                                                .padding(.vertical, 2)
+                                        }
+                                        recordRowView(record: records[index])
+                                    }
+                                }
+                            }
+                            .background(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(customCardColor)
+                            )
+                            .padding(.horizontal, 4)
+                            .padding(.top, 4)
+                            .padding(.bottom, 8)
+                        }
                     }
                 }
+                .padding(.horizontal, 0)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(Color("BackgroundSolidColor"))
-            .listRowBackground(Color("BackgroundSolidColor"))
-            .listRowSeparator(.hidden)
+            .background(customBGColor)
         }
     }
 }
@@ -263,7 +307,7 @@ private var groupedRecordSections: some View {
 var body: some View {
     NavigationView {
         ZStack {
-            Color("BackgroundSolidColor").ignoresSafeArea()
+            customBGColor.ignoresSafeArea()
             VStack(spacing: 0) {
                 HStack(alignment: .center) {
                     Button(action: {
@@ -278,9 +322,12 @@ var body: some View {
                             .shadow(radius: 2)
                     }
                     Spacer()
-                    Text(NSLocalizedString("ledger_tab", comment: "가계부"))
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
+                    ZStack {
+                        Text("myAcBook")
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 0.18, green: 0.32, blue: 0.55))
+                            .shadow(color: .black.opacity(0.12), radius: 2, x: 0, y: 1)
+                    }
                     Spacer()
                     Button(action: {
                         isAddingNewRecord = true
@@ -429,20 +476,6 @@ private var filterSummaryView: some View {
                     .foregroundColor(.blue)
             }
             Spacer()
-            Button(action: {
-                selectedTypeFilter = NSLocalizedString("all", comment: "")
-                selectedIncomeCategory = NSLocalizedString("all", comment: "")
-                selectedExpenseCategory = NSLocalizedString("all", comment: "")
-                selectedAllCategory = NSLocalizedString("all", comment: "")
-                selectedCategory = NSLocalizedString("all", comment: "")
-                selectedDateFilter = NSLocalizedString("all", comment: "")
-                customStartTimestamp = Date().timeIntervalSince1970
-                customEndTimestamp = Date().timeIntervalSince1970
-            }) {
-                Label(NSLocalizedString("reset", comment: "초기화"), systemImage: "arrow.counterclockwise")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.red)
-            }
         }
         Group {
             VStack(alignment: .leading, spacing: 4) {
@@ -491,16 +524,14 @@ private func recordSection(for records: [Record], date: Date) -> some View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         VStack(spacing: 0) {
-            ForEach(records) { record in
-                recordRowView(record: record)
+            ForEach(records.indices, id: \.self) { index in
+                if index != 0 {
+                    Divider()
+                        .padding(.vertical, 2)
+                }
+                recordRowView(record: records[index])
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color("SectionBGColor"))
-        )
-        .padding(.horizontal, 4)
-        .padding(.bottom, 8)
     }
     .padding(.bottom, 8)
 }
@@ -515,10 +546,6 @@ private func recordRowView(record: Record) -> some View {
         selectedRecord: $selectedRecord,
         formattedAmount: formattedAmount,
         formattedDate: formattedDate
-    )
-    .background(
-        RoundedRectangle(cornerRadius: 12)
-            .fill(Color("SectionBGColor").opacity(0.95))
     )
     .onTapGesture {
         print("📝 Record tapped for edit:")

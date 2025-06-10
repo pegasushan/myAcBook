@@ -19,6 +19,23 @@ class KeyboardObserver: ObservableObject {
 struct AddRecordView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
+    @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
+    @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+    @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
+    @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
+    @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+
+    var customBGColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+    }
+    var customCardColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
+    }
+    var customSectionColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+    }
+    @Environment(\.colorScheme) var colorScheme
 
     @State private var type: String = NSLocalizedString("expense", comment: "") // ✨ 기본값 로컬라이즈된 '지출'
     @State private var selectedCategory: AppCategory?
@@ -48,7 +65,7 @@ struct AddRecordView: View {
         let expenseText = NSLocalizedString("expense", comment: "")
         NavigationView {
             ZStack {
-                Color("BackgroundSolidColor").ignoresSafeArea()
+                customBGColor.ignoresSafeArea()
                 VStack(spacing: 0) {
                     ScrollView {
                         VStack(spacing: 20) {

@@ -20,6 +20,13 @@ struct SearchFilterView: View {
 
     @State private var fetchedCategories: [AppCategory] = []
 
+    @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
+    @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
+    @Environment(\.colorScheme) var colorScheme
+    var customBGColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+    }
+
     var currentCategoryBinding: Binding<String> {
         switch selectedType {
         case "수입":
@@ -29,6 +36,11 @@ struct SearchFilterView: View {
         default:
             return $selectedAllCategory
         }
+    }
+
+    // 강조 색상 정의
+    var highlightColor: Color {
+        colorScheme == .light ? Color(red: 1.0, green: 0.5, blue: 0.7) : Color(red: 0.9, green: 0.4, blue: 0.6)
     }
 
     init(
@@ -83,15 +95,19 @@ struct SearchFilterView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color("BackgroundSolidColor").ignoresSafeArea()
+                customBGColor.ignoresSafeArea()
                 VStack(spacing: 18) {
                     // 유형 필터
-                    FilterCard {
+                    FilterCard(
+                        isActive: selectedType != NSLocalizedString("all", comment: "전체"),
+                        highlightColor: highlightColor
+                    ) {
                         HStack(spacing: 8) {
                             Image(systemName: "slider.horizontal.3")
-                                .foregroundColor(Color("HighlightColor"))
+                                .foregroundColor(selectedType != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
                             Text(NSLocalizedString("type", comment: "유형"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(selectedType != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
                             Spacer()
                         }
                         Picker("", selection: $selectedType) {
@@ -103,12 +119,16 @@ struct SearchFilterView: View {
                         .accentColor(Color("HighlightColor"))
                     }
                     // 카테고리 필터
-                    FilterCard {
+                    FilterCard(
+                        isActive: currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체"),
+                        highlightColor: highlightColor
+                    ) {
                         HStack(spacing: 8) {
                             Image(systemName: "tag")
-                                .foregroundColor(Color("HighlightColor"))
+                                .foregroundColor(currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
                             Text(NSLocalizedString("select_category", comment: "카테고리 선택"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
                             Spacer()
                         }
                         Picker("", selection: currentCategoryBinding) {
@@ -120,12 +140,16 @@ struct SearchFilterView: View {
                         .pickerStyle(MenuPickerStyle())
                     }
                     // 기간 필터
-                    FilterCard {
+                    FilterCard(
+                        isActive: selectedDate != NSLocalizedString("all", comment: "전체"),
+                        highlightColor: highlightColor
+                    ) {
                         HStack(spacing: 8) {
                             Image(systemName: "calendar")
-                                .foregroundColor(Color("HighlightColor"))
+                                .foregroundColor(selectedDate != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
                             Text(NSLocalizedString("period", comment: "기간"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundColor(selectedDate != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
                             Spacer()
                         }
                         Picker("", selection: $selectedDate) {
@@ -149,35 +173,31 @@ struct SearchFilterView: View {
                 // 하단 고정 적용/초기화 버튼
                 VStack {
                     Spacer()
-                    HStack {
-                        Button(NSLocalizedString("reset", comment: "초기화")) {
-                            onReset()
-                        }
-                        .foregroundColor(Color("ExpenseColor"))
-                        Spacer()
-                        Button(action: {
-                            selectedCategory = currentCategoryBinding.wrappedValue
-                            dismiss()
-                        }) {
-                            Text(NSLocalizedString("apply", comment: "적용"))
-                                .font(.system(size: 17, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: 120)
-                                .padding(.vertical, 12)
-                                .background(Color("HighlightColor"))
-                                .cornerRadius(12)
-                        }
+                    Button(action: {
+                        selectedCategory = currentCategoryBinding.wrappedValue
+                        dismiss()
+                    }) {
+                        Text(NSLocalizedString("apply", comment: "적용"))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color("HighlightColor"))
+                            .cornerRadius(16)
+                            .shadow(radius: 4)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 16)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
                 }
             }
             .navigationBarTitle(Text(NSLocalizedString("filter_setting", comment: "필터 설정")), displayMode: .inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(NSLocalizedString("cancel", comment: "취소")) {
-                        dismiss()
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(action: { onReset() }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 16, weight: .regular))
                     }
+                    .foregroundColor(Color("ExpenseColor"))
                 }
             }
             .onAppear {
@@ -204,7 +224,17 @@ struct SearchFilterView: View {
 
 struct FilterCard<Content: View>: View {
     let content: Content
-    init(@ViewBuilder content: () -> Content) {
+    var isActive: Bool = false
+    var highlightColor: Color = .clear
+    @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
+    @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+    @Environment(\.colorScheme) var colorScheme
+    var customSectionColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+    }
+    init(isActive: Bool = false, highlightColor: Color = .clear, @ViewBuilder content: () -> Content) {
+        self.isActive = isActive
+        self.highlightColor = highlightColor
         self.content = content()
     }
     var body: some View {
@@ -212,8 +242,12 @@ struct FilterCard<Content: View>: View {
             content
         }
         .padding(16)
-        .background(Color("SectionBGColor"))
+        .background(customSectionColor)
         .cornerRadius(14)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(isActive ? highlightColor : Color.gray.opacity(0.12), lineWidth: isActive ? 2 : 1)
+        )
     }
 }
 

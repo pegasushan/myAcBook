@@ -10,6 +10,13 @@ import SwiftUI
 struct CardListView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("customBGColor") private var customBGColorHex: String = "#FEEAF2"
+    @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
+    @AppStorage("customCardColor") private var customCardColorHex: String = "#FFFFFF"
+    @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
+    @AppStorage("customSectionColor") private var customSectionColorHex: String = "#F6F7FA"
+    @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+    @Environment(\.colorScheme) var colorScheme
     @StateObject private var cardViewModel = CardViewModel(context: PersistenceController.shared.container.viewContext)
 
     @State private var isAdding = false
@@ -18,10 +25,20 @@ struct CardListView: View {
     @State private var showEmptyNameAlert = false
     @State private var showDuplicateAlert = false
 
+    var customBGColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+    }
+    var customCardColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
+    }
+    var customSectionColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
-                Color("BackgroundSolidColor").ignoresSafeArea()
+                customBGColor.ignoresSafeArea()
                 VStack(spacing: 0) {
                     // 상단 타이틀
                     HStack(spacing: 10) {
@@ -101,9 +118,9 @@ struct CardListView: View {
                             .padding(.vertical, 4)
                         }
                     }
-                    .listRowBackground(Color("BackgroundSolidColor"))
+                    .listRowBackground(customBGColor)
                     .scrollContentBackground(.hidden)
-                    .background(Color("BackgroundSolidColor"))
+                    .background(customBGColor)
                     .onAppear {
                         UITableView.appearance().backgroundColor = UIColor.clear
                         cardViewModel.removeDuplicateCards()

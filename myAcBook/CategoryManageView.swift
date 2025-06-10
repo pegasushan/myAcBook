@@ -11,6 +11,23 @@ import CoreData
 public struct CategoryManagerView: View {
     @Environment(\.dismiss) var dismiss
     @Environment(\.managedObjectContext) private var viewContext
+    @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
+    @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
+    @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+    @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
+    @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
+    @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+
+    var customBGColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+    }
+    var customCardColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
+    }
+    var customSectionColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+    }
+    @Environment(\.colorScheme) var colorScheme
     @FetchRequest private var categories: FetchedResults<AppCategory>
     var selectedType: String
 
@@ -160,12 +177,12 @@ public struct CategoryManagerView: View {
             .listStyle(.insetGrouped)
             .listRowBackground(Color("BackgroundSolidColor"))
             .scrollContentBackground(.hidden)
-            .background(Color("BackgroundSolidColor"))
+            .background(customBGColor)
             .onAppear {
                 UITableView.appearance().backgroundColor = UIColor.clear
             }
         }
-        .background(Color("BackgroundSolidColor"))
+        .background(customBGColor)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(NSLocalizedString("manage_category", comment: "카테고리 관리"))
