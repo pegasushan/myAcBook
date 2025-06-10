@@ -255,17 +255,9 @@ struct AddRecordView: View {
                 .alert(isPresented: $showAlert) {
                     Alert(title: Text(NSLocalizedString("input_error", comment: "")), message: Text(alertMessage), dismissButton: .default(Text(NSLocalizedString("confirm", comment: ""))))
                 }
-                .sheet(isPresented: $showCategoryManager, onDismiss: {
-                    fetchCategories()
-                }) {
+                .sheet(isPresented: $showCategoryManager) {
                     NavigationStack {
                         CategoryManagerView(selectedType: type)
-                            .toolbar {
-                                ToolbarItem(placement: .principal) {
-                                    Text(NSLocalizedString("manage_category", comment: "카테고리 관리"))
-                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                }
-                            }
                     }
                 }
                 .sheet(isPresented: $showCardManager, onDismiss: {
@@ -273,12 +265,6 @@ struct AddRecordView: View {
                 }) {
                     NavigationStack {
                         CardListView()
-                            .toolbar {
-                                ToolbarItem(placement: .principal) {
-                                    Text(NSLocalizedString("card_management", comment: "카드 관리"))
-                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                }
-                            }
                     }
                 }
                 .onAppear {

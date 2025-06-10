@@ -35,10 +35,66 @@ public struct CategoryManagerView: View {
     @State private var showEmptyNameAlert = false
     @State private var selectedFilter: String
     @State private var showDuplicateAlert = false
+    @State private var editingCategory: AppCategory? = nil
 
     private var filteredCategories: [AppCategory] {
         let nonEmpty = Array(categories.filter { !($0.name?.isEmpty ?? true) })
         return nonEmpty.filter { $0.type == selectedFilter }
+    }
+    private var validCategories: [AppCategory] {
+        filteredCategories.filter { $0.id != nil }
+    }
+
+    // CategoryRowData 구조체 추가
+    struct CategoryRowData: Identifiable {
+        let id: UUID
+        let name: String
+        let type: String
+        let managedObject: AppCategory
+    }
+
+    // CategoryRowView 뷰 추가
+    struct CategoryRowView: View {
+        let row: CategoryRowData
+        let customCardColor: Color
+        let onEdit: () -> Void
+        let onDelete: () -> Void
+
+        var body: some View {
+            HStack(spacing: 12) {
+                Image(systemName: "tag")
+                    .foregroundColor(.primary)
+                Text(row.name)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(.primary)
+                Spacer()
+                Text(row.type == "income" ? NSLocalizedString("income", comment: "") : NSLocalizedString("expense", comment: ""))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(row.type == "income" ? Color.green : Color.red)
+                    .cornerRadius(8)
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                        .foregroundColor(.blue)
+                }
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .background(RoundedRectangle(cornerRadius: 14).fill(customCardColor).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
+        }
+    }
+
+    private var categoryRows: [CategoryRowData] {
+        filteredCategories.compactMap { category in
+            guard let id = category.id, let name = category.name else { return nil }
+            return CategoryRowData(id: id, name: name, type: category.type ?? "", managedObject: category)
+        }
     }
 
     public init(selectedType: String) {
@@ -59,136 +115,135 @@ public struct CategoryManagerView: View {
     }
 
     public var body: some View {
-        VStack {
-            // 상단 타이틀
-            HStack(spacing: 10) {
-                // Image(systemName: "folder.fill") // 이모티콘 제거
-                // 상단 텍스트도 이미 제거됨
+        VStack(spacing: 0) {
+            // 상단 아이콘과 타이틀 복구
+            VStack(spacing: 8) {
+                Image(systemName: "folder.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+                    .foregroundColor(.primary)
+                    .padding(.top, 24)
+                Text(NSLocalizedString("category_management", comment: "카테고리 관리"))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
             }
-            .padding(.top, 24)
-            .padding(.bottom, 8)
-            // 리스트와 타이틀 사이 여백
-            Spacer().frame(height: 8)
+            // 카테고리 개수 안내
+            if filteredCategories.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "folder")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 36, height: 36)
+                        .foregroundColor(.gray.opacity(0.4))
+                    Text(NSLocalizedString("no_categories", comment: "카테고리가 없습니다."))
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 24)
+            } else {
+                Text(String(format: NSLocalizedString("registered_category_count", comment: "등록된 카테고리 %d개"), filteredCategories.count))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.secondary)
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+            }
+            // 유형(수입/지출) 필터
             Picker("Type Filter", selection: $selectedFilter) {
                 Text(LocalizedStringKey("income")).tag("income")
                 Text(LocalizedStringKey("expense")).tag("expense")
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
-            List {
-                Section(header:
-                    Text(NSLocalizedString("category_list", comment: "카테고리 목록"))
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .padding(.top, 8)
-                ) {
-                    if filteredCategories.isEmpty {
-                        Text(LocalizedStringKey("no_categories"))
-                            .foregroundColor(.gray)
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                    }
-                    ForEach(filteredCategories.compactMap { $0.id != nil ? $0 : nil }, id: \.id) { category in
-                        HStack {
-                            Text(LocalizedStringKey(category.name ?? ""))
-                                .font(.system(size: 15, weight: .regular, design: .rounded))
-                            Spacer()
-                            Text(category.type == "income" ? NSLocalizedString("income", comment: "") : NSLocalizedString("expense", comment: ""))
-                                .font(.system(size: 14, weight: .regular, design: .rounded))
-                                .foregroundColor(.primary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Color("SectionBGColor"))
-                                .cornerRadius(6)
-                        }
-                    }
-                    .onDelete { indexSet in
-                        for index in indexSet {
-                            let categoryToDelete = filteredCategories[index]
-                            if let context = categoryToDelete.managedObjectContext {
-                                context.delete(categoryToDelete)
-                                try? context.save()
+            .padding(.bottom, 12)
+            // 카테고리 목록
+            ScrollView {
+                VStack(spacing: 20) {
+                    ForEach(categoryRows) { row in
+                        CategoryRowView(
+                            row: row,
+                            customCardColor: customCardColor,
+                            onEdit: {
+                                editingCategory = row.managedObject
+                                newCategoryName = row.name
+                            },
+                            onDelete: {
+                                if let context = row.managedObject.managedObjectContext {
+                                    context.delete(row.managedObject)
+                                    try? context.save()
+                                }
                             }
-                        }
+                        )
                     }
                 }
-
-                Section(header:
-                    Text(NSLocalizedString("add_new_category", comment: "카테고리 추가"))
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .padding(.top, 12)
-                ) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "folder.fill")
-                            .foregroundColor(.gray)
-                        TextField(LocalizedStringKey("category_name_placeholder"), text: $newCategoryName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .font(.system(size: 15, weight: .regular, design: .rounded))
-                        Spacer()
-                        Button(action: {
-                            let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
-                            print("➕ 추가 시도: '\(trimmed)', 타입: \(selectedType)")
-                            if !trimmed.isEmpty {
-                                guard !categories.contains(where: {
-                                    let categoryName = $0.name?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
-                                    let matchesName = categoryName == trimmed.lowercased()
-                                    let matchesType = $0.type == selectedFilter
-                                    return matchesName && matchesType
-                                }) else {
-                                    showDuplicateAlert = true
-                                    return
-                                }
-                                let newCategory = AppCategory(context: viewContext)
-                                newCategory.id = UUID()
-                                newCategory.name = trimmed
-                                newCategory.type = selectedFilter
-                                do {
-                                    try viewContext.save()
-                                    UIApplication.shared.endEditing()
-                                    print("✅ 저장 성공")
-                                } catch {
-                                    print("❌ 저장 실패: \(error.localizedDescription)")
-                                }
-                                print("📋 현재 목록: \(categories.map { $0.name ?? "-" })")
-                                newCategoryName = ""
-                            } else {
-                                showEmptyNameAlert = true
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+            }
+            // 새 카테고리 추가
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("add_new_category", comment: "카테고리 추가"))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.top, 18)
+                HStack(spacing: 12) {
+                    Image(systemName: "folder.fill")
+                        .foregroundColor(.gray)
+                    TextField(LocalizedStringKey("category_name_placeholder"), text: $newCategoryName)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                    Spacer()
+                    Button(action: {
+                        let trimmed = newCategoryName.trimmingCharacters(in: .whitespaces)
+                        if !trimmed.isEmpty {
+                            guard !categories.contains(where: {
+                                let categoryName = $0.name?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+                                let matchesName = categoryName == trimmed.lowercased()
+                                let matchesType = $0.type == selectedFilter
+                                return matchesName && matchesType
+                            }) else {
+                                showDuplicateAlert = true
+                                return
                             }
-                        }) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.blue)
-                                .padding(6)
-                                .background(Color.white.opacity(0.7))
-                                .clipShape(Circle())
+                            let newCategory = AppCategory(context: viewContext)
+                            newCategory.id = UUID()
+                            newCategory.name = trimmed
+                            newCategory.type = selectedFilter
+                            do {
+                                try viewContext.save()
+                                UIApplication.shared.endEditing()
+                            } catch {}
+                            newCategoryName = ""
+                        } else {
+                            showEmptyNameAlert = true
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .alert(LocalizedStringKey("empty_input_alert"), isPresented: $showEmptyNameAlert) {
-                            Button(LocalizedStringKey("confirm"), role: .cancel) { }
-                        }
-                        .alert(LocalizedStringKey("duplicate_category_alert"), isPresented: $showDuplicateAlert) {
-                            Button(LocalizedStringKey("confirm"), role: .cancel) { }
-                        }
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.blue)
+                            .clipShape(Circle())
                     }
-                    .padding(.vertical, 4)
                 }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(RoundedRectangle(cornerRadius: 14).fill(customCardColor).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
             }
-            .padding(.top, 8)
-            .listStyle(.insetGrouped)
-            .listRowBackground(Color("BackgroundSolidColor"))
-            .scrollContentBackground(.hidden)
-            .background(customBGColor)
-            .onAppear {
-                UITableView.appearance().backgroundColor = UIColor.clear
-            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
+            Spacer()
+            // 하단 안내문구
+            Text(NSLocalizedString("category_usage_hint", comment: "카테고리는 내역 추가/수정에서 선택할 수 있습니다."))
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .padding(.bottom, 10)
         }
         .background(customBGColor)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(NSLocalizedString("category_management", comment: "카테고리 관리"))
-                    .appSectionTitle()
-                    .foregroundColor(.primary)
-            }
+        .alert(LocalizedStringKey("empty_input_alert"), isPresented: $showEmptyNameAlert) {
+            Button(LocalizedStringKey("confirm"), role: .cancel) { }
+        }
+        .alert(LocalizedStringKey("duplicate_category_alert"), isPresented: $showDuplicateAlert) {
+            Button(LocalizedStringKey("confirm"), role: .cancel) { }
         }
     }
 }

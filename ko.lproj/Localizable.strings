@@ -100,3 +100,9 @@
 "unit_ten_thousand" = "만";
 "unit_thousand" = "천";
 "management_section" = "항목 관리";
+
+"registered_card_count" = "등록된 카드 %d개";
+"card_usage_hint" = "등록한 카드는 내역 추가/수정에서 선택할 수 있습니다.";
+
+"registered_category_count" = "등록된 카테고리 %d개";
+"category_usage_hint" = "카테고리는 내역 추가/수정에서 선택할 수 있습니다.";
