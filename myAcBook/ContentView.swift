@@ -316,30 +316,51 @@ var body: some View {
                     }) {
                         Image(systemName: "minus")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Circle().fill(Color.red))
-                            .shadow(radius: 2)
+                            .foregroundColor(colorScheme == .light ? Color(red: 0.95, green: 0.45, blue: 0.55) : Color(red: 1.0, green: 0.7, blue: 0.7))
+                            .frame(width: 44, height: 44)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red: 1.0, green: 0.8, blue: 0.85), Color(red: 0.95, green: 0.7, blue: 0.8)] : [Color(red: 0.4, green: 0.2, blue: 0.3), Color(red: 0.6, green: 0.3, blue: 0.4)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: Color(red: 0.95, green: 0.45, blue: 0.55, opacity: 0.18), radius: 6, x: 0, y: 2)
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .scaleEffect(isDeleteMode ? 1.08 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDeleteMode)
+
                     Spacer()
-                    ZStack {
-                        Text("myAcBook").appTitle()
-                            .foregroundColor(Color(red: 0.18, green: 0.32, blue: 0.55))
-                            .shadow(color: .black.opacity(0.12), radius: 2, x: 0, y: 1)
-                    }
+                    Text("myAcBook")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundColor(colorScheme == .light ? Color(red: 0.18, green: 0.32, blue: 0.55) : Color(red: 0.7, green: 0.8, blue: 1.0))
+                        .shadow(color: .black.opacity(0.08), radius: 2, x: 0, y: 1)
+
                     Spacer()
                     Button(action: {
                         isAddingNewRecord = true
                     }) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(Circle().fill(Color.blue))
-                            .shadow(radius: 2)
+                            .foregroundColor(colorScheme == .light ? Color(red: 0.45, green: 0.65, blue: 0.95) : Color(red: 0.7, green: 0.85, blue: 1.0))
+                            .frame(width: 44, height: 44)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red: 0.8, green: 0.9, blue: 1.0), Color(red: 0.7, green: 0.85, blue: 1.0)] : [Color(red: 0.2, green: 0.3, blue: 0.4), Color(red: 0.3, green: 0.4, blue: 0.6)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: Color(red: 0.45, green: 0.65, blue: 0.95, opacity: 0.18), radius: 6, x: 0, y: 2)
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .scaleEffect(isAddingNewRecord ? 1.08 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isAddingNewRecord)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
                 .padding(.top, 32)
                 .padding(.bottom, 8)
                 FilterSummaryView(
@@ -364,8 +385,44 @@ var body: some View {
                 groupedRecordSections
                     .padding(.horizontal, 16)
                 if isDeleteMode {
-                    HStack {
+                    HStack(spacing: 16) {
                         Spacer()
+                        Button(action: {
+                            showingDeleteAlert = true
+                        }) {
+                            Text("전체 삭제")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundColor(colorScheme == .light ? Color(red: 0.95, green: 0.45, blue: 0.55) : Color(red: 1.0, green: 0.7, blue: 0.7))
+                                .frame(minWidth: 0, maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: colorScheme == .light ? [Color(red: 1.0, green: 0.8, blue: 0.85), Color(red: 0.95, green: 0.7, blue: 0.8)] : [Color(red: 0.4, green: 0.2, blue: 0.3), Color(red: 0.6, green: 0.3, blue: 0.4)]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .shadow(color: Color(red: 0.95, green: 0.45, blue: 0.55, opacity: 0.18), radius: 6, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .alert(isPresented: $showingDeleteAlert) {
+                            Alert(
+                                title: Text("정말 모든 내역을 삭제하시겠습니까?"),
+                                message: Text("이 작업은 되돌릴 수 없습니다."),
+                                primaryButton: .destructive(Text("전체 삭제")) {
+                                    withAnimation {
+                                        for record in records {
+                                            viewContext.delete(record)
+                                        }
+                                        selectedRecords.removeAll()
+                                        try? viewContext.save()
+                                        isDeleteMode = false
+                                    }
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        }
                         Button(action: {
                             withAnimation {
                                 for record in selectedRecords {
@@ -373,19 +430,29 @@ var body: some View {
                                 }
                                 selectedRecords.removeAll()
                                 try? viewContext.save()
+                                isDeleteMode = false
                             }
                         }) {
                             Text("선택 삭제 (\(selectedRecords.count))")
                                 .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(colorScheme == .light ? Color(red: 0.45, green: 0.65, blue: 0.95) : Color(red: 0.7, green: 0.85, blue: 1.0))
+                                .frame(minWidth: 0, maxWidth: .infinity)
                                 .padding(.vertical, 10)
-                                .padding(.horizontal, 20)
-                                .background(Color.red)
-                                .cornerRadius(10)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: colorScheme == .light ? [Color(red: 0.8, green: 0.9, blue: 1.0), Color(red: 0.7, green: 0.85, blue: 1.0)] : [Color(red: 0.2, green: 0.3, blue: 0.4), Color(red: 0.3, green: 0.4, blue: 0.6)]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .shadow(color: Color(red: 0.45, green: 0.65, blue: 0.95, opacity: 0.18), radius: 6, x: 0, y: 2)
                         }
+                        .buttonStyle(PlainButtonStyle())
                         Spacer()
                     }
                     .padding(.vertical, 8)
+                    .padding(.horizontal, 20)
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)

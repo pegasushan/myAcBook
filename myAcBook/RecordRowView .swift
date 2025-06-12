@@ -21,6 +21,38 @@ struct RecordRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
+            if isDeleteMode {
+                ZStack {
+                    if selectedRecords.contains(record) {
+                        LinearGradient(
+                            gradient: Gradient(colors: colorScheme == .light ? [Color(red: 0.8, green: 0.9, blue: 1.0), Color(red: 0.95, green: 0.7, blue: 0.8)] : [Color(red: 0.2, green: 0.3, blue: 0.4), Color(red: 0.4, green: 0.2, blue: 0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        .frame(width: 26, height: 26)
+                        .clipShape(Circle())
+                        .overlay(
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                        )
+                        .shadow(color: Color.blue.opacity(0.12), radius: 2, x: 0, y: 1)
+                    } else {
+                        Circle()
+                            .strokeBorder(
+                                LinearGradient(
+                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red: 0.8, green: 0.9, blue: 1.0), Color(red: 0.95, green: 0.7, blue: 0.8)] : [Color(red: 0.2, green: 0.3, blue: 0.4), Color(red: 0.4, green: 0.2, blue: 0.3)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                            .frame(width: 26, height: 26)
+                            .background(Color.clear)
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedRecords.contains(record))
+            }
             Image(systemName: (record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                 .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
                 .font(.system(size: 18, weight: .regular, design: .rounded))
@@ -55,10 +87,7 @@ struct RecordRowView: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill((isDeleteMode && selectedRecords.contains(record)) ? Color.blue.opacity(0.18) : (colorScheme == .light ? customLightCardColor : Color("SectionBGColor")))
-                .overlay(
-                    (isDeleteMode && selectedRecords.contains(record)) ? RoundedRectangle(cornerRadius: 14).stroke(Color.blue, lineWidth: 2) : nil
-                )
+                .fill(colorScheme == .light ? customLightCardColor : Color("SectionBGColor"))
         )
         .onTapGesture {
             if isDeleteMode {
