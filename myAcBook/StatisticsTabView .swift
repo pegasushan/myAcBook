@@ -1,6 +1,178 @@
 import CoreData
 import SwiftUI
 import Charts
+import Foundation
+
+struct AccordionState {
+    var expandedMonth: String? = nil
+    var expandedCash: String? = nil
+    var expandedCard: String? = nil
+    var expandedCardType: [String: String?] = [:] // [month: 카드이름]
+}
+
+private func getSortedMonths(
+    from monthlyCategoryTotals: [String: [String: Double]],
+    ascending: Bool
+) -> [String] {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "yyyy-MM"
+    return monthlyCategoryTotals.keys.sorted {
+        guard let d1 = dateFormatter.date(from: $0),
+              let d2 = dateFormatter.date(from: $1) else { return false }
+        return ascending ? d1 < d2 : d1 > d2
+    }
+}
+
+struct StatRowViewModern: View {
+    let key: String
+    let value: Double
+    let color: Color
+    let cardNameMap: [UUID: String]
+    let formattedAmount: (Double) -> String
+    let allRecords: [Record]
+    let formattedDate: (Date) -> String
+    @State private var isExpanded: Bool = false
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: { withAnimation { isExpanded.toggle() } }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "tag")
+                        .font(.system(size: 15))
+                        .foregroundColor(.green.opacity(0.7))
+                    Text(cardNameMap.first(where: { $0.value == key })?.value ?? key)
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .foregroundColor(Color("HighlightColor"))
+                    Spacer()
+                    Text(formattedAmount(value))
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundColor(color)
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.gray)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white.opacity(0.85))
+                        .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+                )
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 2)
+            if isExpanded {
+                CardRecordListViewModern(
+                    records: allRecords.filter { $0.categoryRelation?.name == key },
+                    formattedAmount: formattedAmount,
+                    formattedDate: formattedDate
+                )
+            }
+        }
+    }
+}
+
+struct CategorySectionView: View {
+    let monthlyCategoryTotals: [String: [String: Double]]
+    let color: Color
+    let sectionTitleSuffix: String
+    let formattedAmount: (Double) -> String
+    let isAscendingSort: Bool
+    let onToggleSort: () -> Void
+    let allCards: [Card]
+    let allRecords: [Record]
+    let formattedDate: (Date) -> String
+    let backgroundColor: Color
+    @Binding var expandedMonth: String?
+    var body: some View {
+        let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: isAscendingSort)
+        let cardNameMap: [UUID: String] = Dictionary(uniqueKeysWithValues: allCards.compactMap { card in
+            guard let id = card.id, let name = card.name else { return nil }
+            return (id, name)
+        })
+        let monthTuples: [(month: String, totals: [String: Double], monthSum: Double)] = sortedMonths.map { month in
+            let totals = monthlyCategoryTotals[month] ?? [:]
+            let monthSum = totals.values.reduce(0, +)
+            return (month, totals, monthSum)
+        }
+        if monthlyCategoryTotals.isEmpty {
+            VStack {
+                Spacer()
+                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                Spacer()
+            }
+            .background(backgroundColor)
+        } else {
+            ScrollView {
+                VStack(spacing: 28) {
+                    ForEach(monthTuples, id: \.month) { tuple in
+                        let month = tuple.month
+                        let totals = tuple.totals
+                        let monthSum = tuple.monthSum
+                        VStack(spacing: 0) {
+                            Button(action: { withAnimation { expandedMonth = expandedMonth == month ? nil : month } }) {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "calendar")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(Color.blue.opacity(0.7))
+                                    Text("\(month)월 합계")
+                                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                                        .foregroundColor(Color.primary)
+                                    Spacer()
+                                    Text(formattedAmount(monthSum))
+                                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                                        .foregroundColor(Color(red:0.3, green:0.45, blue:0.7))
+                                    Image(systemName: expandedMonth == month ? "chevron.up" : "chevron.down")
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(.vertical, 16)
+                                .padding(.horizontal, 24)
+                                .background(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [Color(red:0.93, green:0.98, blue:1.0), Color(red:0.9, green:1.0, blue:0.95)]),
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
+                                    )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                                .shadow(color: Color.blue.opacity(0.08), radius: 8, x: 0, y: 4)
+                            }
+                            if expandedMonth == month {
+                                VStack(spacing: 10) {
+                                    let monthKeys = Array(totals.keys)
+                                    ForEach(monthKeys.indices, id: \.self) { index in
+                                        let key = monthKeys[index]
+                                        let value = totals[key] ?? 0
+                                        StatRowViewModern(
+                                            key: key,
+                                            value: value,
+                                            color: Color(red:0.3, green:0.45, blue:0.7),
+                                            cardNameMap: cardNameMap,
+                                            formattedAmount: formattedAmount,
+                                            allRecords: allRecords,
+                                            formattedDate: formattedDate
+                                        )
+                                    }
+                                }
+                                .padding(.top, 8)
+                                .padding(.bottom, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 18)
+                                        .fill(Color.white.opacity(0.7))
+                                        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+                                )
+                                .padding(.horizontal, 8)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
+            }
+            .background(backgroundColor)
+        }
+    }
+}
 
 struct StatisticsTabView: View {
     @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
@@ -16,6 +188,7 @@ struct StatisticsTabView: View {
     let monthlyCategoryExpenseTotals: [String: [String: Double]]
     let monthlyCardExpenseTotals: [String: [String: Double]]
     let formattedAmount: (Double) -> String
+    let formattedDate: (Date) -> String
     let allCards: [Card]
     let selectedTypeFilter: String
     let selectedCategory: String
@@ -28,6 +201,9 @@ struct StatisticsTabView: View {
     @State private var showBarAnnotations: Bool = true
     @State private var selectedExpenseView: String = "all"
     @State private var selectedStatTab: String = NSLocalizedString("graph", comment: "그래프")
+    @State private var accordionState = AccordionState()
+    @State private var selectedBarMonth: String? = nil
+    let allRecords: [Record]
 
     var customBGColor: Color {
         colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
@@ -66,6 +242,12 @@ struct StatisticsTabView: View {
                 contentView
             }
             .background(customBGColor)
+            .onChange(of: selectedStatTab) { _, _ in
+                if let month = selectedBarMonth {
+                    accordionState.expandedMonth = month
+                    selectedBarMonth = nil
+                }
+            }
         }
     }
 
@@ -79,7 +261,6 @@ struct StatisticsTabView: View {
             }
             .pickerStyle(SegmentedPickerStyle())
             .padding()
-
             if selectedStatTab == NSLocalizedString("income", comment: "수입") {
                 CategorySectionView(
                     monthlyCategoryTotals: monthlyCategoryIncomeTotals,
@@ -88,87 +269,133 @@ struct StatisticsTabView: View {
                     formattedAmount: formattedAmount,
                     isAscendingSort: isAscendingSort,
                     onToggleSort: { isAscendingSort.toggle() },
-                    allCards: allCards
+                    allCards: allCards,
+                    allRecords: allRecords,
+                    formattedDate: formattedDate,
+                    backgroundColor: customBGColor,
+                    expandedMonth: $accordionState.expandedMonth
                 )
                 .background(customBGColor).ignoresSafeArea()
             } else if selectedStatTab == NSLocalizedString("expense", comment: "지출") {
                 ExpenseAccordionSectionView(
                     monthlyCategoryTotals: monthlyCategoryExpenseTotals,
                     monthlyCardExpenseTotals: monthlyCardExpenseTotals,
-                    formattedAmount: formattedAmount
+                    formattedAmount: formattedAmount,
+                    formattedDate: formattedDate,
+                    accordionState: $accordionState,
+                    allRecords: allRecords,
+                    selectedBarMonth: $selectedBarMonth
                 )
                 .background(customBGColor).ignoresSafeArea()
             } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
-                VStack {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프")).appSectionTitle()
+                graphSection
+            }
+        }
+    }
 
-                        Toggle(NSLocalizedString("show_bar_labels", comment: "막대 금액 표시"), isOn: $showBarAnnotations)
-                            .font(.system(size: 13, weight: .regular, design: .rounded))
-                            .toggleStyle(.switch)
-                            .padding(.horizontal)
-
-                        if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
-                            VStack {
-                                Spacer()
-                                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
-                                    .foregroundColor(.gray)
-                                    .multilineTextAlignment(.center)
-                                Spacer()
+    private var graphSection: some View {
+        VStack {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프")).appSectionTitle()
+                    .padding(.horizontal, 20)
+                Toggle(NSLocalizedString("show_bar_labels", comment: "막대 금액 표시"), isOn: $showBarAnnotations)
+                    .font(.system(size: 13, weight: .regular, design: .rounded))
+                    .toggleStyle(.switch)
+                    .padding(.horizontal, 20)
+                Group {
+                    if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
+                        VStack {
+                            Spacer()
+                            Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
+                                .foregroundColor(.gray)
+                                .multilineTextAlignment(.center)
+                            Spacer()
+                        }
+                        .background(customBGColor)
+                    } else {
+                        GeometryReader { geometry in
+                            let barCount = max(sortedMonths.count, 1)
+                            let rawCardWidth = geometry.size.width - 40
+                            let cardWidth = max(rawCardWidth, 0)
+                            let chartWidth: CGFloat = {
+                                switch barCount {
+                                case 1:
+                                    return max(cardWidth * 0.6, 0)
+                                case 2:
+                                    return max(cardWidth * 0.8, 0)
+                                case 3:
+                                    return max(cardWidth * 0.9, 0)
+                                default:
+                                    return max(min(CGFloat(barCount) * 90, cardWidth), 0)
+                                }
+                            }()
+                            let chartData: [(month: String, displayMonth: String, income: Double, expense: Double)] = sortedMonths.map { month in
+                                let income = monthlyIncomeTotals[month] ?? 0
+                                let expense = monthlyExpenseTotals[month] ?? 0
+                                let displayMonth = month.replacingOccurrences(of: "-", with: ".")
+                                return (month, displayMonth, income, expense)
                             }
-                            .frame(maxHeight: .infinity)
-                            .background(customBGColor)
-                        } else {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                        .fill(colorScheme == .light ? Color.white.opacity(0.85) : Color(red:0.18, green:0.2, blue:0.28, opacity:0.95))
-                                        .shadow(color: colorScheme == .light ? Color.black.opacity(0.06) : Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
-                                        .frame(height: 320)
-                                    Chart {
-                                        ForEach(sortedMonths, id: \.self) { month in
-                                            let income = monthlyIncomeTotals[month] ?? 0
-                                            let expense = monthlyExpenseTotals[month] ?? 0
-
-                                            BarMark(
-                                                x: .value("Month", month),
-                                                y: .value(NSLocalizedString("amount", comment: "금액"), income)
-                                            )
-                                            .cornerRadius(8)
-                                            .foregroundStyle(
-                                                LinearGradient(
-                                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red:0.7, green:0.85, blue:1.0), Color(red:0.9, green:1.0, blue:0.95)] : [Color(red:0.3, green:0.45, blue:0.7), Color(red:0.5, green:0.6, blue:0.8)]),
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: colorScheme == .light
+                                                ? [Color(red:0.92, green:1.0, blue:0.97, opacity:0.85), Color(red:0.95, green:0.95, blue:1.0, opacity:0.82), Color(red:1.0, green:0.95, blue:0.98, opacity:0.80)]
+                                                        : [Color(red:0.18, green:0.2, blue:0.28, opacity:0.96), Color(red:0.22, green:0.24, blue:0.32, opacity:0.94)]
+                                            ),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .shadow(color: Color.black.opacity(0.06), radius: 24, x: 0, y: 12)
+                                    .frame(width: safeWidth(cardWidth), height: 350)
+                                    .padding(.horizontal, 20)
+                                HStack {
+                                    Spacer(minLength: 0)
+                                    ZStack {
+                                        Chart {
+                                            ForEach(chartData, id: \.month) { data in
+                                                BarMark(
+                                                    x: .value("Month", data.displayMonth),
+                                                    y: .value(NSLocalizedString("amount", comment: "금액"), data.income)
                                                 )
-                                            )
-                                            .annotation(position: .top) {
-                                                if showBarAnnotations {
-                                                    Text(formattedCompactNumber(income))
-                                                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                                                        .foregroundColor(Color(red:0.3, green:0.45, blue:0.7))
-                                                        .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
+                                                .cornerRadius(12)
+                                                .foregroundStyle(
+                                                    LinearGradient(
+                                                        gradient: Gradient(colors: [Color(red:0.7, green:0.85, blue:1.0), Color(red:0.9, green:1.0, blue:0.95)]),
+                                                        startPoint: .top,
+                                                        endPoint: .bottom
+                                                    )
+                                                )
+                                                .annotation(position: .overlay, alignment: .top) {
+                                                    if showBarAnnotations {
+                                                        Text(formattedCompactNumber(data.income))
+                                                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                                                            .foregroundColor(Color(red:0.3, green:0.45, blue:0.7))
+                                                            .padding(.top, -10)
+                                                            .shadow(color: .white.opacity(0.8), radius: 2, x: 0, y: 1)
+                                                    }
                                                 }
-                                            }
-
-                                            BarMark(
-                                                x: .value("Month", month),
-                                                y: .value(NSLocalizedString("amount", comment: "금액"), expense)
-                                            )
-                                            .cornerRadius(8)
-                                            .foregroundStyle(
-                                                LinearGradient(
-                                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red:1.0, green:0.8, blue:0.85), Color(red:0.95, green:0.7, blue:0.8)] : [Color(red:0.5, green:0.3, blue:0.4), Color(red:0.7, green:0.4, blue:0.5)]),
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
+                                                BarMark(
+                                                    x: .value("Month", data.displayMonth),
+                                                    y: .value(NSLocalizedString("amount", comment: "금액"), data.expense)
                                                 )
-                                            )
-                                            .annotation(position: .top) {
-                                                if showBarAnnotations {
-                                                    Text(formattedCompactNumber(expense))
-                                                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                                                        .foregroundColor(Color(red:0.7, green:0.4, blue:0.5))
-                                                        .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
+                                                .cornerRadius(12)
+                                                .foregroundStyle(
+                                                    LinearGradient(
+                                                        gradient: Gradient(colors: [Color(red:1.0, green:0.8, blue:0.85), Color(red:0.95, green:0.7, blue:0.8)]),
+                                                        startPoint: .top,
+                                                        endPoint: .bottom
+                                                    )
+                                                )
+                                                .annotation(position: .overlay, alignment: .top) {
+                                                    if showBarAnnotations {
+                                                        Text(formattedCompactNumber(data.expense))
+                                                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                                                            .foregroundColor(Color(red:0.7, green:0.4, blue:0.5))
+                                                            .padding(.top, -10)
+                                                            .shadow(color: .white.opacity(0.8), radius: 2, x: 0, y: 1)
+                                                    }
                                                 }
                                             }
                                         }
@@ -179,197 +406,75 @@ struct StatisticsTabView: View {
                                             AxisTick()
                                             AxisValueLabel {
                                                 if let doubleValue = value.as(Double.self) {
-                                                    Text(formattedCompactNumber(doubleValue)).appBody()
+                                                    Text(formattedCompactNumber(doubleValue))
+                                                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                        .foregroundColor(.gray)
                                                 }
                                             }
                                         }
                                     }
-                                    .frame(width: CGFloat(sortedMonths.count) * 80, height: 280)
-                                    .padding(.horizontal, 24)
-                                    .padding(.top, 24)
-                                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: monthlyIncomeTotals)
+                                    .padding(.horizontal, 12)
+                                    .padding(.top, 36)
+                                    .padding(.bottom, 12)
+                                    .animation(.spring(response: 0.7, dampingFraction: 0.85), value: monthlyIncomeTotals)
+                                    .chartOverlay { proxy in
+                                        GeometryReader { geo in
+                                            if proxy.plotFrame != nil {
+                                                Rectangle().fill(Color.clear).contentShape(Rectangle())
+                                                    .gesture(
+                                                        DragGesture(minimumDistance: 0)
+                                                            .onEnded { value in
+                                                                let location = value.location
+                                                                if let (month, isIncome) = findBarAt(location: location, proxy: proxy, geo: geo, chartData: chartData) {
+                                                                    selectedBarMonth = month
+                                                                    selectedStatTab = isIncome ? NSLocalizedString("income", comment: "수입") : NSLocalizedString("expense", comment: "지출")
+                                                                }
+                                                            }
+                                                    )
+                                            }
+                                        }
+                                    }
                                 }
+                                .frame(width: safeWidth(chartWidth), height: 310)
+                                Spacer(minLength: 0)
                             }
-                            HStack(spacing: 16) {
-                                HStack(spacing: 4) {
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: colorScheme == .light ? [Color(red:0.7, green:0.85, blue:1.0), Color(red:0.9, green:1.0, blue:0.95)] : [Color(red:0.3, green:0.45, blue:0.7), Color(red:0.5, green:0.6, blue:0.8)]),
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                        .frame(width: 10, height: 10)
-                                    Text(NSLocalizedString("income", comment: ""))
-                                        .font(.system(size: 13, weight: .regular, design: .rounded))
-                                }
-                                HStack(spacing: 4) {
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: colorScheme == .light ? [Color(red:1.0, green:0.8, blue:0.85), Color(red:0.95, green:0.7, blue:0.8)] : [Color(red:0.5, green:0.3, blue:0.4), Color(red:0.7, green:0.4, blue:0.5)]),
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                        .frame(width: 10, height: 10)
-                                    Text(NSLocalizedString("expense", comment: ""))
-                                        .font(.system(size: 13, weight: .regular, design: .rounded))
-                                }
-                            }
-                            .padding(.horizontal)
-                            .padding(.bottom, 8)
                         }
                     }
-                    Spacer()
                 }
-            }
-        }
-    }
-
-    func getSortedMonths(
-        from monthlyCategoryTotals: [String: [String: Double]],
-        ascending: Bool
-    ) -> [String] {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM"
-        return monthlyCategoryTotals.keys.sorted {
-            guard let d1 = dateFormatter.date(from: $0),
-                  let d2 = dateFormatter.date(from: $1) else { return false }
-            return ascending ? d1 < d2 : d1 > d2
-        }
-    }
-
-    @ViewBuilder
-    func CategorySectionView(
-        monthlyCategoryTotals: [String: [String: Double]],
-        color: Color,
-        sectionTitleSuffix: String,
-        formattedAmount: @escaping (Double) -> String,
-        isAscendingSort: Bool,
-        onToggleSort: @escaping () -> Void,
-        allCards: [Card]
-    ) -> some View {
-        let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: isAscendingSort)
-        let cardNameMap: [UUID: String] = Dictionary(uniqueKeysWithValues: allCards.compactMap { card in
-            guard let id = card.id, let name = card.name else { return nil }
-            return (id, name)
-        })
-
-        if monthlyCategoryTotals.isEmpty {
-            VStack {
-                Spacer()
-                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                Spacer()
-            }
-            .frame(maxHeight: .infinity)
-            .background(customBGColor)
-        } else {
-            ScrollView {
-                VStack(spacing: 24) {
-                    ForEach(sortedMonths, id: \.self) { month in
-                        StatMonthSectionView(
-                            month: month,
-                            totals: monthlyCategoryTotals[month] ?? [:],
-                            color: color,
-                            cardNameMap: cardNameMap,
-                            formattedAmount: formattedAmount,
-                            sectionTitleSuffix: sectionTitleSuffix,
-                            isAscendingSort: isAscendingSort,
-                            onToggleSort: onToggleSort
-                        )
+                .frame(height: 370)
+                HStack(spacing: 18) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red:0.7, green:0.85, blue:1.0), Color(red:0.9, green:1.0, blue:0.95)] : [Color(red:0.3, green:0.45, blue:0.7), Color(red:0.5, green:0.6, blue:0.8)]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 12, height: 12)
+                        Text(NSLocalizedString("income", comment: ""))
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                    }
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red:1.0, green:0.8, blue:0.85), Color(red:0.95, green:0.7, blue:0.8)] : [Color(red:0.5, green:0.3, blue:0.4), Color(red:0.7, green:0.4, blue:0.5)]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 12, height: 12)
+                        Text(NSLocalizedString("expense", comment: ""))
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .padding(.bottom, 16)
+                .padding(.bottom, 12)
             }
-            .background(customBGColor)
-        }
-    }
-
-    struct StatMonthSectionView: View {
-        let month: String
-        let totals: [String: Double]
-        let color: Color
-        let cardNameMap: [UUID: String]
-        let formattedAmount: (Double) -> String
-        let sectionTitleSuffix: String
-        let isAscendingSort: Bool
-        let onToggleSort: () -> Void
-        @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
-        @Environment(\.colorScheme) var colorScheme
-        var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
-        var body: some View {
-            let keys = Array(totals.keys)
-            let values = keys.map { totals[$0] ?? 0 }
-            VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Text("\(month) \(NSLocalizedString("month_unit", comment: "월")) \(sectionTitleSuffix)").appSectionTitle()
-                    Spacer()
-                    Image(systemName: isAscendingSort ? "arrow.up" : "arrow.down")
-                        .font(.system(size: 13))
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onToggleSort()
-                }
-                Text(String(format: NSLocalizedString("total_sum", comment: "총 합계"), formattedAmount(values.reduce(0, +)))).appBody()
-                VStack(spacing: 0) {
-                    ForEach(keys.indices, id: \.self) { index in
-                        if index != 0 {
-                            Divider()
-                                .padding(.vertical, 2)
-                        }
-                        let key = keys[index]
-                        StatRowView(
-                            key: key,
-                            value: values[index],
-                            color: color,
-                            cardNameMap: cardNameMap,
-                            formattedAmount: formattedAmount
-                        )
-                    }
-                }
-                .background(
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(colorScheme == .light ? customLightCardColor : Color("SectionBGColor"))
-                )
-                .padding(.horizontal, 4)
-                .padding(.top, 4)
-                .padding(.bottom, 8)
-            }
-            .padding(.vertical, 8)
-        }
-    }
-
-    struct StatRowView: View {
-        let key: String
-        let value: Double
-        let color: Color
-        let cardNameMap: [UUID: String]
-        let formattedAmount: (Double) -> String
-        @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
-        @Environment(\.colorScheme) var colorScheme
-        var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
-        var body: some View {
-            HStack {
-                Text(cardNameMap.first(where: { $0.value == key })?.value ?? key).appBody()
-                Spacer()
-                Text(formattedAmount(value)).appBody()
-                    .foregroundColor(color)
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(colorScheme == .light ? customLightCardColor : Color("SectionBGColor"))
-            )
-            .padding(.vertical, 6)
-            .padding(.horizontal, 2)
+            Spacer()
         }
     }
 
@@ -401,63 +506,304 @@ struct StatisticsTabView: View {
     private func ExpenseAccordionSectionView(
         monthlyCategoryTotals: [String: [String: Double]],
         monthlyCardExpenseTotals: [String: [String: Double]],
-        formattedAmount: @escaping (Double) -> String
+        formattedAmount: @escaping (Double) -> String,
+        formattedDate: @escaping (Date) -> String,
+        accordionState: Binding<AccordionState>,
+        allRecords: [Record],
+        selectedBarMonth: Binding<String?>
     ) -> some View {
-        @State var expandedKey: String? = nil
-        let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: false)
         ScrollView {
-            VStack(spacing: 24) {
-                ForEach(sortedMonths, id: \.self) { month in
-                    let totals = monthlyCategoryTotals[month] ?? [:]
-                    let sum = totals.values.reduce(0, +)
+            let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: false)
+            let monthTuples: [(month: String, allTotals: [String: Double], cardTotals: [String: Double], cashTotals: [String: Double], cashSum: Double, cardSum: Double, monthSum: Double)] = sortedMonths.map { month in
+                let allTotals = monthlyCategoryTotals[month] ?? [:]
+                let cardTotals = monthlyCardExpenseTotals[month] ?? [:]
+                let cashTotals = allTotals.filter { key in !(cardTotals.keys.contains(key.key)) }
+                let cashSum = cashTotals.values.reduce(0, +)
+                let cardSum = cardTotals.values.reduce(0, +)
+                let monthSum = allTotals.values.reduce(0, +)
+                return (month, allTotals, cardTotals, cashTotals, cashSum, cardSum, monthSum)
+            }
+            VStack(spacing: 28) {
+                ForEach(monthTuples, id: \.month) { tuple in
+                    let month = tuple.month
+                    let cardTotals = tuple.cardTotals
+                    let cashTotals = tuple.cashTotals
+                    let cashSum = tuple.cashSum
+                    let cardSum = tuple.cardSum
+                    let monthSum = tuple.monthSum
                     VStack(spacing: 0) {
-                        Button(action: {
-                            withAnimation { expandedKey = expandedKey == month ? nil : month }
-                        }) {
-                            HStack {
-                                Text("0{month}월 합계")
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        Button(action: { withAnimation { accordionState.wrappedValue.expandedMonth = accordionState.wrappedValue.expandedMonth == month ? nil : month } }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(Color.blue.opacity(0.7))
+                                Text("\(month)월 합계")
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(Color.primary)
                                 Spacer()
-                                Text(formattedAmount(sum))
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                Text(formattedAmount(monthSum))
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
                                     .foregroundColor(Color("ExpenseColor"))
-                                Image(systemName: expandedKey == month ? "chevron.up" : "chevron.down")
+                                Image(systemName: accordionState.wrappedValue.expandedMonth == month ? "chevron.up" : "chevron.down")
                                     .foregroundColor(.gray)
                             }
-                            .padding()
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 24)
                             .background(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(Color.white.opacity(0.85))
-                                    .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color(red:0.95, green:0.98, blue:1.0), Color(red:1.0, green:0.95, blue:0.98)]),
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                )
                             )
+                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                            .shadow(color: Color.blue.opacity(0.08), radius: 8, x: 0, y: 4)
                         }
-                        if expandedKey == month {
-                            VStack(alignment: .leading, spacing: 8) {
-                                ForEach(Array(totals.keys), id: \.self) { key in
-                                    HStack {
-                                        Text(key)
-                                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                                            .foregroundColor(.secondary)
+                        if accordionState.wrappedValue.expandedMonth == month {
+                            VStack(spacing: 18) {
+                                Button(action: { withAnimation { accordionState.wrappedValue.expandedCash = accordionState.wrappedValue.expandedCash == month ? nil : month } }) {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "banknote")
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(Color.green.opacity(0.7))
+                                        Text("현금 합계")
+                                            .font(.system(size: 16, weight: .semibold, design: .rounded))
                                         Spacer()
-                                        Text(formattedAmount(totals[key] ?? 0))
-                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                        Text(formattedAmount(cashSum))
+                                            .font(.system(size: 16, weight: .bold, design: .rounded))
                                             .foregroundColor(Color("ExpenseColor"))
+                                        Image(systemName: accordionState.wrappedValue.expandedCash == month ? "chevron.up" : "chevron.down")
+                                            .foregroundColor(.gray)
                                     }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 6)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 20)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .fill(Color.green.opacity(0.08))
+                                    )
+                                }
+                                if accordionState.wrappedValue.expandedCash == month {
+                                    VStack(alignment: .leading, spacing: 10) {
+                                        let cashKeys = Array(cashTotals.keys)
+                                        ForEach(cashKeys, id: \.self) { key in
+                                            HStack {
+                                                Text(key)
+                                                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                                                    .foregroundColor(.secondary)
+                                                Spacer()
+                                                Text(formattedAmount(cashTotals[key] ?? 0))
+                                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                                    .foregroundColor(Color("ExpenseColor"))
+                                            }
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 18)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(Color.white.opacity(0.7))
+                                            )
+                                        }
+                                    }
+                                    .background(Color.green.opacity(0.05))
+                                    .cornerRadius(12)
+                                    .padding(.horizontal, 8)
+                                    .padding(.bottom, 8)
+                                }
+                                Button(action: { withAnimation { accordionState.wrappedValue.expandedCard = accordionState.wrappedValue.expandedCard == month ? nil : month } }) {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "creditcard")
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(Color.purple.opacity(0.7))
+                                        Text("카드 합계")
+                                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                        Spacer()
+                                        Text(formattedAmount(cardSum))
+                                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                                            .foregroundColor(Color("ExpenseColor"))
+                                        Image(systemName: accordionState.wrappedValue.expandedCard == month ? "chevron.up" : "chevron.down")
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 20)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 14)
+                                            .fill(Color.purple.opacity(0.08))
+                                    )
+                                }
+                                if accordionState.wrappedValue.expandedCard == month {
+                                    VStack(spacing: 10) {
+                                        let cardKeys = Array(cardTotals.keys)
+                                        ForEach(cardKeys, id: \.self) { cardName in
+                                            CardAccordionView(
+                                                month: month,
+                                                cardName: cardName,
+                                                cardTotal: cardTotals[cardName] ?? 0,
+                                                expanded: accordionState.wrappedValue.expandedCardType[month] == cardName,
+                                                onToggle: { withAnimation { accordionState.wrappedValue.expandedCardType[month] = accordionState.wrappedValue.expandedCardType[month] == cardName ? nil : cardName } },
+                                                cardRecords: cardRecordsFor(month: month, cardName: cardName, allRecords: allRecords),
+                                                formattedAmount: formattedAmount,
+                                                formattedDate: formattedDate,
+                                                accordionState: accordionState
+                                            )
+                                        }
+                                    }
+                                    .padding(.bottom, 8)
                                 }
                             }
-                            .background(Color.white.opacity(0.7))
-                            .cornerRadius(10)
-                            .padding(.horizontal, 8)
+                            .padding(.top, 8)
                             .padding(.bottom, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 18)
+                                    .fill(Color.white.opacity(0.7))
+                                    .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+                            )
+                            .padding(.horizontal, 8)
                         }
                     }
                 }
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 16)
+            .padding(.bottom, 24)
+        }
+    }
+
+    private func cardRecordsFor(month: String, cardName: String, allRecords: [Record]) -> [Record] {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        let filteredByMonth = allRecords.filter { record in
+            guard let recordDate = record.date else { return false }
+            let recordMonth = dateFormatter.string(from: recordDate)
+            return recordMonth == month
+        }
+        return filteredByMonth.filter { record in
+            (record.card?.name ?? "") == cardName
+        }
+    }
+
+    private func safeWidth(_ value: CGFloat) -> CGFloat {
+        if value.isNaN || value.isInfinite || value < 0 {
+            return 0
+        }
+        return value
+    }
+
+    private func findBarAt(location: CGPoint, proxy: ChartProxy, geo: GeometryProxy, chartData: [(month: String, displayMonth: String, income: Double, expense: Double)]) -> (String, Bool)? {
+        guard let plotFrame = proxy.plotFrame else { return nil }
+        let origin = geo[plotFrame].origin
+        let size = geo[plotFrame].size
+        let x = location.x - origin.x
+        let barWidth = size.width / CGFloat(max(chartData.count, 1))
+        let index = Int((x / max(barWidth, 1)).rounded(.down))
+        guard index >= 0 && index < chartData.count else { return nil }
+        let y = location.y - origin.y
+        let isIncome = y < size.height / 2
+        return (chartData[index].month, isIncome)
+    }
+}
+
+struct CardRecordListViewModern: View {
+    let records: [Record]
+    let formattedAmount: (Double) -> String
+    let formattedDate: (Date) -> String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(records) { record in
+                HStack(alignment: .center, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 13))
+                                .foregroundColor(.blue.opacity(0.7))
+                            Text(formattedDate(record.date ?? Date()))
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundColor(.secondary)
+                        }
+                        HStack(spacing: 6) {
+                            Image(systemName: "tag")
+                                .font(.system(size: 13))
+                                .foregroundColor(.pink.opacity(0.7))
+                            Text(record.categoryRelation?.name ?? "-")
+                                .font(.system(size: 13, weight: .regular, design: .rounded))
+                                .foregroundColor(Color("HighlightColor"))
+                        }
+                        if let detail = record.detail, !detail.isEmpty {
+                            HStack(spacing: 6) {
+                                Image(systemName: "text.bubble")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.gray.opacity(0.7))
+                                Text(detail)
+                                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(formattedAmount(record.amount))
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundColor(Color("ExpenseColor"))
+                        if let payment = record.paymentType {
+                            HStack(spacing: 4) {
+                                Image(systemName: payment == "카드" ? "creditcard" : "banknote")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(payment == "카드" ? .purple.opacity(0.7) : .green.opacity(0.7))
+                                Text(payment)
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundColor(payment == "카드" ? .purple : .green)
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 18)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white.opacity(0.85))
+                        .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+                )
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.bottom, 6)
+    }
+}
+
+struct CardAccordionView: View {
+    let month: String
+    let cardName: String
+    let cardTotal: Double
+    let expanded: Bool
+    let onToggle: () -> Void
+    let cardRecords: [Record]
+    let formattedAmount: (Double) -> String
+    let formattedDate: (Date) -> String
+    let accordionState: Binding<AccordionState>
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: onToggle) {
+                HStack {
+                    Image(systemName: "creditcard.fill")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(Color.purple.opacity(0.7))
+                    Text(cardName)
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                    Spacer()
+                    Text(formattedAmount(cardTotal))
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundColor(Color("ExpenseColor"))
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.gray)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 28)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.purple.opacity(0.07))
+                )
+            }
+            if expanded {
+                CardRecordListViewModern(records: cardRecords, formattedAmount: formattedAmount, formattedDate: formattedDate)
+            }
         }
     }
 }

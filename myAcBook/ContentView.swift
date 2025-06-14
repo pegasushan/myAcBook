@@ -71,10 +71,10 @@ var customSectionColor: Color {
     colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
 }
 
-var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String) -> Void)? = nil
+var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [Record]) -> Void)? = nil
 
 init(
-    onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String) -> Void)? = nil
+    onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [Record]) -> Void)? = nil
 ) {
     let start = UserDefaults.standard.double(forKey: "customStartDate")
     let end = UserDefaults.standard.double(forKey: "customEndDate")
@@ -519,7 +519,8 @@ private func notifyStatisticsDataChanged() {
         selectedTypeFilter,
         currentCategory,
         selectedDateFilter,
-        dateRangeText()
+        dateRangeText(),
+        Array(records)
     )
 }
 
