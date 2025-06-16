@@ -12,13 +12,12 @@ struct MainView: View {
     @State private var selectedCategory: String = "all"
     @State private var selectedDateFilter: String = "all"
     @State private var dateRangeText: String = ""
-    @State private var allRecords: [Record] = []
 
     var body: some View {
         VStack(spacing: 0) {
             TabView {
                 ContentView(
-                    onStatisticsDataChanged: { income, expense, catIncome, catExpense, cardExpense, typeFilter, category, dateFilter, dateRange, records in
+                    onStatisticsDataChanged: { income, expense, catIncome, catExpense, cardExpense, typeFilter, category, dateFilter, dateRange in
                         self.monthlyIncomeTotals = income
                         self.monthlyExpenseTotals = expense
                         self.monthlyCategoryIncomeTotals = catIncome
@@ -28,7 +27,6 @@ struct MainView: View {
                         self.selectedCategory = category
                         self.selectedDateFilter = dateFilter
                         self.dateRangeText = dateRange
-                        self.allRecords = records
                     }
                 )
                 .tabItem {
@@ -48,19 +46,13 @@ struct MainView: View {
                         numberFormatter.groupingSeparator = ","
                         return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
                     },
-                    formattedDate: { date in
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "yyyy/M/d"
-                        return formatter.string(from: date)
-                    },
                     allCards: cardViewModel.cards,
                     selectedTypeFilter: selectedTypeFilter,
                     selectedCategory: selectedCategory,
                     selectedDateFilter: selectedDateFilter,
                     dateRangeText: dateRangeText,
                     onTap: {},
-                    onReset: {},
-                    allRecords: allRecords
+                    onReset: {}
                 )
                 .tabItem {
                     Label(NSLocalizedString("statistics_tab", comment: "통계 탭"), systemImage: "chart.pie")

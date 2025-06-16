@@ -214,4 +214,4 @@ struct SettingsView: View {
             isHapticsEnabled = hapticsValue
         }
     }
-}
+} 
