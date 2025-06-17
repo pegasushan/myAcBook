@@ -16,6 +16,8 @@ struct SearchFilterView: View {
     @Binding var selectedExpenseCategory: String
     @Binding var selectedAllCategory: String
 
+    @Binding var selectedPaymentType: String
+
     var onReset: () -> Void
 
     @State private var fetchedCategories: [AppCategory] = []
@@ -55,6 +57,7 @@ struct SearchFilterView: View {
         selectedIncomeCategory: Binding<String>,
         selectedExpenseCategory: Binding<String>,
         selectedAllCategory: Binding<String>,
+        selectedPaymentType: Binding<String>,
         onReset: @escaping () -> Void
     ) {
         self._selectedType = selectedType
@@ -65,6 +68,7 @@ struct SearchFilterView: View {
         self._selectedIncomeCategory = selectedIncomeCategory
         self._selectedExpenseCategory = selectedExpenseCategory
         self._selectedAllCategory = selectedAllCategory
+        self._selectedPaymentType = selectedPaymentType
         self.onReset = onReset
     }
 
@@ -120,6 +124,30 @@ struct SearchFilterView: View {
                         .pickerStyle(SegmentedPickerStyle())
                         .accentColor(Color("HighlightColor"))
                     }
+
+                    // === 지출구분 필터를 유형 바로 아래로 이동 ===
+                    if selectedType == NSLocalizedString("expense", comment: "지출") {
+                        FilterCard(
+                            isActive: selectedPaymentType != NSLocalizedString("all", comment: "전체"),
+                            highlightColor: highlightColor
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "creditcard")
+                                    .foregroundColor(selectedPaymentType != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
+                                Text(NSLocalizedString("payment_type_label", comment: "지출 구분")).appBody()
+                                    .foregroundColor(selectedPaymentType != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
+                                Spacer()
+                            }
+                            Picker("", selection: $selectedPaymentType) {
+                                Text(NSLocalizedString("all", comment: "전체")).tag(NSLocalizedString("all", comment: "전체"))
+                                Text(NSLocalizedString("cash", comment: "현금")).tag(NSLocalizedString("cash", comment: "현금"))
+                                Text(NSLocalizedString("card", comment: "카드")).tag(NSLocalizedString("card", comment: "카드"))
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .accentColor(Color("HighlightColor"))
+                        }
+                    }
+
                     // 카테고리 필터
                     FilterCard(
                         isActive: currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체"),
@@ -218,6 +246,9 @@ struct SearchFilterView: View {
                 }
                 if selectedAllCategory.isEmpty {
                     selectedAllCategory = NSLocalizedString("all", comment: "전체")
+                }
+                if selectedPaymentType.isEmpty {
+                    selectedPaymentType = NSLocalizedString("all", comment: "전체")
                 }
                 loadCategories(for: selectedType)
                 // 카테고리 인덱스

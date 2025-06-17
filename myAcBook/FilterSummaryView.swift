@@ -14,6 +14,7 @@ struct FilterSummaryView: View {
     var dateRangeText: String
     var onTap: () -> Void
     var onReset: () -> Void
+    var selectedPaymentType: String
 
     @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
@@ -36,18 +37,12 @@ struct FilterSummaryView: View {
                               (selectedDateFilter == NSLocalizedString("all", comment: "") || selectedDateFilter.isEmpty))
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 16) {
-                Button(action: {
-                    onTap()
-                }) {
-                    HStack {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                        Text(NSLocalizedString("filter_setting", comment: "필터 설정")).appBody()
-                    }
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(Color("HighlightColor"))
+                HStack {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                    Text(NSLocalizedString("filter_setting", comment: "필터 설정")).appBody()
                 }
-                .contentShape(Rectangle())
-
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundColor(Color("HighlightColor"))
                 Spacer()
             }
             LazyVGrid(columns: [
@@ -58,6 +53,14 @@ struct FilterSummaryView: View {
                     Text(NSLocalizedString("type", comment: "유형") + ":" ).appCaption()
                     Text(selectedTypeFilter.isEmpty || selectedTypeFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : NSLocalizedString(selectedTypeFilter, comment: ""))
                         .foregroundColor((!selectedTypeFilter.isEmpty && selectedTypeFilter != NSLocalizedString("all", comment: "")) ? highlightColor : .primary)
+                }
+                // 지출구분(결제수단) 필터 요약 표시
+                if selectedTypeFilter == NSLocalizedString("expense", comment: "지출") {
+                    HStack(spacing: 4) {
+                        Text(NSLocalizedString("payment_type_label", comment: "지출 구분") + ":").appCaption()
+                        Text((selectedPaymentType.isEmpty || selectedPaymentType == NSLocalizedString("all", comment: "전체")) ? NSLocalizedString("all", comment: "전체") : NSLocalizedString(selectedPaymentType, comment: ""))
+                            .foregroundColor((!selectedPaymentType.isEmpty && selectedPaymentType != NSLocalizedString("all", comment: "전체")) ? highlightColor : .primary)
+                    }
                 }
                 HStack(spacing: 4) {
                     Text(NSLocalizedString("category", comment: "카테고리") + ":" ).appCaption()
@@ -83,6 +86,7 @@ struct FilterSummaryView: View {
         .padding(.vertical, 8)
         .contentShape(Rectangle())
         .onTapGesture {
+            print("FilterSummaryView tapped!")
             onTap()
         }
     }
