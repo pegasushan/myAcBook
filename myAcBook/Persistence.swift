@@ -1,7 +1,7 @@
 import CoreData
 
 /// 옵션: 앱 실행 시 모든 기존 데이터를 삭제할지 여부
-let shouldClearAllData = true
+let shouldClearAllData = false
 
 /// 옵션: 샘플 데이터를 삽입할지 여부
 let shouldGenerateSampleData = false
@@ -155,7 +155,7 @@ struct PersistenceController {
                 }
             }
 
-            for i in 0..<100 {
+            for i in 0..<2 {
                 let newRecord = Record(context: viewContext)
                 newRecord.id = UUID()
                 let isIncome = i % 3 == 0
@@ -202,88 +202,54 @@ struct PersistenceController {
             }
         }
 
-        // 앱 최초 실행 시 기본 카테고리 자동 입력
-        let defaultCategories: [(String, String)] = [
-            ("급여", "income"),
-            ("부수입", "income"),
-            ("식대", "expense"),
-            ("음료", "expense"),
-            ("쇼핑", "expense")
-        ]
-        let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
-        let existingCategories = (try? container.viewContext.fetch(categoryFetch)) ?? []
-        for (name, type) in defaultCategories {
-            let exists = existingCategories.contains { ($0.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines) == name && ($0.type ?? "") == type }
-            if !exists {
-                let category = AppCategory(context: container.viewContext)
-                category.id = UUID()
-                category.name = name
-                category.type = type
-            }
-        }
-        do {
-            try container.viewContext.save()
-        } catch {
-            print("❌ 기본 카테고리 저장 실패: \(error)")
-        }
-
-        // 앱 실행 시 테스트 데이터 자동 추가 (더 자연스럽게 개선)
-        let cards = (try? container.viewContext.fetch(Card.fetchRequest())) ?? []
-        let categories = (try? container.viewContext.fetch(AppCategory.fetchRequest())) ?? []
-        let now = Date()
-        let calendar = Calendar.current
-        let expenseDetails = ["점심 식사", "저녁 회식", "카페", "편의점 커피", "온라인 쇼핑", "마트 장보기", "택시", "영화관", "의류 구매"]
-        let incomeDetails = ["월급", "용돈", "프리랜서 수입", "보너스"]
-        for dayOffset in 0..<15 {
-            let date = calendar.date(byAdding: .day, value: -dayOffset, to: now) ?? now
-            // 지출: 하루 1~3건
-            let expenseCount = Int.random(in: 1...3)
-            let expenseCategories = categories.filter { $0.type == "expense" }
-            for _ in 0..<expenseCount {
-                let newRecord = Record(context: container.viewContext)
-                newRecord.id = UUID()
-                newRecord.type = NSLocalizedString("expense", comment: "지출")
-                newRecord.amount = Double(Int.random(in: 3000...80000))
-                newRecord.date = date
-                newRecord.detail = expenseDetails.randomElement() ?? "지출"
-                if let category = expenseCategories.first(where: { ($0.name ?? "").isEmpty == false }) ?? expenseCategories.randomElement() {
-                    newRecord.categoryRelation = category
-                } else {
-                    print("❗️카테고리 없는 지출 테스트 데이터 생성을 건너뜀")
-                    container.viewContext.delete(newRecord)
-                    continue
-                }
-                if let card = cards.randomElement(), Bool.random() {
-                    newRecord.card = card
-                    newRecord.paymentType = NSLocalizedString("card", comment: "카드")
-                } else {
-                    newRecord.paymentType = NSLocalizedString("cash", comment: "현금")
+        // 앱 최초 실행 시 기본 카테고리 자동 입력 (최초 1회만)
+        let defaults = UserDefaults.standard
+        if !defaults.bool(forKey: "didInsertDefaultCategories") {
+            let defaultCategories: [(String, String)] = [
+                ("급여", "income"),
+                ("부수입", "income"),
+                ("식대", "expense"),
+                ("음료", "expense"),
+                ("쇼핑", "expense")
+            ]
+            let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+            let existingCategories = (try? container.viewContext.fetch(categoryFetch)) ?? []
+            for (name, type) in defaultCategories {
+                let exists = existingCategories.contains { ($0.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines) == name && ($0.type ?? "") == type }
+                if !exists {
+                    let category = AppCategory(context: container.viewContext)
+                    category.id = UUID()
+                    category.name = name
+                    category.type = type
                 }
             }
-            // 수입: 5일에 한 번만 생성
-            if dayOffset % 5 == 0 {
-                let newRecord = Record(context: container.viewContext)
-                newRecord.id = UUID()
-                newRecord.type = NSLocalizedString("income", comment: "수입")
-                newRecord.amount = Double(Int.random(in: 50000...3000000))
-                newRecord.date = date
-                newRecord.detail = incomeDetails.randomElement() ?? "수입"
-                let incomeCategories = categories.filter { $0.type == "income" }
-                if let category = incomeCategories.first(where: { ($0.name ?? "").isEmpty == false }) ?? incomeCategories.randomElement() {
-                    newRecord.categoryRelation = category
-                } else {
-                    print("❗️카테고리 없는 수입 테스트 데이터 생성을 건너뜀")
-                    container.viewContext.delete(newRecord)
-                    continue
-                }
-                newRecord.paymentType = NSLocalizedString("cash", comment: "현금")
+            do {
+                try container.viewContext.save()
+                defaults.set(true, forKey: "didInsertDefaultCategories")
+            } catch {
+                print("❌ 기본 카테고리 저장 실패: \(error)")
             }
         }
-        do {
-            try container.viewContext.save()
-            print("✅ 자연스러운 테스트 데이터 자동 추가 완료")
-        } catch {
-            print("❌ 테스트 데이터 저장 실패: \(error)")
+        // 앱 최초 실행 시 기본 카드 자동 입력 (최초 1회만)
+        if !defaults.bool(forKey: "didInsertDefaultCards") {
+            let defaultCards: [String] = ["신한카드", "삼성카드"]
+            let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
+            let existingCards = (try? container.viewContext.fetch(cardFetch)) ?? []
+            for name in defaultCards {
+                let exists = existingCards.contains { ($0.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines) == name }
+                if !exists {
+                    let card = Card(context: container.viewContext)
+                    card.id = UUID()
+                    card.name = name
+                    card.createdAt = Date()
+                }
+            }
+            do {
+                try container.viewContext.save()
+                defaults.set(true, forKey: "didInsertDefaultCards")
+            } catch {
+                print("❌ 기본 카드 저장 실패: \(error)")
+            }
         }
     }
 }

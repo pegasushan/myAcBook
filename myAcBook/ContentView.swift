@@ -62,9 +62,9 @@ struct ContentView: View {
     @Environment(\.colorScheme) var colorScheme
 
     // MARK: - Init
-    var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String) -> Void)? = nil
+    var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [String: Double]) -> Void)? = nil
     init(
-        onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String) -> Void)? = nil
+        onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [String: Double]) -> Void)? = nil
     ) {
         let start = UserDefaults.standard.double(forKey: "customStartDate")
         let end = UserDefaults.standard.double(forKey: "customEndDate")
@@ -534,7 +534,8 @@ struct ContentView: View {
             selectedTypeFilter,
             currentCategory,
             selectedDateFilter,
-            dateRangeText()
+            dateRangeText(),
+            monthlyCashExpenseTotals
         )
     }
     private var monthlyIncomeTotals: [String: Double] {
@@ -587,6 +588,16 @@ struct ContentView: View {
             let month = dateFormatter.string(from: record.date ?? Date())
             let cardName = record.card?.name ?? "알 수 없음"
             totals[month, default: [:]][cardName, default: 0] += record.amount
+        }
+        return totals
+    }
+    private var monthlyCashExpenseTotals: [String: Double] {
+        var totals = [String: Double]()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        for record in records where record.type == NSLocalizedString("expense", comment: "") && record.paymentType == NSLocalizedString("cash", comment: "현금") {
+            let month = dateFormatter.string(from: record.date ?? Date())
+            totals[month, default: 0] += record.amount
         }
         return totals
     }

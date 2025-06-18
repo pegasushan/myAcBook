@@ -8,6 +8,7 @@ struct MainView: View {
     @State private var monthlyCategoryIncomeTotals: [String: [String: Double]] = [:]
     @State private var monthlyCategoryExpenseTotals: [String: [String: Double]] = [:]
     @State private var monthlyCardExpenseTotals: [String: [String: Double]] = [:]
+    @State private var monthlyCashExpenseTotals: [String: Double] = [:]
     @State private var selectedTypeFilter: String = "all"
     @State private var selectedCategory: String = "all"
     @State private var selectedDateFilter: String = "all"
@@ -17,12 +18,13 @@ struct MainView: View {
         VStack(spacing: 0) {
             TabView {
                 ContentView(
-                    onStatisticsDataChanged: { income, expense, catIncome, catExpense, cardExpense, typeFilter, category, dateFilter, dateRange in
+                    onStatisticsDataChanged: { income, expense, catIncome, catExpense, cardExpense, typeFilter, category, dateFilter, dateRange, cashExpense in
                         self.monthlyIncomeTotals = income
                         self.monthlyExpenseTotals = expense
                         self.monthlyCategoryIncomeTotals = catIncome
                         self.monthlyCategoryExpenseTotals = catExpense
                         self.monthlyCardExpenseTotals = cardExpense
+                        self.monthlyCashExpenseTotals = cashExpense
                         self.selectedTypeFilter = typeFilter
                         self.selectedCategory = category
                         self.selectedDateFilter = dateFilter
@@ -39,6 +41,7 @@ struct MainView: View {
                     monthlyCategoryIncomeTotals: monthlyCategoryIncomeTotals,
                     monthlyCategoryExpenseTotals: monthlyCategoryExpenseTotals,
                     monthlyCardExpenseTotals: monthlyCardExpenseTotals,
+                    monthlyCashExpenseTotals: monthlyCashExpenseTotals,
                     formattedAmount: { amount in
                         let numberFormatter = NumberFormatter()
                         numberFormatter.numberStyle = .decimal

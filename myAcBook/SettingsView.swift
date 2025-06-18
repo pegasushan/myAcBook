@@ -23,6 +23,7 @@ struct SettingsView: View {
     @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
     @State private var showColorPicker = false
+    @State private var showTestDataAlert = false
 
     struct ColorPalette {
         let name: String
@@ -166,6 +167,84 @@ struct SettingsView: View {
                             }
                         }
                     }
+                    Section(header: Text("테스트")) {
+                        Button(action: {
+                            let context = PersistenceController.shared.container.viewContext
+                            let calendar = Calendar.current
+                            let now = Date()
+                            let dateFormatter = DateFormatter()
+                            dateFormatter.dateFormat = "yyyy-MM"
+
+                            let fetch: NSFetchRequest<Record> = Record.fetchRequest()
+                            if let allRecords = try? context.fetch(fetch) {
+                                let existingMonths = Set<String>(allRecords.compactMap { record in
+                                    guard let date = record.date else { return nil }
+                                    return dateFormatter.string(from: date)
+                                })
+
+                                var candidateMonths: [String] = []
+                                var candidateMonthDates: [Date] = []
+                                for offset in 0..<12 {
+                                    if let monthDate = calendar.date(byAdding: .month, value: -offset, to: now) {
+                                        let monthString = dateFormatter.string(from: monthDate)
+                                        if !existingMonths.contains(monthString) {
+                                            candidateMonths.append(monthString)
+                                            candidateMonthDates.append(monthDate)
+                                        }
+                                    }
+                                }
+
+                                guard let selectedMonthDate = candidateMonthDates.first else {
+                                    // 모든 달에 이미 데이터가 있음
+                                    return
+                                }
+
+                                let range = calendar.range(of: .day, in: .month, for: selectedMonthDate) ?? (1..<29)
+                                for day in range {
+                                    var dateComponents = calendar.dateComponents([.year, .month], from: selectedMonthDate)
+                                    dateComponents.day = day
+                                    guard let date = calendar.date(from: dateComponents) else { continue }
+                                    let count = Int.random(in: 1...5)
+                                    for _ in 0..<count {
+                                        let record = Record(context: context)
+                                        record.amount = Double.random(in: 1000...100000)
+                                        let isIncome = Bool.random()
+                                        record.type = isIncome ? NSLocalizedString("income", comment: "수입") : NSLocalizedString("expense", comment: "지출")
+                                        record.date = date
+                                        record.detail = "테스트"
+                                        if isIncome {
+                                            record.paymentType = NSLocalizedString("cash", comment: "현금")
+                                            record.card = nil
+                                        } else {
+                                            let isCard = Bool.random()
+                                            record.paymentType = isCard ? NSLocalizedString("card", comment: "카드") : NSLocalizedString("cash", comment: "현금")
+                                            if isCard {
+                                                let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
+                                                let availableCards = try? context.fetch(cardFetch)
+                                                if let selectedCard = availableCards?.randomElement() {
+                                                    record.card = selectedCard
+                                                }
+                                            } else {
+                                                record.card = nil
+                                            }
+                                        }
+                                        let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                                        categoryFetch.predicate = NSPredicate(format: "type == %@", isIncome ? "income" : "expense")
+                                        let availableCategories = try? context.fetch(categoryFetch)
+                                        if let selectedCategory = availableCategories?.randomElement() {
+                                            record.categoryRelation = selectedCategory
+                                        }
+                                    }
+                                }
+                                try? context.save()
+                                showTestDataAlert = true
+                            }
+                        }) {
+                            Text("테스트 데이터 입력")
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
+                                .foregroundColor(.red)
+                        }
+                    }
                 }
                 .scrollContentBackground(.hidden)
                 .background(colorScheme == .light ? customLightBGColor : Color("BackgroundSolidColor"))
@@ -212,6 +291,9 @@ struct SettingsView: View {
             isAppLockEnabled = lockToggleValue
             colorSchemeSetting = selectedColorScheme
             isHapticsEnabled = hapticsValue
+        }
+        .alert(isPresented: $showTestDataAlert) {
+            Alert(title: Text("테스트 데이터 입력 완료"), message: Text("테스트 데이터가 성공적으로 입력되었습니다."), dismissButton: .default(Text("확인")))
         }
     }
 } 

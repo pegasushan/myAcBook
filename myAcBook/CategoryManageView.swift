@@ -73,7 +73,7 @@ public struct CategoryManagerView: View {
                     .foregroundColor(.white)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 3)
-                    .background(row.type == "income" ? Color.green : Color.red)
+                    .background(row.type == "income" ? Color(red: 0.7, green: 0.9, blue: 0.7) : Color(red: 1.0, green: 0.7, blue: 0.7))
                     .cornerRadius(8)
                 Button(action: onEdit) {
                     Image(systemName: "pencil")
@@ -81,7 +81,7 @@ public struct CategoryManagerView: View {
                 }
                 Button(action: onDelete) {
                     Image(systemName: "trash")
-                        .foregroundColor(.red)
+                        .foregroundColor(Color(red: 1.0, green: 0.7, blue: 0.7))
                 }
             }
             .padding(.vertical, 10)
@@ -116,7 +116,7 @@ public struct CategoryManagerView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            // 상단 아이콘과 타이틀 복구
+            // 상단 아이콘과 타이틀
             VStack(spacing: 8) {
                 Image(systemName: "folder.fill")
                     .resizable()
@@ -128,27 +128,9 @@ public struct CategoryManagerView: View {
                     .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
             }
-            // 카테고리 개수 안내
-            if filteredCategories.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "folder")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 36, height: 36)
-                        .foregroundColor(.gray.opacity(0.4))
-                    Text(NSLocalizedString("no_categories", comment: "카테고리가 없습니다."))
-                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .foregroundColor(.secondary)
-                }
-                .padding(.top, 24)
-            } else {
-                Text(String(format: NSLocalizedString("registered_category_count", comment: "등록된 카테고리 %d개"), filteredCategories.count))
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(.secondary)
-                    .padding(.top, 12)
-                    .padding(.bottom, 16)
-            }
-            // 유형(수입/지출) 필터
+            .padding(.bottom, 32) // 제목과 탭 사이 간격 넓힘
+
+            // 수입/지출 탭
             Picker("Type Filter", selection: $selectedFilter) {
                 Text(LocalizedStringKey("income")).tag("income")
                 Text(LocalizedStringKey("expense")).tag("expense")
@@ -156,30 +138,49 @@ public struct CategoryManagerView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
             .padding(.bottom, 12)
-            // 카테고리 목록
+
+            // 스크롤 영역 (카테고리 리스트 or 없음 안내)
             ScrollView {
-                VStack(spacing: 20) {
-                    ForEach(categoryRows) { row in
-                        CategoryRowView(
-                            row: row,
-                            customCardColor: customCardColor,
-                            onEdit: {
-                                editingCategory = row.managedObject
-                                newCategoryName = row.name
-                            },
-                            onDelete: {
-                                if let context = row.managedObject.managedObjectContext {
-                                    context.delete(row.managedObject)
-                                    try? context.save()
-                                }
-                            }
-                        )
+                if filteredCategories.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "folder")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 36, height: 36)
+                            .foregroundColor(.gray.opacity(0.4))
+                        Text(NSLocalizedString("no_categories", comment: "카테고리가 없습니다."))
+                            .font(.system(size: 15, weight: .regular, design: .rounded))
+                            .foregroundColor(.secondary)
                     }
+                    .padding(.top, 40)
+                } else {
+                    VStack(spacing: 20) {
+                        ForEach(categoryRows) { row in
+                            CategoryRowView(
+                                row: row,
+                                customCardColor: customCardColor,
+                                onEdit: {
+                                    editingCategory = row.managedObject
+                                    newCategoryName = row.name
+                                },
+                                onDelete: {
+                                    if let context = row.managedObject.managedObjectContext {
+                                        context.delete(row.managedObject)
+                                        try? context.save()
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+                Spacer(minLength: 0)
             }
-            // 새 카테고리 추가
+
+            Spacer() // 하단 고정용
+
+            // 새 카테고리 추가 (항상 하단 고정)
             VStack(alignment: .leading, spacing: 8) {
                 Text(NSLocalizedString("add_new_category", comment: "카테고리 추가"))
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
@@ -231,7 +232,7 @@ public struct CategoryManagerView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
-            Spacer()
+
             // 하단 안내문구
             Text(NSLocalizedString("category_usage_hint", comment: "카테고리는 내역 추가/수정에서 선택할 수 있습니다."))
                 .font(.footnote)
