@@ -129,145 +129,126 @@ struct StatisticsTabView: View {
                     .background(customBGColor).ignoresSafeArea()
                 }
             } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
-                VStack {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프")).appSectionTitle()
-                            .padding(.horizontal, 16)
-
-                        if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
-                            VStack {
-                                Spacer()
-                                Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
-                                    .foregroundColor(.gray)
-                                    .multilineTextAlignment(.center)
-                                Spacer()
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                            .background(customBGColor)
-                        } else {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                        .fill(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color("customLightSectionColor").opacity(0.95),
-                                                    Color.white.opacity(0.85)
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .shadow(color: colorScheme == .light ? Color.black.opacity(0.12) : Color.black.opacity(0.25), radius: 18, x: 0, y: 10)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 24)
-                                                .stroke(Color.pink.opacity(0.18), lineWidth: 1.5)
-                                        )
-                                        .frame(height: 340)
-                                    Chart {
-                                        // 수입
-                                        ForEach(sortedMonths, id: \.self) { month in
-                                            let income = monthlyIncomeTotals[month] ?? 0
-                                            LineMark(
-                                                x: .value("Month", month),
-                                                y: .value(NSLocalizedString("amount", comment: "금액"), income)
-                                            )
-                                            .foregroundStyle(Color.blue)
-                                            .lineStyle(StrokeStyle(lineWidth: 3))
-                                            .interpolationMethod(.catmullRom)
-                                            PointMark(
-                                                x: .value("Month", month),
-                                                y: .value(NSLocalizedString("amount", comment: "금액"), income)
-                                            )
-                                            .foregroundStyle(Color.blue)
-                                            .symbolSize(60)
-                                            .annotation(position: .top, alignment: .center) {
-                                                if income > 0 {
-                                                    Text(formattedCompactNumber(income))
-                                                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                                                        .foregroundColor(Color.blue)
-                                                        .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
-                                                        .offset(y: -6)
-                                                }
-                                            }
-                                        }
-                                        // 지출
-                                        ForEach(sortedMonths, id: \.self) { month in
-                                            let expense = monthlyExpenseTotals[month] ?? 0
-                                            LineMark(
-                                                x: .value("Month", month),
-                                                y: .value(NSLocalizedString("amount", comment: "금액"), expense)
-                                            )
-                                            .foregroundStyle(Color.red)
-                                            .lineStyle(StrokeStyle(lineWidth: 3))
-                                            .interpolationMethod(.catmullRom)
-                                            PointMark(
-                                                x: .value("Month", month),
-                                                y: .value(NSLocalizedString("amount", comment: "금액"), expense)
-                                            )
-                                            .foregroundStyle(Color.red)
-                                            .symbolSize(60)
-                                            .annotation(position: .bottom, alignment: .center) {
-                                                if expense > 0 {
-                                                    Text(formattedCompactNumber(expense))
-                                                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                                                        .foregroundColor(Color.red)
-                                                        .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
-                                                        .offset(y: 6)
-                                                }
-                                            }
+                let pastelBlue = Color(red: 0.55, green: 0.75, blue: 1.0)
+                let pastelRed = Color(red: 1.0, green: 0.55, blue: 0.65)
+                let screenWidth = UIScreen.main.bounds.width
+                let horizontalPadding: CGFloat = 32 // 좌우 패딩 합계
+                let visibleMonths = 3
+                let chartWidth = screenWidth - horizontalPadding
+                let barWidth: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.6
+                let barSpacing: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.4
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(Color("HighlightColor"))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 8)
+                        .padding(.bottom, 12)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color("customLightSectionColor").opacity(0.95),
+                                            Color.white.opacity(0.85)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .shadow(color: colorScheme == .light ? Color.black.opacity(0.12) : Color.black.opacity(0.25), radius: 18, x: 0, y: 10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 24)
+                                        .stroke(Color.pink.opacity(0.18), lineWidth: 1.5)
+                                )
+                                .frame(height: 380)
+                            Chart {
+                                ForEach(sortedMonths, id: \.self) { month in
+                                    BarMark(
+                                        x: .value("Month", month),
+                                        y: .value("수입", monthlyIncomeTotals[month] ?? 0)
+                                    )
+                                    .foregroundStyle(pastelBlue)
+                                    .position(by: .value("Type", "수입"))
+                                    .cornerRadius(4)
+                                    .annotation(position: .top) {
+                                        if let value = monthlyIncomeTotals[month], value > 0 {
+                                            Text(formattedCompactNumber(value))
+                                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                                .foregroundColor(pastelBlue)
                                         }
                                     }
-                                    .chartYAxis {
-                                        AxisMarks(position: .leading) { value in
-                                            AxisGridLine()
-                                            AxisTick()
-                                            AxisValueLabel() {
-                                                if let doubleValue = value.as(Double.self) {
-                                                    Text(formattedCompactNumber(doubleValue))
-                                                        .font(.system(size: 12, weight: .regular))
-                                                        .foregroundColor(.gray)
-                                                }
-                                            }
+                                    BarMark(
+                                        x: .value("Month", month),
+                                        y: .value("지출", monthlyExpenseTotals[month] ?? 0)
+                                    )
+                                    .foregroundStyle(pastelRed)
+                                    .position(by: .value("Type", "지출"))
+                                    .cornerRadius(4)
+                                    .annotation(position: .top) {
+                                        if let value = monthlyExpenseTotals[month], value > 0 {
+                                            Text(formattedCompactNumber(value))
+                                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                                                .foregroundColor(pastelRed)
                                         }
                                     }
-                                    .chartXAxis {
-                                        AxisMarks { value in
-                                            AxisGridLine()
-                                            AxisTick()
-                                            AxisValueLabel() {
-                                                if let str = value.as(String.self) {
-                                                    Text(str)
-                                                        .font(.system(size: 12, weight: .regular))
-                                                        .foregroundColor(.gray)
-                                                }
-                                            }
+                                }
+                            }
+                            .chartYAxis {
+                                AxisMarks(position: .leading) { value in
+                                    AxisGridLine()
+                                    AxisTick()
+                                    AxisValueLabel() {
+                                        if let doubleValue = value.as(Double.self) {
+                                            Text(formattedCompactNumber(doubleValue))
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray)
                                         }
                                     }
-                                    .frame(width: max(CGFloat(sortedMonths.count) * 80, 340), height: 300)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 8)
                                 }
                             }
-                            HStack(spacing: 20) {
-                                HStack(spacing: 6) {
-                                    Circle().fill(Color.blue).frame(width: 12, height: 12)
-                                    Text(NSLocalizedString("income", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
-                                }
-                                HStack(spacing: 6) {
-                                    Circle().fill(Color.pink).frame(width: 12, height: 12)
-                                    Text(NSLocalizedString("expense", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
+                            .chartXAxis {
+                                AxisMarks { value in
+                                    AxisGridLine()
+                                    AxisTick()
+                                    AxisValueLabel() {
+                                        if let str = value.as(String.self) {
+                                            Text(str)
+                                                .font(.system(size: 12, weight: .regular))
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
                                 }
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
+                            .frame(
+                                width: max(CGFloat(sortedMonths.count) * (barWidth + barSpacing), chartWidth),
+                                height: 340
+                            )
+                            .padding(.horizontal, 8)
                         }
                     }
-                    Spacer()
+                    .padding(.horizontal, 8)
+                    HStack(spacing: 20) {
+                        HStack(spacing: 6) {
+                            Circle().fill(pastelBlue).frame(width: 12, height: 12)
+                            Text(NSLocalizedString("income", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
+                                .foregroundColor(pastelBlue)
+                        }
+                        HStack(spacing: 6) {
+                            Circle().fill(pastelRed).frame(width: 12, height: 12)
+                            Text(NSLocalizedString("expense", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
+                                .foregroundColor(pastelRed)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
                 }
-                .padding(.horizontal, 20)
             }
         }
+        .padding(.horizontal, 12)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     func getSortedMonths(
