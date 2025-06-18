@@ -122,6 +122,9 @@ struct AddRecordView: View {
     @State private var selectedCategoryIndex: Int? = nil
     @State private var selectedCardIndex: Int? = nil
 
+    @FocusState private var isAmountFieldFocused: Bool
+    @FocusState private var isDetailFieldFocused: Bool
+
     var body: some View {
         let expenseText = NSLocalizedString("expense", comment: "")
         NavigationView {
@@ -141,6 +144,7 @@ struct AddRecordView: View {
                                     .padding(12)
                                     .background(Color.white.opacity(0.7))
                                     .cornerRadius(12)
+                                    .focused($isAmountFieldFocused)
                                     .onChange(of: amount) {
                                         let numberString = amount.replacingOccurrences(of: ",", with: "")
                                         if let value = Int(numberString) {
@@ -223,6 +227,7 @@ struct AddRecordView: View {
                                     .padding(10)
                                     .background(Color.white.opacity(0.7))
                                     .cornerRadius(8)
+                                    .focused($isDetailFieldFocused)
                             }
                             .padding(.horizontal)
                             // 날짜
@@ -236,6 +241,10 @@ struct AddRecordView: View {
                         }
                         .padding(.top, 48)
                         .padding(.bottom, 32)
+                    }
+                    .onTapGesture {
+                        isAmountFieldFocused = false
+                        isDetailFieldFocused = false
                     }
                     Button(action: {
                         saveRecord()

@@ -222,6 +222,13 @@ struct ContentView: View {
         VStack(spacing: 0) {
             headerBar
             filterSummarySection
+            // 총 건수 표시
+            Text("\(filteredRecords.count)건")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundColor(.secondary)
+                .padding(.bottom, 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 16)
             groupedRecordSections
             if isDeleteMode { deleteButtons }
         }
@@ -281,7 +288,7 @@ struct ContentView: View {
             .scaleEffect(isAddingNewRecord ? 1.08 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isAddingNewRecord)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
         .padding(.top, 32)
         .padding(.bottom, 8)
     }
