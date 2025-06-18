@@ -158,10 +158,14 @@ struct StatisticsTabView: View {
                                                 endPoint: .bottomTrailing
                                             )
                                         )
-                                        .shadow(color: colorScheme == .light ? Color.black.opacity(0.06) : Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
-                                        .frame(height: 320)
+                                        .shadow(color: colorScheme == .light ? Color.black.opacity(0.12) : Color.black.opacity(0.25), radius: 18, x: 0, y: 10)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 24)
+                                                .stroke(Color.pink.opacity(0.18), lineWidth: 1.5)
+                                        )
+                                        .frame(height: 340)
                                     Chart {
-                                        // 수입 꺾은선 + 점 + 라벨
+                                        // 수입
                                         ForEach(sortedMonths, id: \.self) { month in
                                             let income = monthlyIncomeTotals[month] ?? 0
                                             LineMark(
@@ -177,37 +181,39 @@ struct StatisticsTabView: View {
                                             )
                                             .foregroundStyle(Color.blue)
                                             .symbolSize(60)
-                                            .annotation(position: .top) {
+                                            .annotation(position: .top, alignment: .center) {
                                                 if income > 0 {
                                                     Text(formattedCompactNumber(income))
-                                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                        .font(.system(size: 11, weight: .bold, design: .rounded))
                                                         .foregroundColor(Color.blue)
                                                         .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
+                                                        .offset(y: -6)
                                                 }
                                             }
                                         }
-                                        // 지출 꺾은선 + 점 + 라벨
+                                        // 지출
                                         ForEach(sortedMonths, id: \.self) { month in
                                             let expense = monthlyExpenseTotals[month] ?? 0
                                             LineMark(
                                                 x: .value("Month", month),
                                                 y: .value(NSLocalizedString("amount", comment: "금액"), expense)
                                             )
-                                            .foregroundStyle(Color.pink)
+                                            .foregroundStyle(Color.red)
                                             .lineStyle(StrokeStyle(lineWidth: 3))
                                             .interpolationMethod(.catmullRom)
                                             PointMark(
                                                 x: .value("Month", month),
                                                 y: .value(NSLocalizedString("amount", comment: "금액"), expense)
                                             )
-                                            .foregroundStyle(Color.pink)
+                                            .foregroundStyle(Color.red)
                                             .symbolSize(60)
-                                            .annotation(position: .top) {
+                                            .annotation(position: .bottom, alignment: .center) {
                                                 if expense > 0 {
                                                     Text(formattedCompactNumber(expense))
-                                                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                                                        .foregroundColor(Color.pink)
+                                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                                        .foregroundColor(Color.red)
                                                         .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
+                                                        .offset(y: 6)
                                                 }
                                             }
                                         }
@@ -216,22 +222,31 @@ struct StatisticsTabView: View {
                                         AxisMarks(position: .leading) { value in
                                             AxisGridLine()
                                             AxisTick()
-                                            AxisValueLabel {
+                                            AxisValueLabel() {
                                                 if let doubleValue = value.as(Double.self) {
-                                                    Text(formattedCompactNumber(doubleValue)).appBody()
+                                                    Text(formattedCompactNumber(doubleValue))
+                                                        .font(.system(size: 12, weight: .regular))
+                                                        .foregroundColor(.gray)
                                                 }
                                             }
                                         }
                                     }
-                                    .frame(width: max(CGFloat(sortedMonths.count) * 80, 320), height: 280)
+                                    .chartXAxis {
+                                        AxisMarks { value in
+                                            AxisGridLine()
+                                            AxisTick()
+                                            AxisValueLabel() {
+                                                if let str = value.as(String.self) {
+                                                    Text(str)
+                                                        .font(.system(size: 12, weight: .regular))
+                                                        .foregroundColor(.gray)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .frame(width: max(CGFloat(sortedMonths.count) * 80, 340), height: 300)
                                     .padding(.horizontal, 20)
-                                    .padding(.leading, 12)
-                                    .padding(.trailing, 12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                            .fill(colorScheme == .light ? Color.white.opacity(0.92) : Color(red:0.18, green:0.2, blue:0.28, opacity:0.97))
-                                            .shadow(color: colorScheme == .light ? Color.black.opacity(0.06) : Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
-                                    )
+                                    .padding(.vertical, 8)
                                 }
                             }
                             HStack(spacing: 20) {
