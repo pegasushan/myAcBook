@@ -157,6 +157,13 @@ struct ContentView: View {
                 mainContent
             }
         }
+        .onAppear {
+            notifyStatisticsDataChanged()
+        }
+        .onChange(of: selectedTypeFilter) { _ in notifyStatisticsDataChanged() }
+        .onChange(of: selectedCategory) { _ in notifyStatisticsDataChanged() }
+        .onChange(of: selectedDateFilter) { _ in notifyStatisticsDataChanged() }
+        .onChange(of: selectedPaymentType) { _ in notifyStatisticsDataChanged() }
         .sheet(isPresented: $isAddingNewRecord) {
             AddRecordView()
         }

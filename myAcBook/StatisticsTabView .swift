@@ -81,32 +81,54 @@ struct StatisticsTabView: View {
             .padding()
 
             if selectedStatTab == NSLocalizedString("income", comment: "수입") {
-                CategorySectionView(
-                    monthlyCategoryTotals: monthlyCategoryIncomeTotals,
-                    color: Color("IncomeColor"),
-                    sectionTitleSuffix: NSLocalizedString("income", comment: ""),
-                    formattedAmount: formattedAmount,
-                    isAscendingSort: isAscendingSort,
-                    onToggleSort: { isAscendingSort.toggle() },
-                    allCards: allCards
-                )
-                .background(customBGColor).ignoresSafeArea()
+                let hasIncomeData = monthlyCategoryIncomeTotals.values.flatMap { $0.values }.reduce(0, +) > 0
+                if !hasIncomeData {
+                    VStack {
+                        Spacer()
+                        Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .background(customBGColor)
+                } else {
+                    CategorySectionView(
+                        monthlyCategoryTotals: monthlyCategoryIncomeTotals,
+                        color: Color("IncomeColor"),
+                        sectionTitleSuffix: NSLocalizedString("income", comment: ""),
+                        formattedAmount: formattedAmount,
+                        isAscendingSort: isAscendingSort,
+                        onToggleSort: { isAscendingSort.toggle() },
+                        allCards: allCards
+                    )
+                    .background(customBGColor).ignoresSafeArea()
+                }
             } else if selectedStatTab == NSLocalizedString("expense", comment: "지출") {
-                ExpenseAccordionSectionView(
-                    monthlyCategoryTotals: monthlyCategoryExpenseTotals,
-                    monthlyCardExpenseTotals: monthlyCardExpenseTotals,
-                    formattedAmount: formattedAmount
-                )
-                .background(customBGColor).ignoresSafeArea()
+                let hasExpenseData = monthlyCategoryExpenseTotals.values.flatMap { $0.values }.reduce(0, +) > 0
+                if !hasExpenseData {
+                    VStack {
+                        Spacer()
+                        Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .background(customBGColor)
+                } else {
+                    ExpenseAccordionSectionView(
+                        monthlyCategoryTotals: monthlyCategoryExpenseTotals,
+                        monthlyCardExpenseTotals: monthlyCardExpenseTotals,
+                        formattedAmount: formattedAmount
+                    )
+                    .background(customBGColor).ignoresSafeArea()
+                }
             } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
                 VStack {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프")).appSectionTitle()
-
-                        Toggle(NSLocalizedString("show_bar_labels", comment: "막대 금액 표시"), isOn: $showBarAnnotations)
-                            .font(.system(size: 13, weight: .regular, design: .rounded))
-                            .toggleStyle(.switch)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 16)
 
                         if monthlyIncomeTotals.isEmpty && monthlyExpenseTotals.isEmpty {
                             VStack {
@@ -116,58 +138,71 @@ struct StatisticsTabView: View {
                                     .multilineTextAlignment(.center)
                                 Spacer()
                             }
-                            .frame(maxHeight: .infinity)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                             .background(customBGColor)
                         } else {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                        .fill(colorScheme == .light ? Color.white.opacity(0.85) : Color(red:0.18, green:0.2, blue:0.28, opacity:0.95))
+                                        .fill(
+                                            LinearGradient(
+                                                gradient: Gradient(colors: [
+                                                    Color("customLightSectionColor").opacity(0.95),
+                                                    Color.white.opacity(0.85)
+                                                ]),
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
                                         .shadow(color: colorScheme == .light ? Color.black.opacity(0.06) : Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
                                         .frame(height: 320)
                                     Chart {
+                                        // 수입 꺾은선 + 점 + 라벨
                                         ForEach(sortedMonths, id: \.self) { month in
                                             let income = monthlyIncomeTotals[month] ?? 0
-                                            let expense = monthlyExpenseTotals[month] ?? 0
-
-                                            BarMark(
+                                            LineMark(
                                                 x: .value("Month", month),
                                                 y: .value(NSLocalizedString("amount", comment: "금액"), income)
                                             )
-                                            .cornerRadius(8)
-                                            .foregroundStyle(
-                                                LinearGradient(
-                                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red:0.7, green:0.85, blue:1.0), Color(red:0.9, green:1.0, blue:0.95)] : [Color(red:0.3, green:0.45, blue:0.7), Color(red:0.5, green:0.6, blue:0.8)]),
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
-                                                )
+                                            .foregroundStyle(Color.blue)
+                                            .lineStyle(StrokeStyle(lineWidth: 3))
+                                            .interpolationMethod(.catmullRom)
+                                            PointMark(
+                                                x: .value("Month", month),
+                                                y: .value(NSLocalizedString("amount", comment: "금액"), income)
                                             )
+                                            .foregroundStyle(Color.blue)
+                                            .symbolSize(60)
                                             .annotation(position: .top) {
-                                                if showBarAnnotations {
+                                                if income > 0 {
                                                     Text(formattedCompactNumber(income))
-                                                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                                                        .foregroundColor(Color(red:0.3, green:0.45, blue:0.7))
+                                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                        .foregroundColor(Color.blue)
                                                         .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
                                                 }
                                             }
-
-                                            BarMark(
+                                        }
+                                        // 지출 꺾은선 + 점 + 라벨
+                                        ForEach(sortedMonths, id: \.self) { month in
+                                            let expense = monthlyExpenseTotals[month] ?? 0
+                                            LineMark(
                                                 x: .value("Month", month),
                                                 y: .value(NSLocalizedString("amount", comment: "금액"), expense)
                                             )
-                                            .cornerRadius(8)
-                                            .foregroundStyle(
-                                                LinearGradient(
-                                                    gradient: Gradient(colors: colorScheme == .light ? [Color(red:1.0, green:0.8, blue:0.85), Color(red:0.95, green:0.7, blue:0.8)] : [Color(red:0.5, green:0.3, blue:0.4), Color(red:0.7, green:0.4, blue:0.5)]),
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
-                                                )
+                                            .foregroundStyle(Color.pink)
+                                            .lineStyle(StrokeStyle(lineWidth: 3))
+                                            .interpolationMethod(.catmullRom)
+                                            PointMark(
+                                                x: .value("Month", month),
+                                                y: .value(NSLocalizedString("amount", comment: "금액"), expense)
                                             )
+                                            .foregroundStyle(Color.pink)
+                                            .symbolSize(60)
                                             .annotation(position: .top) {
-                                                if showBarAnnotations {
+                                                if expense > 0 {
                                                     Text(formattedCompactNumber(expense))
-                                                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                                                        .foregroundColor(Color(red:0.7, green:0.4, blue:0.5))
+                                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                                        .foregroundColor(Color.pink)
                                                         .shadow(color: .white.opacity(0.7), radius: 2, x: 0, y: 1)
                                                 }
                                             }
@@ -184,46 +219,34 @@ struct StatisticsTabView: View {
                                             }
                                         }
                                     }
-                                    .frame(width: CGFloat(sortedMonths.count) * 80, height: 280)
-                                    .padding(.horizontal, 24)
-                                    .padding(.top, 24)
-                                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: monthlyIncomeTotals)
+                                    .frame(width: max(CGFloat(sortedMonths.count) * 80, 320), height: 280)
+                                    .padding(.horizontal, 20)
+                                    .padding(.leading, 12)
+                                    .padding(.trailing, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                            .fill(colorScheme == .light ? Color.white.opacity(0.92) : Color(red:0.18, green:0.2, blue:0.28, opacity:0.97))
+                                            .shadow(color: colorScheme == .light ? Color.black.opacity(0.06) : Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
+                                    )
                                 }
                             }
-                            HStack(spacing: 16) {
-                                HStack(spacing: 4) {
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: colorScheme == .light ? [Color(red:0.7, green:0.85, blue:1.0), Color(red:0.9, green:1.0, blue:0.95)] : [Color(red:0.3, green:0.45, blue:0.7), Color(red:0.5, green:0.6, blue:0.8)]),
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                        .frame(width: 10, height: 10)
-                                    Text(NSLocalizedString("income", comment: ""))
-                                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                            HStack(spacing: 20) {
+                                HStack(spacing: 6) {
+                                    Circle().fill(Color.blue).frame(width: 12, height: 12)
+                                    Text(NSLocalizedString("income", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
                                 }
-                                HStack(spacing: 4) {
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: colorScheme == .light ? [Color(red:1.0, green:0.8, blue:0.85), Color(red:0.95, green:0.7, blue:0.8)] : [Color(red:0.5, green:0.3, blue:0.4), Color(red:0.7, green:0.4, blue:0.5)]),
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                        .frame(width: 10, height: 10)
-                                    Text(NSLocalizedString("expense", comment: ""))
-                                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                                HStack(spacing: 6) {
+                                    Circle().fill(Color.pink).frame(width: 12, height: 12)
+                                    Text(NSLocalizedString("expense", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
                                 }
                             }
-                            .padding(.horizontal)
-                            .padding(.bottom, 8)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                         }
                     }
                     Spacer()
                 }
+                .padding(.horizontal, 20)
             }
         }
     }
@@ -265,7 +288,7 @@ struct StatisticsTabView: View {
                     .multilineTextAlignment(.center)
                 Spacer()
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .background(customBGColor)
         } else {
             ScrollView {
@@ -287,7 +310,20 @@ struct StatisticsTabView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 16)
             }
-            .background(customBGColor)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color("customLightSectionColor").opacity(0.95),
+                                Color.white.opacity(0.85)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: colorScheme == .light ? Color.black.opacity(0.06) : Color.black.opacity(0.18), radius: 12, x: 0, y: 6)
+            )
         }
     }
 
