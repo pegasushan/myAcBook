@@ -30,6 +30,7 @@ struct StatisticsTabView: View {
     @State private var selectedExpenseView: String = "all"
     @State private var selectedStatTab: String = NSLocalizedString("graph", comment: "그래프")
     @State private var expandedCardMonth: String? = nil
+    @State private var selectedPeriod: String = "3개월"
 
     var customBGColor: Color {
         colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
@@ -62,6 +63,8 @@ struct StatisticsTabView: View {
         }
     }
 
+    private var periodOptions: [String] { ["3개월", "6개월", "1년", "전체"] }
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -82,6 +85,25 @@ struct StatisticsTabView: View {
             .pickerStyle(SegmentedPickerStyle())
             .padding()
 
+            Picker("기간", selection: $selectedPeriod) {
+                ForEach(periodOptions, id: \.self) { period in
+                    Text(period).tag(period)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+
+            if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
+                Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(Color.primary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 12)
+            }
+
             if selectedStatTab == NSLocalizedString("income", comment: "수입") {
                 let hasIncomeData = monthlyCategoryIncomeTotals.values.flatMap { $0.values }.reduce(0, +) > 0
                 if !hasIncomeData {
@@ -96,7 +118,7 @@ struct StatisticsTabView: View {
                     .background(customBGColor)
                 } else {
                     CategorySectionView(
-                        monthlyCategoryTotals: monthlyCategoryIncomeTotals,
+                        monthlyCategoryTotals: filterMonths(dict: monthlyCategoryIncomeTotals),
                         color: Color("IncomeColor"),
                         sectionTitleSuffix: NSLocalizedString("income", comment: ""),
                         formattedAmount: formattedAmount,
@@ -120,9 +142,9 @@ struct StatisticsTabView: View {
                     .background(customBGColor)
                 } else {
                     ExpenseAccordionSectionView(
-                        monthlyCategoryTotals: monthlyCategoryExpenseTotals,
-                        monthlyCardExpenseTotals: monthlyCardExpenseTotals,
-                        monthlyCashExpenseTotals: monthlyCashExpenseTotals,
+                        monthlyCategoryTotals: filterMonths(dict: monthlyCategoryExpenseTotals),
+                        monthlyCardExpenseTotals: filterMonths(dict: monthlyCardExpenseTotals),
+                        monthlyCashExpenseTotals: filterMonths(dict: monthlyCashExpenseTotals),
                         formattedAmount: formattedAmount,
                         expandedCardMonth: $expandedCardMonth
                     )
@@ -137,14 +159,20 @@ struct StatisticsTabView: View {
                 let chartWidth = screenWidth - horizontalPadding
                 let barWidth: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.6
                 let barSpacing: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.4
+                let filteredMonths: [String] = {
+                    let months = sortedMonths
+                    switch selectedPeriod {
+                    case "3개월":
+                        return Array(months.suffix(3))
+                    case "6개월":
+                        return Array(months.suffix(6))
+                    case "1년":
+                        return Array(months.suffix(12))
+                    default:
+                        return months
+                    }
+                }()
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(Color("HighlightColor"))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 8)
-                        .padding(.bottom, 12)
                     ScrollView(.horizontal, showsIndicators: false) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -165,7 +193,7 @@ struct StatisticsTabView: View {
                                 )
                                 .frame(height: 380)
                             Chart {
-                                ForEach(sortedMonths, id: \.self) { month in
+                                ForEach(filteredMonths, id: \.self) { month in
                                     BarMark(
                                         x: .value("Month", month),
                                         y: .value("수입", monthlyIncomeTotals[month] ?? 0)
@@ -223,7 +251,7 @@ struct StatisticsTabView: View {
                                 }
                             }
                             .frame(
-                                width: max(CGFloat(sortedMonths.count) * (barWidth + barSpacing), chartWidth),
+                                width: max(CGFloat(filteredMonths.count) * (barWidth + barSpacing), chartWidth),
                                 height: 340
                             )
                             .padding(.horizontal, 8)
@@ -462,6 +490,22 @@ struct StatisticsTabView: View {
             formatter.maximumFractionDigits = 0
             return formatter.string(from: NSNumber(value: value)) ?? "\(sign)₩\(Int(absValue))"
         }
+    }
+
+    func filterMonths<T>(dict: [String: T]) -> [String: T] {
+        let months = dict.keys.sorted()
+        let filteredKeys: [String]
+        switch selectedPeriod {
+        case "3개월":
+            filteredKeys = Array(months.suffix(3))
+        case "6개월":
+            filteredKeys = Array(months.suffix(6))
+        case "1년":
+            filteredKeys = Array(months.suffix(12))
+        default:
+            filteredKeys = months
+        }
+        return dict.filter { filteredKeys.contains($0.key) }
     }
 }
 
