@@ -430,11 +430,12 @@ struct StatisticsTabView: View {
                                 Text("\(monthNumber)월 수입 합계 (\(incomeCount)건)")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(Color("HighlightColor"))
+                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 Spacer()
                                 Text(formattedAmount(incomeSum))
                                     .font(.system(size: 24, weight: .heavy))
                                     .foregroundColor(Color("HighlightColor"))
-                                    .shadow(color: Color("HighlightColor").opacity(0.18), radius: 2, x: 0, y: 2)
+                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : Color("HighlightColor").opacity(0.18), radius: 2, x: 0, y: 2)
                             }
                             .padding(.bottom, 2)
                             VStack(spacing: 10) {
@@ -447,28 +448,34 @@ struct StatisticsTabView: View {
                                         Text(formattedAmount(value))
                                             .font(.system(size: 15, weight: .semibold))
                                             .foregroundColor(Color("HighlightColor"))
+                                            .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                     }
                                     .padding(10)
                                     .background(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color("customLightSectionColor").opacity(0.5))
+                                            .fill(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
                                     )
                                 }
                             }
                         }
                         .padding()
                         .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                            colorScheme == .light ?
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                )
+                            :
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color("customDarkCardColor").opacity(0.85), Color("customDarkSectionColor").opacity(0.7)]),
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                )
                         )
                         .cornerRadius(22)
-                        .shadow(color: Color("HighlightColor").opacity(0.10), radius: 12, x: 0, y: 6)
+                        .shadow(color: colorScheme == .light ? Color("HighlightColor").opacity(0.10) : Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
                         .overlay(
                             RoundedRectangle(cornerRadius: 22)
-                                .stroke(Color("HighlightColor").opacity(0.18), lineWidth: 1.5)
+                                .stroke(colorScheme == .light ? Color("HighlightColor").opacity(0.18) : Color("HighlightColor").opacity(0.35), lineWidth: 1.5)
                         )
                         .padding(.horizontal, 16)
                         .animation(.spring(), value: incomeSum)
@@ -511,11 +518,12 @@ struct StatisticsTabView: View {
                                 Text("\(monthNumber)월 합계 (\(monthCount)건)")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(Color("HighlightColor"))
+                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 Spacer()
                                 Text(formattedAmount(totals.values.reduce(0, +)))
                                     .font(.system(size: 24, weight: .heavy))
                                     .foregroundColor(Color("HighlightColor"))
-                                    .shadow(color: Color("HighlightColor").opacity(0.18), radius: 2, x: 0, y: 2)
+                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : Color("HighlightColor").opacity(0.18), radius: 2, x: 0, y: 2)
                             }
                             .contentShape(Rectangle())
                         }
@@ -532,11 +540,12 @@ struct StatisticsTabView: View {
                                     Text(formattedAmount(cashSum))
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(Color("HighlightColor"))
+                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 }
                             }
                             .padding(.vertical, 10)
                             .padding(.horizontal, 14)
-                            .background(Color("customLightSectionColor").opacity(0.5))
+                            .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
                             .cornerRadius(12)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -552,12 +561,13 @@ struct StatisticsTabView: View {
                                     Text(formattedAmount(cardSum))
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(Color("HighlightColor"))
+                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
                             .padding(.vertical, 10)
                             .padding(.horizontal, 14)
-                            .background(Color("customLightSectionColor").opacity(0.5))
+                            .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
                             .cornerRadius(12)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -587,9 +597,10 @@ struct StatisticsTabView: View {
                                                 Text(formattedAmount(value))
                                                     .font(.system(size: 15, weight: .semibold))
                                                     .foregroundColor(Color("HighlightColor"))
+                                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                             }
                                             .padding(8)
-                                            .background(Color("customLightSectionColor").opacity(0.5))
+                                            .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
                                             .cornerRadius(8)
                                         }
                                         .buttonStyle(PlainButtonStyle())
@@ -602,17 +613,22 @@ struct StatisticsTabView: View {
                     }
                     .padding()
                     .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        colorScheme == .light ?
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        :
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color("customDarkCardColor").opacity(0.85), Color("customDarkSectionColor").opacity(0.7)]),
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
                     )
                     .cornerRadius(22)
-                    .shadow(color: Color("HighlightColor").opacity(0.10), radius: 12, x: 0, y: 6)
+                    .shadow(color: colorScheme == .light ? Color("HighlightColor").opacity(0.10) : Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
                     .overlay(
                         RoundedRectangle(cornerRadius: 22)
-                            .stroke(Color("HighlightColor").opacity(0.18), lineWidth: 1.5)
+                            .stroke(colorScheme == .light ? Color("HighlightColor").opacity(0.18) : Color("HighlightColor").opacity(0.35), lineWidth: 1.5)
                     )
                     .padding(.horizontal, 16)
                     .animation(.spring(), value: totals.values.reduce(0, +))

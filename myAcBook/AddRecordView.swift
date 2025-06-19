@@ -21,13 +21,14 @@ struct CustomDropdown: View {
     let options: [String]
     let placeholder: String
     @State private var isExpanded = false
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button(action: { withAnimation { isExpanded.toggle() } }) {
                 HStack {
                     Text(selectedIndex.flatMap { options[safe: $0] } ?? placeholder)
-                        .foregroundColor(.primary)
+                        .foregroundColor(colorScheme == .light ? .primary : .white)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                     Spacer()
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
@@ -35,7 +36,15 @@ struct CustomDropdown: View {
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Color.white).shadow(radius: 1))
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(colorScheme == .light ? Color.white : Color("customDarkCardColor").opacity(0.85))
+                        .shadow(color: colorScheme == .light ? Color.gray.opacity(0.08) : Color.black.opacity(0.3), radius: 1)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
+                )
             }
             if isExpanded {
                 VStack(spacing: 0) {
@@ -46,18 +55,22 @@ struct CustomDropdown: View {
                         }) {
                             HStack {
                                 Text(options[idx])
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(colorScheme == .light ? .primary : .white)
                                     .font(.system(size: 15, weight: .regular, design: .rounded))
                                 Spacer()
                             }
                             .padding(.vertical, 8)
                             .padding(.horizontal, 12)
                         }
-                        .background(Color.white)
+                        .background(colorScheme == .light ? Color.white : Color("customDarkSectionColor").opacity(0.85))
                         .contentShape(Rectangle())
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: 6).fill(Color.white).shadow(radius: 1))
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(colorScheme == .light ? Color.white : Color("customDarkSectionColor").opacity(0.85))
+                        .shadow(color: colorScheme == .light ? Color.gray.opacity(0.08) : Color.black.opacity(0.3), radius: 1)
+                )
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
@@ -142,8 +155,13 @@ struct AddRecordView: View {
                                     .keyboardType(.decimalPad)
                                     .font(.system(size: 28, weight: .bold, design: .rounded))
                                     .padding(12)
-                                    .background(Color.white.opacity(0.7))
+                                    .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
+                                    .foregroundColor(colorScheme == .light ? .primary : .white)
                                     .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
+                                    )
                                     .focused($isAmountFieldFocused)
                                     .onChange(of: amount) {
                                         let numberString = amount.replacingOccurrences(of: ",", with: "")
@@ -191,7 +209,7 @@ struct AddRecordView: View {
                                                     .font(.system(size: 18, weight: .bold))
                                                     .foregroundColor(.blue)
                                                     .padding(6)
-                                                    .background(Color.white.opacity(0.7))
+                                                    .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
                                                     .clipShape(Circle())
                                             }
                                             .buttonStyle(PlainButtonStyle())
@@ -212,7 +230,7 @@ struct AddRecordView: View {
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(.blue)
                                         .padding(6)
-                                        .background(Color.white.opacity(0.7))
+                                        .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
                                         .clipShape(Circle())
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -225,8 +243,13 @@ struct AddRecordView: View {
                                 TextField(NSLocalizedString("detail_placeholder", comment: ""), text: $detail)
                                     .font(.system(size: 15, weight: .regular, design: .rounded))
                                     .padding(10)
-                                    .background(Color.white.opacity(0.7))
+                                    .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
+                                    .foregroundColor(colorScheme == .light ? .primary : .white)
                                     .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
+                                    )
                                     .focused($isDetailFieldFocused)
                             }
                             .padding(.horizontal)
