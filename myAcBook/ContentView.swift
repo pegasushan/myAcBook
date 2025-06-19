@@ -227,8 +227,8 @@ struct ContentView: View {
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.secondary)
                 .padding(.bottom, 0)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 16)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 16)
             groupedRecordSections
             if isDeleteMode { deleteButtons }
         }
