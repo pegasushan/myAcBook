@@ -429,14 +429,14 @@ struct StatisticsTabView: View {
                             HStack {
                                 Text("\(monthNumber)월 수입 합계 (\(incomeCount)건)")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(Color("IncomeColor"))
+                                    .foregroundColor(Color("HighlightColor"))
                                 Spacer()
                                 Text(formattedAmount(incomeSum))
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundColor(Color("IncomeColor"))
+                                    .font(.system(size: 24, weight: .heavy))
+                                    .foregroundColor(Color("HighlightColor"))
+                                    .shadow(color: Color("HighlightColor").opacity(0.18), radius: 2, x: 0, y: 2)
                             }
                             .padding(.bottom, 2)
-                            // 카테고리별 합계 카드 박스
                             VStack(spacing: 10) {
                                 ForEach(categorySums.sorted(by: { $0.key < $1.key }), id: \.key) { category, value in
                                     HStack {
@@ -446,21 +446,32 @@ struct StatisticsTabView: View {
                                         Spacer()
                                         Text(formattedAmount(value))
                                             .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(Color("IncomeColor"))
+                                            .foregroundColor(Color("HighlightColor"))
                                     }
                                     .padding(10)
-                                    .background(Color(red: 0.95, green: 1.0, blue: 0.95).opacity(0.7))
-                                    .cornerRadius(10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color("customLightSectionColor").opacity(0.5))
+                                    )
                                 }
                             }
                         }
                         .padding()
                         .background(
-                            RoundedRectangle(cornerRadius: 18)
-                                .fill(Color.white)
-                                .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(22)
+                        .shadow(color: Color("HighlightColor").opacity(0.10), radius: 12, x: 0, y: 6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22)
+                                .stroke(Color("HighlightColor").opacity(0.18), lineWidth: 1.5)
                         )
                         .padding(.horizontal, 16)
+                        .animation(.spring(), value: incomeSum)
                     }
                 }
                 .padding(.top, 8)
@@ -503,7 +514,8 @@ struct StatisticsTabView: View {
                                 Spacer()
                                 Text(formattedAmount(totals.values.reduce(0, +)))
                                     .font(.system(size: 24, weight: .heavy))
-                                    .foregroundColor(Color("ExpenseColor"))
+                                    .foregroundColor(Color("HighlightColor"))
+                                    .shadow(color: Color("HighlightColor").opacity(0.18), radius: 2, x: 0, y: 2)
                             }
                             .contentShape(Rectangle())
                         }
@@ -516,14 +528,15 @@ struct StatisticsTabView: View {
                                     Label("현금 합계 (\(cashCount)건)", systemImage: "banknote")
                                         .font(.system(size: 12, weight: .regular))
                                         .foregroundColor(.secondary)
+                                    Spacer()
                                     Text(formattedAmount(cashSum))
                                         .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.4))
+                                        .foregroundColor(Color("HighlightColor"))
                                 }
                             }
                             .padding(.vertical, 10)
                             .padding(.horizontal, 14)
-                            .background(Color(red: 0.88, green: 1.0, blue: 0.92).opacity(0.8))
+                            .background(Color("customLightSectionColor").opacity(0.5))
                             .cornerRadius(12)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -538,13 +551,13 @@ struct StatisticsTabView: View {
                                 NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", customBGColor: customBGColor)) {
                                     Text(formattedAmount(cardSum))
                                         .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(Color(red: 0.25, green: 0.45, blue: 0.85))
+                                        .foregroundColor(Color("HighlightColor"))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
                             .padding(.vertical, 10)
                             .padding(.horizontal, 14)
-                            .background(Color(red: 0.92, green: 0.96, blue: 1.0).opacity(0.8))
+                            .background(Color("customLightSectionColor").opacity(0.5))
                             .cornerRadius(12)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -573,10 +586,10 @@ struct StatisticsTabView: View {
                                                 Spacer()
                                                 Text(formattedAmount(value))
                                                     .font(.system(size: 15, weight: .semibold))
-                                                    .foregroundColor(Color(red: 0.25, green: 0.45, blue: 0.85))
+                                                    .foregroundColor(Color("HighlightColor"))
                                             }
                                             .padding(8)
-                                            .background(Color(.systemGray6))
+                                            .background(Color("customLightSectionColor").opacity(0.5))
                                             .cornerRadius(8)
                                         }
                                         .buttonStyle(PlainButtonStyle())
@@ -589,15 +602,20 @@ struct StatisticsTabView: View {
                     }
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.white)
-                            .shadow(color: Color.black.opacity(0.13), radius: 12, x: 0, y: 6)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.gray.opacity(0.10), lineWidth: 1.5)
-                            )
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                    .padding(.horizontal, 18)
+                    .cornerRadius(22)
+                    .shadow(color: Color("HighlightColor").opacity(0.10), radius: 12, x: 0, y: 6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(Color("HighlightColor").opacity(0.18), lineWidth: 1.5)
+                    )
+                    .padding(.horizontal, 16)
+                    .animation(.spring(), value: totals.values.reduce(0, +))
                 }
             }
             .padding(.top, 8)
