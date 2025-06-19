@@ -424,10 +424,10 @@ struct StatisticsTabView: View {
                         let categorySums = monthlyCategoryTotals[month] ?? [:]
                         let incomeSum = categorySums.values.reduce(0, +)
                         let monthNumber = month.split(separator: "-").count == 2 ? String(Int(month.split(separator: "-")[1]) ?? 0) : month
+                        let incomeCount = categorySums.values.reduce(0) { $0 + ( $1 > 0 ? 1 : 0 ) }
                         VStack(alignment: .leading, spacing: 16) {
-                            // 월별 수입 합계
                             HStack {
-                                Text("\(monthNumber)월 수입 합계")
+                                Text("\(monthNumber)월 수입 합계 (\(incomeCount)건)")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(Color("IncomeColor"))
                                 Spacer()
