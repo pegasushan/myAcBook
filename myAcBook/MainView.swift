@@ -13,6 +13,10 @@ struct MainView: View {
     @State private var selectedCategory: String = "all"
     @State private var selectedDateFilter: String = "all"
     @State private var dateRangeText: String = ""
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Record.date, ascending: false)],
+        animation: .default
+    ) private var records: FetchedResults<Record>
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,7 +59,8 @@ struct MainView: View {
                     selectedDateFilter: selectedDateFilter,
                     dateRangeText: dateRangeText,
                     onTap: {},
-                    onReset: {}
+                    onReset: {},
+                    records: Array(records)
                 )
                 .tabItem {
                     Label(NSLocalizedString("statistics_tab", comment: "통계 탭"), systemImage: "chart.pie")

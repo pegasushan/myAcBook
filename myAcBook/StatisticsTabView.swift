@@ -2,6 +2,102 @@ import CoreData
 import SwiftUI
 import Charts
 
+struct ExpenseDetailView: View {
+    let month: String
+    var paymentType: String? = nil
+    var cardName: String? = nil
+    var customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow)
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \Record.date, ascending: false)],
+        animation: .default
+    ) private var records: FetchedResults<Record>
+
+    var detailTitle: String {
+        var title = "\(month) 지출"
+        if let paymentType = paymentType, let cardName = cardName {
+            title += "(\(paymentType)/\(cardName))"
+        } else if let paymentType = paymentType {
+            title += "(\(paymentType))"
+        } else if let cardName = cardName {
+            title += "(\(cardName))"
+        }
+        title += " 상세내역"
+        return title
+    }
+
+    init(month: String, paymentType: String? = nil, cardName: String? = nil, customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow)) {
+        self.month = month
+        self.paymentType = paymentType
+        self.cardName = cardName
+        self.customBGColor = customBGColor
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        let startDate = dateFormatter.date(from: month) ?? Date()
+        var comps = DateComponents()
+        comps.month = 1
+        let endDate = Calendar.current.date(byAdding: comps, to: startDate) ?? Date()
+        var predicateFormat = "date >= %@ AND date < %@ AND type == %@"
+        var predicateArgs: [Any] = [startDate as NSDate, endDate as NSDate, "지출"]
+        if let paymentType = paymentType {
+            predicateFormat += " AND paymentType == %@"
+            predicateArgs.append(paymentType)
+        }
+        if let cardName = cardName {
+            predicateFormat += " AND card.name == %@"
+            predicateArgs.append(cardName)
+        }
+        let predicate = NSPredicate(format: predicateFormat, argumentArray: predicateArgs)
+        _records = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(keyPath: \Record.date, ascending: false)],
+            predicate: predicate,
+            animation: .default
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(detailTitle)
+                .font(.title3).bold()
+                .padding(.top, 16)
+            if records.isEmpty {
+                Spacer()
+                Text("표시할 내역이 없습니다.")
+                    .foregroundColor(.secondary)
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(records, id: \.objectID) { record in
+                            RecordRowView(
+                                record: record,
+                                isDeleteMode: false,
+                                selectedRecords: [],
+                                toggleSelection: { _ in },
+                                selectedRecord: .constant(nil),
+                                formattedAmount: { amount in
+                                    let numberFormatter = NumberFormatter()
+                                    numberFormatter.numberStyle = .decimal
+                                    numberFormatter.maximumFractionDigits = 0
+                                    numberFormatter.groupingSeparator = ","
+                                    return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
+                                },
+                                formattedDate: { date in
+                                    let formatter = DateFormatter()
+                                    formatter.dateFormat = "yyyy/M/d"
+                                    return formatter.string(from: date)
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                }
+            }
+        }
+        .background(customBGColor.ignoresSafeArea())
+    }
+}
+
 struct StatisticsTabView: View {
     @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
     @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
@@ -31,6 +127,7 @@ struct StatisticsTabView: View {
     @State private var selectedStatTab: String = NSLocalizedString("graph", comment: "그래프")
     @State private var expandedCardMonth: String? = nil
     @State private var selectedPeriod: String = "3개월"
+    let records: [Record]
 
     var customBGColor: Color {
         colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
@@ -142,6 +239,7 @@ struct StatisticsTabView: View {
                     .background(customBGColor)
                 } else {
                     ExpenseAccordionSectionView(
+                        monthRecordMap: monthRecordMap,
                         monthlyCategoryTotals: filterMonths(dict: monthlyCategoryExpenseTotals),
                         monthlyCardExpenseTotals: filterMonths(dict: monthlyCardExpenseTotals),
                         monthlyCashExpenseTotals: filterMonths(dict: monthlyCashExpenseTotals),
@@ -367,6 +465,7 @@ struct StatisticsTabView: View {
 
     @ViewBuilder
     func ExpenseAccordionSectionView(
+        monthRecordMap: [String: [Record]],
         monthlyCategoryTotals: [String: [String: Double]],
         monthlyCardExpenseTotals: [String: [String: Double]],
         monthlyCashExpenseTotals: [String: Double],
@@ -375,92 +474,124 @@ struct StatisticsTabView: View {
     ) -> some View {
         let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: false)
         ScrollView {
-            VStack(spacing: 28) {
+            VStack(spacing: 36) {
                 ForEach(sortedMonths, id: \.self) { month in
+                    let filteredMonthRecords = monthRecordMap[month] ?? []
+                    let monthCount = filteredMonthRecords.count
+                    let filteredCashRecords = filteredMonthRecords.filter { $0.paymentType == "현금" }
+                    let cashCount = filteredCashRecords.count
+                    let filteredCardRecords = filteredMonthRecords.filter { $0.paymentType == "카드" }
+                    let cardCount = filteredCardRecords.count
                     let totals = monthlyCategoryTotals[month] ?? [:]
-                    let sum = totals.values.reduce(0, +)
                     let cashSum = monthlyCashExpenseTotals[month] ?? 0
                     let cardSums = monthlyCardExpenseTotals[month] ?? [:]
                     let cardSum = cardSums.values.reduce(0, +)
                     let monthNumber = month.split(separator: "-").count == 2 ? String(Int(month.split(separator: "-")[1]) ?? 0) : month
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 18) {
                         // 월별 합계
-                        HStack {
-                            Text("\(monthNumber)월 합계")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(Color("HighlightColor"))
-                            Spacer()
-                            Text(formattedAmount(sum))
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(Color("ExpenseColor"))
+                        NavigationLink(destination: ExpenseDetailView(month: month, customBGColor: customBGColor)) {
+                            HStack {
+                                Text("\(monthNumber)월 합계 (\(monthCount)건)")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(Color("HighlightColor"))
+                                Spacer()
+                                Text(formattedAmount(totals.values.reduce(0, +)))
+                                    .font(.system(size: 24, weight: .heavy))
+                                    .foregroundColor(Color("ExpenseColor"))
+                            }
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(PlainButtonStyle())
                         .padding(.bottom, 2)
                         // 현금/카드 합계 카드 박스
-                        HStack(spacing: 14) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Label("현금 합계", systemImage: "banknote")
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.5))
-                                Text(formattedAmount(cashSum))
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(Color("ExpenseColor"))
-                            }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .background(Color(red: 0.85, green: 1.0, blue: 0.95).opacity(0.7))
-                            .cornerRadius(12)
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Label("카드 합계", systemImage: "creditcard")
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.8))
-                                    Spacer()
-                                    Image(systemName: expandedCardMonth.wrappedValue == month ? "chevron.up" : "chevron.down")
-                                        .foregroundColor(.gray)
+                        HStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "현금", customBGColor: customBGColor)) {
+                                    Label("현금 합계 (\(cashCount)건)", systemImage: "banknote")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.secondary)
+                                    Text(formattedAmount(cashSum))
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.4))
                                 }
-                                Text(formattedAmount(cardSum))
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(Color("ExpenseColor"))
                             }
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .background(Color(red: 0.9, green: 0.95, blue: 1.0).opacity(0.7))
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 14)
+                            .background(Color(red: 0.88, green: 1.0, blue: 0.92).opacity(0.8))
                             .cornerRadius(12)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Label("카드 합계 (\(cardCount)건)", systemImage: "creditcard")
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Image(systemName: expandedCardMonth.wrappedValue == month ? "chevron.up" : "chevron.down")
+                                    .foregroundColor(.gray)
+                                NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", customBGColor: customBGColor)) {
+                                    Text(formattedAmount(cardSum))
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(Color(red: 0.25, green: 0.45, blue: 0.85))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 14)
+                            .background(Color(red: 0.92, green: 0.96, blue: 1.0).opacity(0.8))
+                            .cornerRadius(12)
+                            .contentShape(Rectangle())
                             .onTapGesture {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.25)) {
                                     expandedCardMonth.wrappedValue = expandedCardMonth.wrappedValue == month ? nil : month
                                 }
                             }
-                        }
-                        // 카드별 합계 펼침
-                        if expandedCardMonth.wrappedValue == month, !cardSums.isEmpty {
-                            VStack(spacing: 6) {
-                                ForEach(cardSums.sorted(by: { $0.key < $1.key }), id: \.key) { cardName, value in
-                                    HStack {
-                                        Label(cardName, systemImage: "creditcard.fill")
-                                            .font(.system(size: 13))
-                                            .foregroundColor(.gray)
-                                        Spacer()
-                                        Text(formattedAmount(value))
-                                            .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(Color("ExpenseColor"))
+                            // 카드별 합계 펼침
+                            if expandedCardMonth.wrappedValue == month, !cardSums.isEmpty {
+                                VStack(spacing: 6) {
+                                    let filteredCardNameRecords: (String) -> [Record] = { cardName in
+                                        filteredMonthRecords.filter { record in
+                                            let localFormatter = DateFormatter()
+                                            localFormatter.dateFormat = "yyyy-MM"
+                                            let recordMonth = localFormatter.string(from: record.date ?? Date())
+                                            return recordMonth == month && record.type == "지출" && record.paymentType == "카드" && record.card?.name == cardName
+                                        }
                                     }
-                                    .padding(8)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(8)
+                                    ForEach(cardSums.sorted(by: { $0.key < $1.key }), id: \.key) { cardName, value in
+                                        let cardNameCount = filteredCardNameRecords(cardName).count
+                                        NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", cardName: cardName, customBGColor: customBGColor)) {
+                                            HStack {
+                                                Label("\(cardName) (\(cardNameCount)건)", systemImage: "creditcard.fill")
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(.gray)
+                                                Spacer()
+                                                Text(formattedAmount(value))
+                                                    .font(.system(size: 15, weight: .semibold))
+                                                    .foregroundColor(Color(red: 0.25, green: 0.45, blue: 0.85))
+                                            }
+                                            .padding(8)
+                                            .background(Color(.systemGray6))
+                                            .cornerRadius(8)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
                                 }
+                                .padding(.top, 2)
+                                .transition(.move(edge: .top).combined(with: .opacity))
                             }
-                            .padding(.top, 2)
-                            .transition(.move(edge: .top).combined(with: .opacity))
                         }
                     }
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: 18)
+                        RoundedRectangle(cornerRadius: 20)
                             .fill(Color.white)
-                            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
+                            .shadow(color: Color.black.opacity(0.13), radius: 12, x: 0, y: 6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.gray.opacity(0.10), lineWidth: 1.5)
+                            )
                     )
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 18)
                 }
             }
             .padding(.top, 8)
@@ -506,6 +637,16 @@ struct StatisticsTabView: View {
             filteredKeys = months
         }
         return dict.filter { filteredKeys.contains($0.key) }
+    }
+
+    // 월별 지출 레코드 미리 그룹핑
+    var monthRecordMap: [String: [Record]] {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        let expenseRecords = records.filter { $0.type == "지출" }
+        return Dictionary(grouping: expenseRecords) { record in
+            dateFormatter.string(from: record.date ?? Date())
+        }
     }
 }
 
