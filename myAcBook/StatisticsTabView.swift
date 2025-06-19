@@ -57,14 +57,15 @@ struct ExpenseDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             Text(detailTitle)
-                .font(.title3).bold()
+                .font(.headline).bold()
                 .padding(.top, 16)
             Text("\(records.count)건")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 16)
-                .padding(.bottom, 0)
+                .padding(.top, 10)
+                .padding(.bottom, 2)
             if records.isEmpty {
                 Spacer()
                 Text("표시할 내역이 없습니다.")
