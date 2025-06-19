@@ -430,13 +430,13 @@ struct StatisticsTabView: View {
                             HStack {
                                 Text("\(monthNumber)월 수입 합계 (\(incomeCount)건)")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(Color("HighlightColor"))
+                                    .foregroundColor(Color("IncomeColor"))
                                     .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 Spacer()
                                 Text(formattedAmount(incomeSum))
                                     .font(.system(size: 24, weight: .heavy))
-                                    .foregroundColor(Color("HighlightColor"))
-                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : Color("HighlightColor").opacity(0.18), radius: 2, x: 0, y: 2)
+                                    .foregroundColor(Color("IncomeColor"))
+                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : Color("IncomeColor").opacity(0.18), radius: 2, x: 0, y: 2)
                             }
                             .padding(.bottom, 2)
                             VStack(spacing: 10) {
@@ -448,7 +448,7 @@ struct StatisticsTabView: View {
                                         Spacer()
                                         Text(formattedAmount(value))
                                             .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(Color("HighlightColor"))
+                                            .foregroundColor(Color("IncomeColor"))
                                             .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                     }
                                     .padding(10)
@@ -597,7 +597,7 @@ struct StatisticsTabView: View {
                                                 Spacer()
                                                 Text(formattedAmount(value))
                                                     .font(.system(size: 15, weight: .semibold))
-                                                    .foregroundColor(Color("HighlightColor"))
+                                                    .foregroundColor(Color("IncomeColor"))
                                                     .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                             }
                                             .padding(8)
