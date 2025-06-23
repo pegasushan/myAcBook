@@ -37,7 +37,7 @@ struct RecordRowView: View {
                                 .foregroundColor(.white)
                         )
                         .shadow(color: Color.blue.opacity(0.12), radius: 2, x: 0, y: 1)
-                    } else {
+                    
                         Circle()
                             .strokeBorder(
                                 LinearGradient(
@@ -56,27 +56,22 @@ struct RecordRowView: View {
             Image(systemName: (record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
                 .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
                 .font(.system(size: 18, weight: .regular, design: .rounded))
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    if let date = record.date {
-                        Text(formattedDate(date)).appBody()
+            
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Text(record.categoryRelation?.name ?? "unknown").appBody()
+                        .foregroundColor(Color("HighlightColor"))
+                    if record.paymentType == "카드" {
+                        Text("💳").appBody()
                             .foregroundColor(.secondary)
                     }
-                    HStack(spacing: 6) {
-                        Text(record.categoryRelation?.name ?? "unknown").appBody()
-                            .foregroundColor(Color("HighlightColor"))
-                        if record.paymentType == "카드" {
-                            Text("💳").appBody()
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
                 }
-                if let detail = record.detail, !detail.isEmpty {
-                    Text(detail).appBody()
-                        .foregroundColor(.primary)
-                        .padding(.top, 2)
-                }
+                .font(.system(size: 15, weight: .regular, design: .rounded))
+            }
+            if let detail = record.detail, !detail.isEmpty {
+                Text(detail).appBody()
+                    .foregroundColor(.primary)
+                    .padding(.top, 2)
             }
             Spacer()
             Text(((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "+ " : "- ") + formattedAmount(record.amount))

@@ -366,43 +366,8 @@ struct ContentView: View {
                                         .padding(.bottom, 2)
                                         .padding(.leading, 2)
                                 }
-                                // Glassmorphism 카드
-                                HStack(alignment: .center, spacing: 12) {
-                                    // 카테고리 컬러 포인트
-                                    Circle()
-                                        .fill(categoryColor(record.categoryRelation?.name))
-                                        .frame(width: 10, height: 10)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        HStack(alignment: .center, spacing: 6) {
-                                            Text(record.categoryRelation?.name ?? "-")
-                                                .font(.system(size: 15, weight: .semibold))
-                                            if record.paymentType == "카드" {
-                                                Image(systemName: "creditcard")
-                                                    .font(.system(size: 13))
-                                            }
-                                            Spacer()
-                                            Text(formattedAmount(record.amount))
-                                                .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor((record.type ?? "") == NSLocalizedString("income", comment: "") ? .blue : .red)
-                                        }
-                                        if let detail = record.detail, !detail.isEmpty {
-                                            Text(detail)
-                                                .font(.system(size: 13))
-                                                .foregroundColor(.secondary)
-                                        }
-                                    }
-                                }
-                                .padding(14)
-                                .background(
-                                    BlurView(style: .systemMaterial)
-                                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                )
-                                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-                                .padding(.bottom, 8)
+                                recordRowView(record: record)
+                                    .padding(.bottom, 8)
                             }
                             .onAppear {
                                 if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
