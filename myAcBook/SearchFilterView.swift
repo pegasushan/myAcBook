@@ -227,7 +227,11 @@ struct SearchFilterView: View {
                         .foregroundColor(.primary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(action: { onReset() }) {
+                    Button(action: {
+                        onReset()
+                        selectedCategoryIndex = 0
+                        selectedDateIndex = 0
+                    }) {
                         Image(systemName: "arrow.counterclockwise")
                             .font(.system(size: 16, weight: .regular))
                     }

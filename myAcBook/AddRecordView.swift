@@ -387,11 +387,15 @@ struct AddRecordView: View {
         record.card = selectedCard
         record.categoryRelation = selectedCategory
 
-        do {
-            try viewContext.save()
-            dismiss()
-        } catch {
-            print("Save error: \(error.localizedDescription)")
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try viewContext.save()
+                DispatchQueue.main.async {
+                    dismiss()
+                }
+            } catch {
+                print("Save error: \(error.localizedDescription)")
+            }
         }
     }
     

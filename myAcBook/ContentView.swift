@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 import GoogleMobileAds
+import CoreData
 // AdMob 배너 광고 뷰
 struct BannerAdView: UIViewRepresentable {
     func makeUIView(context: Context) -> BannerView {
@@ -22,7 +23,7 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var purchaseManager: IAPManager
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Record.date, ascending: false)],
+        fetchRequest: ContentView.makeFetchRequest(selectedDateFilter: UserDefaults.standard.string(forKey: "selectedDateFilter")),
         animation: .default)
     private var records: FetchedResults<Record>
 
@@ -391,7 +392,7 @@ struct ContentView: View {
     // MARK: - Grouped Record Sections (중복 제거)
     private var groupedRecordSections: some View {
         Group {
-            if filteredRecords.isEmpty {
+            if records.isEmpty {
                 VStack(spacing: 20) {
                     Image(systemName: "tray")
                         .resizable()
@@ -417,46 +418,14 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                     }
                 }
-                .padding(.horizontal, 0)
             } else {
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(sortedRecordDates, id: \.self) { date in
-                            if let records = groupedRecordsByDate[date] {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text(formattedDate(
-                                        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month, .day], from: date)) ?? date
-                                    ))
-                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                    .foregroundColor(Color("HighlightColor"))
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 12)
-                                    VStack(spacing: 0) {
-                                        ForEach(records.indices, id: \.self) { index in
-                                            if index != 0 {
-                                                Divider().padding(.vertical, 2)
-                                            }
-                                            recordRowView(record: records[index])
-                                        }
-                                    }
-                                }
-                                .background(
-                                    RoundedRectangle(cornerRadius: 18)
-                                        .fill(customCardColor)
-                                )
-                                .padding(.horizontal, 0)
-                                .padding(.top, 4)
-                                .padding(.bottom, 8)
-                            }
-                        }
-                    }
+                List(records, id: \.objectID) { record in
+                    recordRowView(record: record)
                 }
-                .padding(.horizontal, 0)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
-                .background(customBGColor)
+                .listStyle(.plain)
             }
         }
+        .padding(.horizontal, 0)
     }
 
     // MARK: - View Builders
@@ -615,6 +584,40 @@ struct ContentView: View {
             totals[month, default: 0] += record.amount
         }
         return totals
+    }
+
+    static func makeFetchRequest(selectedDateFilter: String?) -> NSFetchRequest<Record> {
+        let request = Record.fetchRequest()
+        let calendar = Calendar.current
+        var predicate: NSPredicate? = nil
+        if let filter = selectedDateFilter, filter != NSLocalizedString("all", comment: "") {
+            let now = Date()
+            let startOfToday = calendar.startOfDay(for: now)
+            switch filter {
+            case NSLocalizedString("today", comment: ""):
+                predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfToday as NSDate, calendar.date(byAdding: .day, value: 1, to: startOfToday)! as NSDate)
+            case NSLocalizedString("week", comment: ""):
+                if let weekAgo = calendar.date(byAdding: .day, value: -7, to: startOfToday) {
+                    predicate = NSPredicate(format: "date >= %@ AND date <= %@", weekAgo as NSDate, now as NSDate)
+                }
+            case NSLocalizedString("month", comment: ""):
+                if let monthAgo = calendar.date(byAdding: .month, value: -1, to: startOfToday) {
+                    predicate = NSPredicate(format: "date >= %@ AND date <= %@", monthAgo as NSDate, now as NSDate)
+                }
+            case NSLocalizedString("custom", comment: ""):
+                let customStart = UserDefaults.standard.double(forKey: "customStartDate")
+                let customEnd = UserDefaults.standard.double(forKey: "customEndDate")
+                let start = Date(timeIntervalSince1970: min(customStart, customEnd))
+                let end = Date(timeIntervalSince1970: max(customStart, customEnd))
+                predicate = NSPredicate(format: "date >= %@ AND date <= %@", start as NSDate, end as NSDate)
+            default:
+                break
+            }
+        }
+        request.predicate = predicate
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Record.date, ascending: false)]
+        request.fetchBatchSize = 50
+        return request
     }
 }
 
