@@ -22,11 +22,6 @@ struct ContentView: View {
     // MARK: - Environment & State
     @Environment(\.managedObjectContext) private var viewContext
     @EnvironmentObject var purchaseManager: IAPManager
-    @FetchRequest(
-        fetchRequest: ContentView.makeFetchRequest(selectedDateFilter: UserDefaults.standard.string(forKey: "selectedDateFilter")),
-        animation: .default)
-    private var records: FetchedResults<Record>
-
     @AppStorage("colorScheme") private var colorSchemeSetting: String = "system"
     @AppStorage("isHapticsEnabled") private var isHapticsEnabled: Bool = true
     @AppStorage("isAdRemoved") private var isAdRemoved: Bool = false
@@ -45,7 +40,7 @@ struct ContentView: View {
     @State private var selectedExpenseCategory: String = NSLocalizedString("all", comment: "")
     @State private var selectedAllCategory: String = NSLocalizedString("all", comment: "")
     @State private var selectedPaymentType: String = NSLocalizedString("all", comment: "전체")
-    @AppStorage("selectedDateFilter") private var selectedDateFilter: String = NSLocalizedString("all", comment: "")
+    @AppStorage("selectedDateFilter") private var selectedDateFilter: String = NSLocalizedString("month", comment: "한달")
     @AppStorage("selectedTypeFilter") private var selectedTypeFilter: String = NSLocalizedString("all", comment: "")
     @State private var showFilterSheet = false
     @AppStorage("customStartDate") private var customStartTimestamp: Double = Date().timeIntervalSince1970
@@ -61,6 +56,10 @@ struct ContentView: View {
     @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
     @Environment(\.colorScheme) var colorScheme
+
+    // 페이징 관련 상태
+    @State private var loadedMonthCount: Int = 1
+    @State private var records: [Record] = []
 
     // MARK: - Init
     var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [String: Double]) -> Void)? = nil
@@ -150,6 +149,88 @@ struct ContentView: View {
         groupedRecordsByDate.keys.sorted(by: >)
     }
 
+    // MARK: - 데이터 페치 함수
+    private func fetchRecords() {
+        let request = Record.fetchRequest()
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
+        var predicate: NSPredicate? = nil
+        if selectedDateFilter == NSLocalizedString("all", comment: "") {
+            if let startDate = calendar.date(byAdding: .month, value: -loadedMonthCount, to: startOfToday) {
+                predicate = NSPredicate(format: "date >= %@ AND date <= %@", startDate as NSDate, now as NSDate)
+            }
+        } else if selectedDateFilter == NSLocalizedString("month", comment: "한달") {
+            if let monthAgo = calendar.date(byAdding: .month, value: -1, to: startOfToday) {
+                predicate = NSPredicate(format: "date >= %@ AND date <= %@", monthAgo as NSDate, now as NSDate)
+            }
+        } else if selectedDateFilter == NSLocalizedString("week", comment: "1주일") {
+            if let weekAgo = calendar.date(byAdding: .day, value: -7, to: startOfToday) {
+                predicate = NSPredicate(format: "date >= %@ AND date <= %@", weekAgo as NSDate, now as NSDate)
+            }
+        } else if selectedDateFilter == NSLocalizedString("today", comment: "오늘") {
+            predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfToday as NSDate, calendar.date(byAdding: .day, value: 1, to: startOfToday)! as NSDate)
+        } else if selectedDateFilter == NSLocalizedString("custom", comment: "직접 선택") {
+            let safeStartDate = min(customStartDate, customEndDate)
+            let safeEndDate = max(customStartDate, customEndDate)
+            predicate = NSPredicate(format: "date >= %@ AND date <= %@", safeStartDate as NSDate, safeEndDate as NSDate)
+        }
+        request.predicate = predicate
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \Record.date, ascending: false)]
+        request.fetchBatchSize = 50
+        do {
+            let result = try viewContext.fetch(request)
+            records = result
+        } catch {
+            records = []
+        }
+    }
+
+    // MARK: - 전체 필터 적용 총 건수
+    private var totalFilteredRecordsCount: Int {
+        let request = Record.fetchRequest()
+        var predicates: [NSPredicate] = []
+        // 타입, 카테고리, 결제수단 등 기존 필터 조건 추가
+        if selectedTypeFilter != NSLocalizedString("all", comment: "") {
+            predicates.append(NSPredicate(format: "type == %@", selectedTypeFilter))
+        }
+        if currentCategory != NSLocalizedString("all", comment: "") {
+            predicates.append(NSPredicate(format: "categoryRelation.name == %@", currentCategory))
+        }
+        if selectedPaymentType != NSLocalizedString("all", comment: "전체") && selectedTypeFilter == NSLocalizedString("expense", comment: "지출") {
+            predicates.append(NSPredicate(format: "paymentType == %@", selectedPaymentType))
+        }
+        // 기간 필터는 '전체'일 때는 추가하지 않음
+        if selectedDateFilter != NSLocalizedString("all", comment: "") {
+            let calendar = Calendar.current
+            let now = Date()
+            let startOfToday = calendar.startOfDay(for: now)
+            if selectedDateFilter == NSLocalizedString("month", comment: "한달") {
+                if let monthAgo = calendar.date(byAdding: .month, value: -1, to: startOfToday) {
+                    predicates.append(NSPredicate(format: "date >= %@ AND date <= %@", monthAgo as NSDate, now as NSDate))
+                }
+            } else if selectedDateFilter == NSLocalizedString("week", comment: "1주일") {
+                if let weekAgo = calendar.date(byAdding: .day, value: -7, to: startOfToday) {
+                    predicates.append(NSPredicate(format: "date >= %@ AND date <= %@", weekAgo as NSDate, now as NSDate))
+                }
+            } else if selectedDateFilter == NSLocalizedString("today", comment: "오늘") {
+                predicates.append(NSPredicate(format: "date >= %@ AND date < %@", startOfToday as NSDate, calendar.date(byAdding: .day, value: 1, to: startOfToday)! as NSDate))
+            } else if selectedDateFilter == NSLocalizedString("custom", comment: "직접 선택") {
+                let safeStartDate = min(customStartDate, customEndDate)
+                let safeEndDate = max(customStartDate, customEndDate)
+                predicates.append(NSPredicate(format: "date >= %@ AND date <= %@", safeStartDate as NSDate, safeEndDate as NSDate))
+            }
+        }
+        if !predicates.isEmpty {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+        }
+        do {
+            return try viewContext.count(for: request)
+        } catch {
+            return 0
+        }
+    }
+
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -159,18 +240,24 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            fetchRecords()
             notifyStatisticsDataChanged()
         }
         .onChange(of: selectedTypeFilter) {
+            fetchRecords()
             notifyStatisticsDataChanged()
         }
         .onChange(of: selectedCategory) {
+            fetchRecords()
             notifyStatisticsDataChanged()
         }
         .onChange(of: selectedDateFilter) {
+            loadedMonthCount = 1
+            fetchRecords()
             notifyStatisticsDataChanged()
         }
         .onChange(of: selectedPaymentType) {
+            fetchRecords()
             notifyStatisticsDataChanged()
         }
         .sheet(isPresented: $isAddingNewRecord) {
@@ -202,7 +289,7 @@ struct ContentView: View {
                     selectedIncomeCategory = NSLocalizedString("all", comment: "")
                     selectedExpenseCategory = NSLocalizedString("all", comment: "")
                     selectedAllCategory = NSLocalizedString("all", comment: "")
-                    selectedDateFilter = NSLocalizedString("all", comment: "")
+                    selectedDateFilter = NSLocalizedString("month", comment: "한달")
                     customStartTimestamp = Date().timeIntervalSince1970
                     customEndTimestamp = Date().timeIntervalSince1970
                     selectedPaymentType = NSLocalizedString("all", comment: "전체")
@@ -223,14 +310,52 @@ struct ContentView: View {
         VStack(spacing: 0) {
             headerBar
             filterSummarySection
-            // 총 건수 표시
-            Text("\(filteredRecords.count)건")
+            Text("\(totalFilteredRecordsCount)건")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.secondary)
-                .padding(.bottom, 0)
+                .padding(.bottom, 12)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 16)
-            groupedRecordSections
+            Group {
+                if records.isEmpty {
+                    VStack(spacing: 20) {
+                        Image(systemName: "tray")
+                            .resizable()
+                            .frame(width: 50, height: 50)
+                            .foregroundColor(.secondary)
+                        Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundColor(.primary)
+                        Button(action: { isAddingNewRecord = true }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .background(Color("HighlightColor"))
+                            .clipShape(Capsule())
+                            .shadow(radius: 4)
+                            .frame(maxWidth: .infinity)
+                            .multilineTextAlignment(.center)
+                        }
+                    }
+                } else {
+                    List(records, id: \.objectID) { record in
+                        recordRowView(record: record)
+                            .onAppear {
+                                if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
+                                    loadedMonthCount += 1
+                                    fetchRecords()
+                                }
+                            }
+                    }
+                    .listStyle(.plain)
+                }
+            }
             if isDeleteMode { deleteButtons }
         }
         .padding(.horizontal, 20)
@@ -306,7 +431,7 @@ struct ContentView: View {
                 selectedIncomeCategory = NSLocalizedString("all", comment: "")
                 selectedExpenseCategory = NSLocalizedString("all", comment: "")
                 selectedAllCategory = NSLocalizedString("all", comment: "")
-                selectedDateFilter = NSLocalizedString("all", comment: "")
+                selectedDateFilter = NSLocalizedString("month", comment: "한달")
                 customStartTimestamp = Date().timeIntervalSince1970
                 customEndTimestamp = Date().timeIntervalSince1970
                 selectedPaymentType = NSLocalizedString("all", comment: "전체")
@@ -387,45 +512,6 @@ struct ContentView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 20)
-    }
-
-    // MARK: - Grouped Record Sections (중복 제거)
-    private var groupedRecordSections: some View {
-        Group {
-            if records.isEmpty {
-                VStack(spacing: 20) {
-                    Image(systemName: "tray")
-                        .resizable()
-                        .frame(width: 50, height: 50)
-                        .foregroundColor(.secondary)
-                    Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
-                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundColor(.primary)
-                    Button(action: { isAddingNewRecord = true }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 20)
-                        .background(Color("HighlightColor"))
-                        .clipShape(Capsule())
-                        .shadow(radius: 4)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                    }
-                }
-            } else {
-                List(records, id: \.objectID) { record in
-                    recordRowView(record: record)
-                }
-                .listStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 0)
     }
 
     // MARK: - View Builders

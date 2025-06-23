@@ -240,7 +240,7 @@ struct SearchFilterView: View {
             }
             .onAppear {
                 if selectedDate.isEmpty {
-                    selectedDate = NSLocalizedString("all", comment: "전체")
+                    selectedDate = NSLocalizedString("month", comment: "한달")
                 }
                 if selectedIncomeCategory.isEmpty {
                     selectedIncomeCategory = NSLocalizedString("all", comment: "전체")
