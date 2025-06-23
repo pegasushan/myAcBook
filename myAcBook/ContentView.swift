@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 import GoogleMobileAds
 import CoreData
+import UIKit
 // AdMob 배너 광고 뷰
 struct BannerAdView: UIViewRepresentable {
     func makeUIView(context: Context) -> BannerView {
@@ -16,6 +17,14 @@ struct BannerAdView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: BannerView, context: Context) {}
+}
+
+struct BlurView: UIViewRepresentable {
+    var style: UIBlurEffect.Style = .systemMaterial
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        return UIVisualEffectView(effect: UIBlurEffect(style: style))
+    }
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
 }
 
 struct ContentView: View {
@@ -344,16 +353,68 @@ struct ContentView: View {
                         }
                     }
                 } else {
-                    List(records, id: \.objectID) { record in
-                        recordRowView(record: record)
+                    List {
+                        ForEach(records.indices, id: \.self) { idx in
+                            let record = records[idx]
+                            let previousRecord: Record? = idx > 0 ? records[idx-1] : nil
+                            VStack(alignment: .leading, spacing: 0) {
+                                if isNewDate(record, previousRecord) {
+                                    Text(displayDate(record.date))
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
+                                        .padding(.top, 6)
+                                        .padding(.bottom, 2)
+                                        .padding(.leading, 2)
+                                }
+                                // Glassmorphism 카드
+                                HStack(alignment: .center, spacing: 12) {
+                                    // 카테고리 컬러 포인트
+                                    Circle()
+                                        .fill(categoryColor(record.categoryRelation?.name))
+                                        .frame(width: 10, height: 10)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(alignment: .center, spacing: 6) {
+                                            Text(record.categoryRelation?.name ?? "-")
+                                                .font(.system(size: 15, weight: .semibold))
+                                            if record.paymentType == "카드" {
+                                                Image(systemName: "creditcard")
+                                                    .font(.system(size: 13))
+                                            }
+                                            Spacer()
+                                            Text(formattedAmount(record.amount))
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor((record.type ?? "") == NSLocalizedString("income", comment: "") ? .blue : .red)
+                                        }
+                                        if let detail = record.detail, !detail.isEmpty {
+                                            Text(detail)
+                                                .font(.system(size: 13))
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                }
+                                .padding(14)
+                                .background(
+                                    BlurView(style: .systemMaterial)
+                                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                )
+                                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
+                                .padding(.bottom, 8)
+                            }
                             .onAppear {
                                 if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
                                     loadedMonthCount += 1
                                     fetchRecords()
                                 }
                             }
+                            .listRowSeparator(.hidden)
+                        }
                     }
                     .listStyle(.plain)
+                    .background(customBGColor.ignoresSafeArea())
                 }
             }
             if isDeleteMode { deleteButtons }
@@ -672,6 +733,31 @@ struct ContentView: View {
         return totals
     }
 
+    // 날짜가 바뀔 때마다 true를 반환하는 유틸
+    private func isNewDate(_ record: Record, _ previousRecord: Record?) -> Bool {
+        guard let date1 = record.date else { return false }
+        guard let date2 = previousRecord?.date else { return true }
+        let calendar = Calendar.current
+        return !calendar.isDate(date1, inSameDayAs: date2)
+    }
+
+    // 날짜 포맷 함수 (오늘/어제 한글, 나머지 yyyy/M/d)
+    private func displayDate(_ date: Date?) -> String {
+        guard let date = date else { return "-" }
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "오늘" }
+        if calendar.isDateInYesterday(date) { return "어제" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/M/d"
+        return formatter.string(from: date)
+    }
+
+    private func isTodayOrYesterday(_ date: Date?) -> Bool {
+        guard let date = date else { return false }
+        let calendar = Calendar.current
+        return calendar.isDateInToday(date) || calendar.isDateInYesterday(date)
+    }
+
     static func makeFetchRequest(selectedDateFilter: String?) -> NSFetchRequest<Record> {
         let request = Record.fetchRequest()
         let calendar = Calendar.current
@@ -704,6 +790,17 @@ struct ContentView: View {
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Record.date, ascending: false)]
         request.fetchBatchSize = 50
         return request
+    }
+
+    // 카테고리별 컬러 포인트 함수
+    private func categoryColor(_ category: String?) -> Color {
+        switch category {
+        case "식대": return Color.pink.opacity(0.7)
+        case "음료": return Color.blue.opacity(0.5)
+        case "교통": return Color.green.opacity(0.5)
+        case "부수입": return Color.purple.opacity(0.5)
+        default: return Color.gray.opacity(0.3)
+        }
     }
 }
 
