@@ -92,7 +92,8 @@ struct ExpenseDetailView: View {
                                     let formatter = DateFormatter()
                                     formatter.dateFormat = "yyyy/M/d"
                                     return formatter.string(from: date)
-                                }
+                                },
+                                onDelete: { }
                             )
                         }
                     }

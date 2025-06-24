@@ -556,21 +556,13 @@ struct ContentView: View {
             toggleSelection: toggleSelection,
             selectedRecord: $selectedRecord,
             formattedAmount: formattedAmount,
-            formattedDate: formattedDate
+            formattedDate: formattedDate,
+            onDelete: {
+                fetchRecords()
+                notifyStatisticsDataChanged()
+            }
         )
         .onTapGesture { selectedRecord = record }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            if !isDeleteMode {
-                Button(role: .destructive) {
-                    withAnimation {
-                        viewContext.delete(record)
-                        try? viewContext.save()
-                    }
-                } label: {
-                    Label(NSLocalizedString("delete", comment: "삭제"), systemImage: "trash")
-                }
-            }
-        }
     }
 
     // MARK: - Helpers

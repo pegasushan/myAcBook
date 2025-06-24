@@ -15,6 +15,7 @@ struct RecordRowView: View {
     @Binding var selectedRecord: Record?
     let formattedAmount: (Double) -> String
     let formattedDate: (Date) -> String
+    let onDelete: () -> Void
     @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
     var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
     @Environment(\.colorScheme) var colorScheme
