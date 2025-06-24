@@ -365,9 +365,12 @@ struct ContentView: View {
                                         .padding(.top, 6)
                                         .padding(.bottom, 2)
                                         .padding(.leading, 2)
+                                    recordRowView(record: record)
+                                        .padding(.bottom, 2)
+                                } else {
+                                    recordRowView(record: record)
+                                        .padding(.bottom, 0)
                                 }
-                                recordRowView(record: record)
-                                    .padding(.bottom, 8)
                             }
                             .onAppear {
                                 if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {

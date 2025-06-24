@@ -78,12 +78,13 @@ struct RecordRowView: View {
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 10)
                 .fill(colorScheme == .light ? customLightCardColor : Color("SectionBGColor"))
         )
+        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
         .onTapGesture {
             if isDeleteMode {
                 toggleSelection(record)
