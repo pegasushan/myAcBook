@@ -20,12 +20,16 @@ struct CustomDropdown: View {
     @Binding var selectedIndex: Int?
     let options: [String]
     let placeholder: String
+    var onDropdownTap: (() -> Void)? = nil
     @State private var isExpanded = false
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button(action: { withAnimation { isExpanded.toggle() } }) {
+            Button(action: {
+                onDropdownTap?()
+                withAnimation { isExpanded.toggle() }
+            }) {
                 HStack {
                     Text(selectedIndex.flatMap { options[safe: $0] } ?? placeholder)
                         .foregroundColor(colorScheme == .light ? .primary : .white)
@@ -128,6 +132,7 @@ struct AddRecordView: View {
     @State private var fetchedCategories: [AppCategory] = []
 
     var recordToEdit: Record?
+    var onSave: (() -> Void)? = nil
 
     @State private var showCardDropdown = false
     @State private var showCategoryDropdown = false
@@ -163,6 +168,10 @@ struct AddRecordView: View {
                                             .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
                                     )
                                     .focused($isAmountFieldFocused)
+                                    .onTapGesture {
+                                        isAmountFieldFocused = true
+                                        isDetailFieldFocused = false
+                                    }
                                     .onChange(of: amount) {
                                         let numberString = amount.replacingOccurrences(of: ",", with: "")
                                         if let value = Int(numberString) {
@@ -183,6 +192,10 @@ struct AddRecordView: View {
                                 .pickerStyle(.segmented)
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .disabled(recordToEdit != nil)
+                                .onTapGesture {
+                                    isAmountFieldFocused = false
+                                    isDetailFieldFocused = false
+                                }
                             }
                             .padding(.horizontal)
                             // 결제수단/카드
@@ -197,12 +210,19 @@ struct AddRecordView: View {
                                         }
                                         .pickerStyle(SegmentedPickerStyle())
                                         .font(.system(size: 15, weight: .regular, design: .rounded))
+                                        .onTapGesture {
+                                            isAmountFieldFocused = false
+                                            isDetailFieldFocused = false
+                                        }
                                     }
                                     if paymentType == NSLocalizedString("card", comment: "카드") {
                                         HStack(spacing: 8) {
                                             Image(systemName: "creditcard.fill")
                                                 .foregroundColor(.gray)
-                                            CustomDropdown(selectedIndex: $selectedCardIndex, options: cardViewModel.cards.map { $0.name ?? "" }, placeholder: NSLocalizedString("카드선택", comment: "카드선택"))
+                                            CustomDropdown(selectedIndex: $selectedCardIndex, options: cardViewModel.cards.map { $0.name ?? "" }, placeholder: NSLocalizedString("카드선택", comment: "카드선택"), onDropdownTap: {
+                                                isAmountFieldFocused = false
+                                                isDetailFieldFocused = false
+                                            })
                                                 .frame(maxWidth: .infinity)
                                             Button(action: { showCardManager = true }) {
                                                 Image(systemName: "plus")
@@ -223,7 +243,10 @@ struct AddRecordView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "folder.fill")
                                     .foregroundColor(.gray)
-                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.map { $0.name ?? "" }, placeholder: NSLocalizedString("카테고리 선택", comment: "카테고리 선택"))
+                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.map { $0.name ?? "" }, placeholder: NSLocalizedString("카테고리 선택", comment: "카테고리 선택"), onDropdownTap: {
+                                    isAmountFieldFocused = false
+                                    isDetailFieldFocused = false
+                                })
                                     .frame(maxWidth: .infinity)
                                 Button(action: { showCategoryManager = true }) {
                                     Image(systemName: "plus")
@@ -251,6 +274,10 @@ struct AddRecordView: View {
                                             .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
                                     )
                                     .focused($isDetailFieldFocused)
+                                    .onTapGesture {
+                                        isDetailFieldFocused = true
+                                        isAmountFieldFocused = false
+                                    }
                             }
                             .padding(.horizontal)
                             // 날짜
@@ -265,6 +292,7 @@ struct AddRecordView: View {
                         .padding(.top, 48)
                         .padding(.bottom, 32)
                     }
+                    .background(Color.clear)
                     .onTapGesture {
                         isAmountFieldFocused = false
                         isDetailFieldFocused = false
@@ -391,6 +419,7 @@ struct AddRecordView: View {
             do {
                 try viewContext.save()
                 DispatchQueue.main.async {
+                    onSave?()
                     dismiss()
                 }
             } catch {

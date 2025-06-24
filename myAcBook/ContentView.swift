@@ -270,7 +270,10 @@ struct ContentView: View {
             notifyStatisticsDataChanged()
         }
         .sheet(isPresented: $isAddingNewRecord) {
-            AddRecordView()
+            AddRecordView(onSave: {
+                fetchRecords()
+                notifyStatisticsDataChanged()
+            })
         }
         .sheet(isPresented: $showFilterSheet) {
             let type = $selectedTypeFilter
