@@ -354,31 +354,34 @@ struct ContentView: View {
                     }
                 } else {
                     List {
-                        ForEach(records.indices, id: \.self) { idx in
-                            let record = records[idx]
+                        ForEach(records, id: \.id) { idxRecord in
+                            let record = idxRecord
+                            let idx = records.firstIndex(where: { $0.id == record.id }) ?? 0
                             let previousRecord: Record? = idx > 0 ? records[idx-1] : nil
-                            VStack(alignment: .leading, spacing: 0) {
-                                if isNewDate(record, previousRecord) {
-                                    Text(displayDate(record.date))
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
-                                        .padding(.top, 6)
-                                        .padding(.bottom, 2)
-                                        .padding(.leading, 2)
-                                    recordRowView(record: record)
-                                        .padding(.bottom, 2)
-                                } else {
-                                    recordRowView(record: record)
-                                        .padding(.bottom, 0)
+                            if record.categoryRelation != nil {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    if isNewDate(record, previousRecord) {
+                                        Text(displayDate(record.date))
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
+                                            .padding(.top, 6)
+                                            .padding(.bottom, 2)
+                                            .padding(.leading, 2)
+                                        recordRowView(record: record)
+                                            .padding(.bottom, 2)
+                                    } else {
+                                        recordRowView(record: record)
+                                            .padding(.bottom, 0)
+                                    }
                                 }
-                            }
-                            .onAppear {
-                                if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
-                                    loadedMonthCount += 1
-                                    fetchRecords()
+                                .onAppear {
+                                    if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
+                                        loadedMonthCount += 1
+                                        fetchRecords()
+                                    }
                                 }
+                                .listRowSeparator(.hidden)
                             }
-                            .listRowSeparator(.hidden)
                         }
                     }
                     .listStyle(.plain)

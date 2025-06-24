@@ -92,18 +92,6 @@ struct RecordRowView: View {
                 selectedRecord = record
             }
         }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            if !isDeleteMode {
-                Button(role: .destructive) {
-                    if let context = record.managedObjectContext {
-                        context.delete(record)
-                        try? context.save()
-                    }
-                } label: {
-                    Label(NSLocalizedString("delete", comment: "삭제"), systemImage: "trash")
-                }
-            }
-        }
         .contentShape(Rectangle())
         .padding(.vertical, 4)
         .listRowInsets(EdgeInsets())
