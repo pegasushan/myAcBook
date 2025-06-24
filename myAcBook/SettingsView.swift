@@ -182,6 +182,7 @@ struct SettingsView: View {
                                     return dateFormatter.string(from: date)
                                 })
 
+                                // 최근 12개월 중 데이터가 없는 달 후보 만들기
                                 var candidateMonths: [String] = []
                                 var candidateMonthDates: [Date] = []
                                 for offset in 0..<12 {
@@ -194,24 +195,31 @@ struct SettingsView: View {
                                     }
                                 }
 
-                                guard let selectedMonthDate = candidateMonthDates.first else {
-                                    // 모든 달에 이미 데이터가 있음
+                                // 후보가 없으면 안내
+                                guard !candidateMonthDates.isEmpty else {
+                                    showTestDataAlert = true
                                     return
                                 }
 
+                                // 랜덤으로 한 달 선택
+                                let randomIdx = Int.random(in: 0..<candidateMonthDates.count)
+                                let selectedMonthDate = candidateMonthDates[randomIdx]
+
+                                // 한 달치 데이터 입력
                                 let range = calendar.range(of: .day, in: .month, for: selectedMonthDate) ?? (1..<29)
                                 for day in range {
                                     var dateComponents = calendar.dateComponents([.year, .month], from: selectedMonthDate)
                                     dateComponents.day = day
                                     guard let date = calendar.date(from: dateComponents) else { continue }
                                     let count = Int.random(in: 1...5)
-                                    for _ in 0..<count {
+                                    for i in 0..<count {
                                         let record = Record(context: context)
-                                        record.amount = Double.random(in: 1000...100000)
+                                        record.id = UUID()
+                                        record.amount = Double(Int.random(in: 1000...100000))
                                         let isIncome = Bool.random()
                                         record.type = isIncome ? NSLocalizedString("income", comment: "수입") : NSLocalizedString("expense", comment: "지출")
                                         record.date = date
-                                        record.detail = "테스트"
+                                        record.detail = "테스트 \(i+1)"
                                         if isIncome {
                                             record.paymentType = NSLocalizedString("cash", comment: "현금")
                                             record.card = nil

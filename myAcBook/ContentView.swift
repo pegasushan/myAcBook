@@ -506,12 +506,17 @@ struct ContentView: View {
                     message: Text("이 작업은 되돌릴 수 없습니다."),
                     primaryButton: .destructive(Text("전체 삭제")) {
                         withAnimation {
-                            for record in records {
-                                viewContext.delete(record)
+                            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = Record.fetchRequest()
+                            let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                            do {
+                                try viewContext.execute(batchDeleteRequest)
+                                try viewContext.save()
+                                records.removeAll()
+                                selectedRecords.removeAll()
+                                isDeleteMode = false
+                            } catch {
+                                // 에러 처리 (필요시)
                             }
-                            selectedRecords.removeAll()
-                            try? viewContext.save()
-                            isDeleteMode = false
                         }
                     },
                     secondaryButton: .cancel()
