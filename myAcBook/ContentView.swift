@@ -252,6 +252,10 @@ struct ContentView: View {
             fetchRecords()
             notifyStatisticsDataChanged()
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("TestDataInserted"))) { _ in
+            fetchRecords()
+            notifyStatisticsDataChanged()
+        }
         .onChange(of: selectedTypeFilter) {
             fetchRecords()
             notifyStatisticsDataChanged()

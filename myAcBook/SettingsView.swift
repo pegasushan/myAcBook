@@ -244,8 +244,15 @@ struct SettingsView: View {
                                         }
                                     }
                                 }
-                                try? context.save()
-                                showTestDataAlert = true
+                                do {
+                                    try context.save()
+                                    DispatchQueue.main.async {
+                                        NotificationCenter.default.post(name: Notification.Name("TestDataInserted"), object: nil)
+                                        showTestDataAlert = true
+                                    }
+                                } catch {
+                                    print("테스트 데이터 저장 실패:", error)
+                                }
                             }
                         }) {
                             Text("테스트 데이터 입력")
