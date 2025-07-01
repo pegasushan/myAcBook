@@ -103,12 +103,9 @@ struct SearchFilterView: View {
         NavigationView {
             ZStack {
                 customBGColor.ignoresSafeArea()
-                VStack(spacing: 18) {
-                    // 유형 필터
-                    FilterCard(
-                        isActive: selectedType != NSLocalizedString("all", comment: "전체"),
-                        highlightColor: highlightColor
-                    ) {
+                VStack(spacing: 24) {
+                    // 유형 필터 카드
+                    FilterCard {
                         HStack(spacing: 8) {
                             Image(systemName: "slider.horizontal.3")
                                 .foregroundColor(selectedType != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
@@ -127,10 +124,7 @@ struct SearchFilterView: View {
 
                     // === 지출구분 필터를 유형 바로 아래로 이동 ===
                     if selectedType == NSLocalizedString("expense", comment: "지출") {
-                        FilterCard(
-                            isActive: selectedPaymentType != NSLocalizedString("all", comment: "전체"),
-                            highlightColor: highlightColor
-                        ) {
+                        FilterCard {
                             HStack(spacing: 8) {
                                 Image(systemName: "creditcard")
                                     .foregroundColor(selectedPaymentType != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
@@ -148,11 +142,8 @@ struct SearchFilterView: View {
                         }
                     }
 
-                    // 카테고리 필터
-                    FilterCard(
-                        isActive: currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체"),
-                        highlightColor: highlightColor
-                    ) {
+                    // 카테고리 필터 카드
+                    FilterCard {
                         HStack(spacing: 8) {
                             Image(systemName: "tag")
                                 .foregroundColor(currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
@@ -171,43 +162,16 @@ struct SearchFilterView: View {
                                 }
                             }
                     }
-                    // 기간 필터
-                    FilterCard(
-                        isActive: selectedDate != NSLocalizedString("all", comment: "전체"),
-                        highlightColor: highlightColor
-                    ) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "calendar")
-                                .foregroundColor(selectedDate != NSLocalizedString("all", comment: "전체") ? highlightColor : Color("HighlightColor"))
-                            Text(NSLocalizedString("period", comment: "기간")).appBody()
-                                .foregroundColor(selectedDate != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
-                            Spacer()
-                        }
-                        let dateOptions = [NSLocalizedString("all", comment: "전체"), NSLocalizedString("today", comment: "오늘"), NSLocalizedString("yesterday", comment: "어제"), NSLocalizedString("week", comment: "1주일"), NSLocalizedString("month", comment: "한달"), NSLocalizedString("custom", comment: "직접 선택")]
-                        CustomDropdown(selectedIndex: $selectedDateIndex, options: dateOptions, placeholder: NSLocalizedString("period", comment: "기간"))
-                            .onChange(of: selectedDateIndex) {
-                                if let idx = selectedDateIndex, dateOptions.indices.contains(idx) {
-                                    selectedDate = dateOptions[idx]
-                                }
-                            }
-                        if selectedDate == NSLocalizedString("custom", comment: "직접 선택") {
-                            DatePicker(NSLocalizedString("start_date", comment: "시작 날짜"), selection: $customStartDate, displayedComponents: .date)
-                            DatePicker(NSLocalizedString("end_date", comment: "종료 날짜"), selection: $customEndDate, displayedComponents: .date)
-                        }
-                    }
+
                     Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 24)
-                // 하단 고정 적용/초기화 버튼
-                VStack {
-                    Spacer()
+
+                    // 적용 버튼
                     Button(action: {
                         selectedCategory = currentCategoryBinding.wrappedValue
                         dismiss()
                     }) {
                         Text(NSLocalizedString("apply", comment: "적용"))
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -218,6 +182,7 @@ struct SearchFilterView: View {
                             .padding(.bottom, 16)
                     }
                 }
+                .padding(.horizontal, 16)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -32,9 +32,11 @@ struct FilterSummaryView: View {
     }
     var body: some View {
         // 1. 필터가 전체인지 여부 판단
-        let isDefaultFilter = (selectedTypeFilter == NSLocalizedString("all", comment: "") &&
-                              selectedCategory == NSLocalizedString("all", comment: "") &&
-                              (selectedDateFilter == NSLocalizedString("all", comment: "") || selectedDateFilter.isEmpty))
+        let all = NSLocalizedString("all", comment: "")
+        let allPayment = NSLocalizedString("all", comment: "전체")
+        let isDefaultFilter = (selectedTypeFilter == all || selectedTypeFilter.isEmpty)
+            && (selectedCategory == all || selectedCategory.isEmpty)
+            && (selectedPaymentType == allPayment || selectedPaymentType.isEmpty)
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 16) {
                 HStack {
@@ -66,11 +68,6 @@ struct FilterSummaryView: View {
                     Text(NSLocalizedString("category", comment: "카테고리") + ":" ).appCaption()
                     Text(selectedCategory.isEmpty || selectedCategory == NSLocalizedString("all", comment: "전체") ? NSLocalizedString("all", comment: "전체") : NSLocalizedString(selectedCategory, comment: ""))
                         .foregroundColor((!selectedCategory.isEmpty && selectedCategory != NSLocalizedString("all", comment: "전체")) ? highlightColor : .primary)
-                }
-                HStack(spacing: 4) {
-                    Text(NSLocalizedString("period", comment: "기간") + ":" ).appCaption()
-                    Text(selectedDateFilter.isEmpty || selectedDateFilter == NSLocalizedString("all", comment: "") ? NSLocalizedString("all", comment: "") : dateRangeText)
-                        .foregroundColor((!selectedDateFilter.isEmpty && selectedDateFilter != NSLocalizedString("all", comment: "")) ? highlightColor : .primary)
                 }
             }
             .font(.system(size: 14, weight: .regular, design: .rounded))

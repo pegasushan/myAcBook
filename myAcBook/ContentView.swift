@@ -69,6 +69,7 @@ struct ContentView: View {
     // 페이징 관련 상태
     @State private var loadedMonthCount: Int = 1
     @State private var records: [Record] = []
+    @State private var selectedMonth: String = ""
 
     // MARK: - Init
     var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [String: Double]) -> Void)? = nil
@@ -142,7 +143,8 @@ struct ContentView: View {
                 }
                 return true
             }()
-            return matchesCategory && matchesType && matchesDate && matchesPaymentType
+            // categoryRelation이 nil인 Record는 제외
+            return matchesCategory && matchesType && matchesDate && matchesPaymentType && record.categoryRelation != nil
         }
     }
     private var groupedRecordsByDate: [Date: [Record]] {
@@ -326,14 +328,25 @@ struct ContentView: View {
         VStack(spacing: 0) {
             headerBar
             filterSummarySection
-            Text("\(totalFilteredRecordsCount)건")
+            if !monthsWithData.isEmpty {
+                Picker("월 선택", selection: $selectedMonth) {
+                    Text("전체").tag("")
+                    ForEach(monthsWithData, id: \.self) { month in
+                        Text(month).tag(month)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            }
+            Text("\(monthFilteredRecords.count)건")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.secondary)
                 .padding(.bottom, 12)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 16)
             Group {
-                if records.isEmpty {
+                if monthFilteredRecords.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "tray")
                             .resizable()
@@ -361,34 +374,32 @@ struct ContentView: View {
                     }
                 } else {
                     List {
-                        ForEach(records, id: \.id) { idxRecord in
+                        ForEach(monthFilteredRecords, id: \.id) { idxRecord in
                             let record = idxRecord
-                            let idx = records.firstIndex(where: { $0.id == record.id }) ?? 0
-                            let previousRecord: Record? = idx > 0 ? records[idx-1] : nil
-                            if record.categoryRelation != nil {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    if isNewDate(record, previousRecord) {
-                                        Text(displayDate(record.date))
-                                            .font(.system(size: 12, weight: .semibold))
-                                            .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
-                                            .padding(.top, 6)
-                                            .padding(.bottom, 2)
-                                            .padding(.leading, 2)
-                                        recordRowView(record: record)
-                                            .padding(.bottom, 2)
-                                    } else {
-                                        recordRowView(record: record)
-                                            .padding(.bottom, 0)
-                                    }
+                            let idx = monthFilteredRecords.firstIndex(where: { $0.id == record.id }) ?? 0
+                            let previousRecord: Record? = idx > 0 ? monthFilteredRecords[idx-1] : nil
+                            VStack(alignment: .leading, spacing: 0) {
+                                if isNewDate(record, previousRecord) {
+                                    Text(displayDate(record.date))
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
+                                        .padding(.top, 6)
+                                        .padding(.bottom, 2)
+                                        .padding(.leading, 2)
+                                    recordRowView(record: record)
+                                        .padding(.bottom, 2)
+                                } else {
+                                    recordRowView(record: record)
+                                        .padding(.bottom, 0)
                                 }
-                                .onAppear {
-                                    if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
-                                        loadedMonthCount += 1
-                                        fetchRecords()
-                                    }
-                                }
-                                .listRowSeparator(.hidden)
                             }
+                            .onAppear {
+                                if selectedDateFilter == NSLocalizedString("all", comment: "") && record == monthFilteredRecords.last {
+                                    loadedMonthCount += 1
+                                    fetchRecords()
+                                }
+                            }
+                            .listRowSeparator(.hidden)
                         }
                     }
                     .listStyle(.plain)
@@ -463,7 +474,7 @@ struct ContentView: View {
             selectedTypeFilter: selectedTypeFilter,
             selectedCategory: currentCategory,
             selectedDateFilter: selectedDateFilter,
-            dateRangeText: dateRangeText(),
+            dateRangeText: "",
             onTap: { showFilterSheet = true },
             onReset: {
                 selectedTypeFilter = NSLocalizedString("all", comment: "")
@@ -775,6 +786,27 @@ struct ContentView: View {
         case "교통": return Color.green.opacity(0.5)
         case "부수입": return Color.purple.opacity(0.5)
         default: return Color.gray.opacity(0.3)
+        }
+    }
+
+    private var monthsWithData: [String] {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        let months = Set(filteredRecords.compactMap { record in
+            record.date.map { dateFormatter.string(from: $0) }
+        })
+        return months.sorted(by: >)
+    }
+    private var monthFilteredRecords: [Record] {
+        if selectedMonth.isEmpty {
+            return filteredRecords
+        } else {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM"
+            return filteredRecords.filter { record in
+                guard let date = record.date else { return false }
+                return dateFormatter.string(from: date) == selectedMonth
+            }
         }
     }
 }

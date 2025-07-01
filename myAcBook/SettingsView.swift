@@ -175,83 +175,132 @@ struct SettingsView: View {
                             let dateFormatter = DateFormatter()
                             dateFormatter.dateFormat = "yyyy-MM"
 
+                            // 1. 카테고리 자동 생성 (수입/지출)
+                            let incomeCategoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                            incomeCategoryFetch.predicate = NSPredicate(format: "type == %@", "income")
+                            let expenseCategoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                            expenseCategoryFetch.predicate = NSPredicate(format: "type == %@", "expense")
+                            let existingIncomeCategories = (try? context.fetch(incomeCategoryFetch)) ?? []
+                            let existingExpenseCategories = (try? context.fetch(expenseCategoryFetch)) ?? []
+                            print("수입 카테고리 개수: \(existingIncomeCategories.count)")
+                            print("지출 카테고리 개수: \(existingExpenseCategories.count)")
+                            if existingIncomeCategories.isEmpty {
+                                let defaultIncomeNames = ["급여", "부수입"]
+                                for name in defaultIncomeNames {
+                                    let cat = AppCategory(context: context)
+                                    cat.id = UUID()
+                                    cat.name = name
+                                    cat.type = "income"
+                                }
+                            }
+                            if existingExpenseCategories.isEmpty {
+                                let defaultExpenseNames = ["식비", "교통비", "쇼핑", "여가", "기타"]
+                                for name in defaultExpenseNames {
+                                    let cat = AppCategory(context: context)
+                                    cat.id = UUID()
+                                    cat.name = name
+                                    cat.type = "expense"
+                                }
+                            }
+                            // 2. 카드 자동 생성
+                            let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
+                            let existingCards = (try? context.fetch(cardFetch)) ?? []
+                            print("카드 개수: \(existingCards.count)")
+                            if existingCards.isEmpty {
+                                let defaultCardNames = ["신한카드", "삼성카드"]
+                                for name in defaultCardNames {
+                                    let card = Card(context: context)
+                                    card.id = UUID()
+                                    card.name = name
+                                    card.createdAt = Date()
+                                }
+                            }
+                            try? context.save()
+
+                            // 기존 Record의 월 정보 추출 (existingMonths)
                             let fetch: NSFetchRequest<Record> = Record.fetchRequest()
-                            if let allRecords = try? context.fetch(fetch) {
-                                let existingMonths = Set<String>(allRecords.compactMap { record in
-                                    guard let date = record.date else { return nil }
-                                    return dateFormatter.string(from: date)
-                                })
+                            let allRecords = (try? context.fetch(fetch)) ?? []
+                            let existingMonths = Set<String>(allRecords.compactMap { record in
+                                guard let date = record.date else { return nil }
+                                return dateFormatter.string(from: date)
+                            })
+                            print("기존 데이터 월: \(existingMonths)")
 
-                                // 최근 12개월 중 데이터가 없는 달 후보 만들기
-                                var candidateMonths: [String] = []
-                                var candidateMonthDates: [Date] = []
-                                for offset in 0..<12 {
-                                    if let monthDate = calendar.date(byAdding: .month, value: -offset, to: now) {
-                                        let monthString = dateFormatter.string(from: monthDate)
-                                        if !existingMonths.contains(monthString) {
-                                            candidateMonths.append(monthString)
-                                            candidateMonthDates.append(monthDate)
-                                        }
+                            // 최근 12개월 중 데이터가 없는 달 후보 만들기
+                            var candidateMonths: [String] = []
+                            var candidateMonthDates: [Date] = []
+                            for offset in 0..<12 {
+                                if let monthDate = calendar.date(byAdding: .month, value: -offset, to: now) {
+                                    let monthString = dateFormatter.string(from: monthDate)
+                                    if !existingMonths.contains(monthString) {
+                                        candidateMonths.append(monthString)
+                                        candidateMonthDates.append(monthDate)
                                     }
                                 }
+                            }
+                            print("후보 달 개수: \(candidateMonthDates.count), 후보 달: \(candidateMonths)")
 
-                                // 후보가 없으면 안내
-                                guard !candidateMonthDates.isEmpty else {
-                                    showTestDataAlert = true
-                                    return
-                                }
+                            // 후보가 없으면 안내
+                            if candidateMonthDates.isEmpty {
+                                print("후보 달이 없습니다. 테스트 데이터 생성 스킵")
+                                showTestDataAlert = true
+                                return
+                            }
 
-                                // 랜덤으로 한 달 선택
-                                let randomIdx = Int.random(in: 0..<candidateMonthDates.count)
-                                let selectedMonthDate = candidateMonthDates[randomIdx]
+                            // 랜덤으로 한 달 선택
+                            let randomIdx = Int.random(in: 0..<candidateMonthDates.count)
+                            let selectedMonthDate = candidateMonthDates[randomIdx]
 
-                                // 한 달치 데이터 입력
-                                let range = calendar.range(of: .day, in: .month, for: selectedMonthDate) ?? (1..<29)
-                                for day in range {
-                                    var dateComponents = calendar.dateComponents([.year, .month], from: selectedMonthDate)
-                                    dateComponents.day = day
-                                    guard let date = calendar.date(from: dateComponents) else { continue }
-                                    let count = Int.random(in: 1...5)
-                                    for i in 0..<count {
-                                        let record = Record(context: context)
-                                        record.id = UUID()
-                                        record.amount = Double(Int.random(in: 1000...100000))
-                                        let isIncome = Bool.random()
-                                        record.type = isIncome ? NSLocalizedString("income", comment: "수입") : NSLocalizedString("expense", comment: "지출")
-                                        record.date = date
-                                        record.detail = "테스트 \(i+1)"
-                                        if isIncome {
-                                            record.paymentType = NSLocalizedString("cash", comment: "현금")
-                                            record.card = nil
-                                        } else {
-                                            let isCard = Bool.random()
-                                            record.paymentType = isCard ? NSLocalizedString("card", comment: "카드") : NSLocalizedString("cash", comment: "현금")
-                                            if isCard {
-                                                let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
-                                                let availableCards = try? context.fetch(cardFetch)
-                                                if let selectedCard = availableCards?.randomElement() {
-                                                    record.card = selectedCard
-                                                }
-                                            } else {
-                                                record.card = nil
+                            // 한 달치 데이터 입력
+                            let range = calendar.range(of: .day, in: .month, for: selectedMonthDate) ?? (1..<29)
+                            for day in range {
+                                var dateComponents = calendar.dateComponents([.year, .month], from: selectedMonthDate)
+                                dateComponents.day = day
+                                guard let date = calendar.date(from: dateComponents) else { continue }
+                                let count = Int.random(in: 1...5)
+                                for i in 0..<count {
+                                    let record = Record(context: context)
+                                    record.id = UUID()
+                                    record.amount = Double(Int.random(in: 1000...100000))
+                                    let isIncome = Bool.random()
+                                    record.type = isIncome ? NSLocalizedString("income", comment: "수입") : NSLocalizedString("expense", comment: "지출")
+                                    record.date = date
+                                    record.detail = "테스트 \(i+1)"
+                                    if isIncome {
+                                        record.paymentType = NSLocalizedString("cash", comment: "현금")
+                                        record.card = nil
+                                    } else {
+                                        let isCard = Bool.random()
+                                        record.paymentType = isCard ? NSLocalizedString("card", comment: "카드") : NSLocalizedString("cash", comment: "현금")
+                                        if isCard {
+                                            let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
+                                            let availableCards = try? context.fetch(cardFetch)
+                                            if let selectedCard = availableCards?.randomElement() {
+                                                record.card = selectedCard
                                             }
+                                        } else {
+                                            record.card = nil
                                         }
-                                        let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
-                                        categoryFetch.predicate = NSPredicate(format: "type == %@", isIncome ? "income" : "expense")
-                                        let availableCategories = try? context.fetch(categoryFetch)
-                                        if let selectedCategory = availableCategories?.randomElement() {
-                                            record.categoryRelation = selectedCategory
-                                        }
+                                    }
+                                    let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                                    categoryFetch.predicate = NSPredicate(format: "type == %@", isIncome ? "income" : "expense")
+                                    let availableCategories = try? context.fetch(categoryFetch)
+                                    if let selectedCategory = availableCategories?.randomElement() {
+                                        record.categoryRelation = selectedCategory
                                     }
                                 }
-                                do {
-                                    try context.save()
-                                    DispatchQueue.main.async {
-                                        NotificationCenter.default.post(name: Notification.Name("TestDataInserted"), object: nil)
-                                        showTestDataAlert = true
-                                    }
-                                } catch {
-                                    print("테스트 데이터 저장 실패:", error)
+                            }
+                            do {
+                                try context.save()
+                                print("테스트 데이터 저장 성공")
+                                DispatchQueue.main.async {
+                                    NotificationCenter.default.post(name: Notification.Name("TestDataInserted"), object: nil)
+                                    showTestDataAlert = true
+                                }
+                            } catch {
+                                print("테스트 데이터 저장 실패:", error)
+                                DispatchQueue.main.async {
+                                    showTestDataAlert = true
                                 }
                             }
                         }) {
