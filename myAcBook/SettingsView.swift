@@ -24,6 +24,7 @@ struct SettingsView: View {
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
     @State private var showColorPicker = false
     @State private var showTestDataAlert = false
+    @State private var testDataInsertedMonth: String? = nil
 
     struct ColorPalette {
         let name: String
@@ -192,6 +193,7 @@ struct SettingsView: View {
                                     cat.name = name
                                     cat.type = "income"
                                 }
+                                try? context.save() // 카테고리 생성 후 저장
                             }
                             if existingExpenseCategories.isEmpty {
                                 let defaultExpenseNames = ["식비", "교통비", "쇼핑", "여가", "기타"]
@@ -201,7 +203,12 @@ struct SettingsView: View {
                                     cat.name = name
                                     cat.type = "expense"
                                 }
+                                try? context.save() // 카테고리 생성 후 저장
                             }
+                            // 카테고리 최신 fetch
+                            let updatedIncomeCategories = (try? context.fetch(incomeCategoryFetch)) ?? []
+                            let updatedExpenseCategories = (try? context.fetch(expenseCategoryFetch)) ?? []
+
                             // 2. 카드 자동 생성
                             let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
                             let existingCards = (try? context.fetch(cardFetch)) ?? []
@@ -214,8 +221,10 @@ struct SettingsView: View {
                                     card.name = name
                                     card.createdAt = Date()
                                 }
+                                try? context.save() // 카드 생성 후 저장
                             }
-                            try? context.save()
+                            // 카드 최신 fetch
+                            let updatedCards = (try? context.fetch(cardFetch)) ?? []
 
                             // 기존 Record의 월 정보 추출 (existingMonths)
                             let fetch: NSFetchRequest<Record> = Record.fetchRequest()
@@ -247,12 +256,14 @@ struct SettingsView: View {
                                 return
                             }
 
-                            // 랜덤으로 한 달 선택
-                            let randomIdx = Int.random(in: 0..<candidateMonthDates.count)
-                            let selectedMonthDate = candidateMonthDates[randomIdx]
+                            // 최신 달부터 차례로 입력 (랜덤이 아님)
+                            let sortedCandidateMonthDates = candidateMonthDates.sorted(by: >) // 최신순 정렬
+                            guard let selectedMonthDate = sortedCandidateMonthDates.first else { return }
+                            let selectedMonthString = dateFormatter.string(from: selectedMonthDate)
 
                             // 한 달치 데이터 입력
                             let range = calendar.range(of: .day, in: .month, for: selectedMonthDate) ?? (1..<29)
+                            var createdCount = 0
                             for day in range {
                                 var dateComponents = calendar.dateComponents([.year, .month], from: selectedMonthDate)
                                 dateComponents.day = day
@@ -273,34 +284,33 @@ struct SettingsView: View {
                                         let isCard = Bool.random()
                                         record.paymentType = isCard ? NSLocalizedString("card", comment: "카드") : NSLocalizedString("cash", comment: "현금")
                                         if isCard {
-                                            let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
-                                            let availableCards = try? context.fetch(cardFetch)
-                                            if let selectedCard = availableCards?.randomElement() {
+                                            if let selectedCard = updatedCards.randomElement() {
                                                 record.card = selectedCard
                                             }
                                         } else {
                                             record.card = nil
                                         }
                                     }
-                                    let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
-                                    categoryFetch.predicate = NSPredicate(format: "type == %@", isIncome ? "income" : "expense")
-                                    let availableCategories = try? context.fetch(categoryFetch)
-                                    if let selectedCategory = availableCategories?.randomElement() {
+                                    let availableCategories = isIncome ? updatedIncomeCategories : updatedExpenseCategories
+                                    if let selectedCategory = availableCategories.randomElement() {
                                         record.categoryRelation = selectedCategory
                                     }
+                                    createdCount += 1
                                 }
                             }
                             do {
                                 try context.save()
-                                print("테스트 데이터 저장 성공")
+                                print("테스트 데이터 저장 성공 (입력된 달: \(selectedMonthString)), 생성된 Record 수: \(createdCount)")
                                 DispatchQueue.main.async {
                                     NotificationCenter.default.post(name: Notification.Name("TestDataInserted"), object: nil)
                                     showTestDataAlert = true
+                                    testDataInsertedMonth = selectedMonthString
                                 }
                             } catch {
                                 print("테스트 데이터 저장 실패:", error)
                                 DispatchQueue.main.async {
                                     showTestDataAlert = true
+                                    testDataInsertedMonth = nil
                                 }
                             }
                         }) {
@@ -357,7 +367,7 @@ struct SettingsView: View {
             isHapticsEnabled = hapticsValue
         }
         .alert(isPresented: $showTestDataAlert) {
-            Alert(title: Text("테스트 데이터 입력 완료"), message: Text("테스트 데이터가 성공적으로 입력되었습니다."), dismissButton: .default(Text("확인")))
+            Alert(title: Text("테스트 데이터 입력 완료"), message: Text("테스트 데이터가 성공적으로 입력되었습니다.\n입력된 달: \(testDataInsertedMonth ?? "-")"), dismissButton: .default(Text("확인")))
         }
     }
 } 

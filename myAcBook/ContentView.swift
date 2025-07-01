@@ -71,6 +71,26 @@ struct ContentView: View {
     @State private var records: [Record] = []
     @State private var selectedMonth: String = ""
 
+    // 1. 전체 월 리스트 생성
+    private var allMonths: [String] {
+        let calendar = Calendar.current
+        let startComponents = DateComponents(year: 2024, month: 1)
+        let endComponents = calendar.dateComponents([.year, .month], from: Date())
+        let startDate = calendar.date(from: startComponents)!
+        let endDate = calendar.date(from: endComponents)!
+        var months: [String] = []
+        var date = startDate
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        while date <= endDate {
+            months.append(dateFormatter.string(from: date))
+            date = calendar.date(byAdding: .month, value: 1, to: date)!
+        }
+        return months.reversed() // 최신순
+    }
+
+    @State private var selectedMonthIndex: Int = 0
+
     // MARK: - Init
     var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [String: Double]) -> Void)? = nil
     init(
@@ -136,7 +156,6 @@ struct ContentView: View {
                 guard let type = record.type else { return false }
                 return type == selectedTypeFilter
             }()
-            let matchesDate = isRecordInSelectedDateRange(record)
             let matchesPaymentType: Bool = {
                 if selectedTypeFilter == NSLocalizedString("expense", comment: "") && selectedPaymentType != NSLocalizedString("all", comment: "전체") {
                     return record.paymentType == selectedPaymentType
@@ -144,7 +163,7 @@ struct ContentView: View {
                 return true
             }()
             // categoryRelation이 nil인 Record는 제외
-            return matchesCategory && matchesType && matchesDate && matchesPaymentType && record.categoryRelation != nil
+            return matchesCategory && matchesType && matchesPaymentType && record.categoryRelation != nil
         }
     }
     private var groupedRecordsByDate: [Date: [Record]] {
@@ -163,30 +182,8 @@ struct ContentView: View {
     // MARK: - 데이터 페치 함수
     private func fetchRecords() {
         let request = Record.fetchRequest()
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfToday = calendar.startOfDay(for: now)
-        var predicate: NSPredicate? = nil
-        if selectedDateFilter == NSLocalizedString("all", comment: "") {
-            if let startDate = calendar.date(byAdding: .month, value: -loadedMonthCount, to: startOfToday) {
-                predicate = NSPredicate(format: "date >= %@ AND date <= %@", startDate as NSDate, now as NSDate)
-            }
-        } else if selectedDateFilter == NSLocalizedString("month", comment: "한달") {
-            if let monthAgo = calendar.date(byAdding: .month, value: -1, to: startOfToday) {
-                predicate = NSPredicate(format: "date >= %@ AND date <= %@", monthAgo as NSDate, now as NSDate)
-            }
-        } else if selectedDateFilter == NSLocalizedString("week", comment: "1주일") {
-            if let weekAgo = calendar.date(byAdding: .day, value: -7, to: startOfToday) {
-                predicate = NSPredicate(format: "date >= %@ AND date <= %@", weekAgo as NSDate, now as NSDate)
-            }
-        } else if selectedDateFilter == NSLocalizedString("today", comment: "오늘") {
-            predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfToday as NSDate, calendar.date(byAdding: .day, value: 1, to: startOfToday)! as NSDate)
-        } else if selectedDateFilter == NSLocalizedString("custom", comment: "직접 선택") {
-            let safeStartDate = min(customStartDate, customEndDate)
-            let safeEndDate = max(customStartDate, customEndDate)
-            predicate = NSPredicate(format: "date >= %@ AND date <= %@", safeStartDate as NSDate, safeEndDate as NSDate)
-        }
-        request.predicate = predicate
+        // 모든 데이터를 한 번에 보여주기 위해 predicate를 nil로 설정
+        request.predicate = nil
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Record.date, ascending: false)]
         request.fetchBatchSize = 50
         do {
@@ -253,10 +250,40 @@ struct ContentView: View {
         .onAppear {
             fetchRecords()
             notifyStatisticsDataChanged()
+            if let idx = allMonths.firstIndex(of: selectedMonth), !allMonths.isEmpty {
+                selectedMonthIndex = idx
+            } else {
+                selectedMonthIndex = 0
+                selectedMonth = allMonths.first ?? ""
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("TestDataInserted"))) { _ in
             fetchRecords()
             notifyStatisticsDataChanged()
+            // 테스트 데이터 저장 후 전체 Record 개수와 일부 데이터 콘솔 출력
+            let request = Record.fetchRequest()
+            do {
+                let allRecords = try viewContext.fetch(request)
+                print("✅ 전체 Record 개수: \(allRecords.count)")
+                for record in allRecords.prefix(10) {
+                    print("Record: \(record.id?.uuidString ?? "-"), 금액: \(record.amount), 날짜: \(record.date ?? Date()), 타입: \(record.type ?? "-")")
+                }
+                // 2025-02 데이터만 필터링해서 출력
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM"
+                let filtered = allRecords.filter { record in
+                    if let date = record.date {
+                        return dateFormatter.string(from: date) == "2025-02"
+                    }
+                    return false
+                }
+                print("✅ 2025-02 Record 개수: \(filtered.count)")
+                for record in filtered.prefix(10) {
+                    print("[2025-02] Record: \(record.id?.uuidString ?? "-"), 금액: \(record.amount), 날짜: \(record.date ?? Date()), 타입: \(record.type ?? "-")")
+                }
+            } catch {
+                print("❌ Record fetch 실패: \(error)")
+            }
         }
         .onChange(of: selectedTypeFilter) {
             fetchRecords()
@@ -328,14 +355,32 @@ struct ContentView: View {
         VStack(spacing: 0) {
             headerBar
             filterSummarySection
-            if !monthsWithData.isEmpty {
-                Picker("월 선택", selection: $selectedMonth) {
-                    Text("전체").tag("")
-                    ForEach(monthsWithData, id: \.self) { month in
-                        Text(month).tag(month)
+            if !allMonths.isEmpty {
+                HStack(spacing: 16) {
+                    Button(action: {
+                        if selectedMonthIndex < allMonths.count - 1 {
+                            selectedMonthIndex += 1
+                            selectedMonth = allMonths[selectedMonthIndex]
+                        }
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(selectedMonthIndex < allMonths.count - 1 ? .primary : .gray)
+                    }
+                    Text(allMonths[selectedMonthIndex])
+                        .font(.headline)
+                        .frame(minWidth: 80)
+                    Button(action: {
+                        if selectedMonthIndex > 0 {
+                            selectedMonthIndex -= 1
+                            selectedMonth = allMonths[selectedMonthIndex]
+                        }
+                    }) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(selectedMonthIndex > 0 ? .primary : .gray)
                     }
                 }
-                .pickerStyle(MenuPickerStyle())
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
             }
@@ -526,6 +571,7 @@ struct ContentView: View {
                             do {
                                 try viewContext.execute(batchDeleteRequest)
                                 try viewContext.save()
+                                fetchRecords()
                                 records.removeAll()
                                 selectedRecords.removeAll()
                                 isDeleteMode = false
@@ -789,14 +835,6 @@ struct ContentView: View {
         }
     }
 
-    private var monthsWithData: [String] {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM"
-        let months = Set(filteredRecords.compactMap { record in
-            record.date.map { dateFormatter.string(from: $0) }
-        })
-        return months.sorted(by: >)
-    }
     private var monthFilteredRecords: [Record] {
         if selectedMonth.isEmpty {
             return filteredRecords
