@@ -79,7 +79,7 @@ struct CardListView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "creditcard")
                                         .foregroundColor(.primary)
-                                    Text(card.name ?? "")
+                                    Text(NSLocalizedString(card.name ?? "", comment: ""))
                                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                                         .foregroundColor(.primary)
                                     Spacer()

@@ -236,7 +236,7 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(red: 1.0, green: 0.93, blue: 0.96).ignoresSafeArea() // 전체 배경(연핑크)
+                (colorScheme == .light ? Color(red: 1.0, green: 0.93, blue: 0.96) : customBGColor).ignoresSafeArea() // 라이트: 연핑크, 다크: 어두운 테마
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     VStack(spacing: 0) {
@@ -390,13 +390,14 @@ struct ContentView: View {
                         }
                         .padding(.horizontal, 16 * 0.7)
                         .padding(.vertical, 8 * 0.7)
-                        .background(Color.white.opacity(0.95))
+                        .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
                         .cornerRadius(12 * 0.7)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12 * 0.7)
-                                .stroke(borderColor, lineWidth: 1.2 * 0.7)
+                                .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
                         )
-                        .shadow(color: borderColor.opacity(0.06), radius: 2 * 0.7, x: 0, y: 1)
+                        .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
+                        .foregroundColor(colorScheme == .light ? iconColor : Color.white)
                     }
                     Button(action: { moveToNextMonth() }) {
                         Image(systemName: "chevron.right")

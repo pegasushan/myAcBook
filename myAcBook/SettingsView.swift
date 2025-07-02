@@ -38,19 +38,19 @@ struct SettingsView: View {
 
     let palettes = [
         ColorPalette(
-            name: "라이트 핑크",
+            name: NSLocalizedString("theme_light_pink", comment: "라이트 핑크"),
             lightBG: "#FEEAF2", darkBG: "#181A20",
             lightCard: "#FFFFFF", darkCard: "#23272F",
             lightSection: "#F6F7FA", darkSection: "#23272F"
         ),
         ColorPalette(
-            name: "파스텔 민트",
+            name: NSLocalizedString("theme_pastel_mint", comment: "파스텔 민트"),
             lightBG: "#D6F5E6", darkBG: "#181A20",
             lightCard: "#FFFFFF", darkCard: "#23272F",
             lightSection: "#E6F9F2", darkSection: "#23272F"
         ),
         ColorPalette(
-            name: "라이트 옐로우",
+            name: NSLocalizedString("theme_light_yellow", comment: "라이트 옐로우"),
             lightBG: "#FFF9D6", darkBG: "#181A20",
             lightCard: "#FFFFFF", darkCard: "#23272F",
             lightSection: "#FDF6E3", darkSection: "#23272F"
@@ -61,7 +61,7 @@ struct SettingsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if colorScheme == .light {
-                    Text("추천 테마")
+                    Text(NSLocalizedString("recommended_theme_title", comment: "추천 테마"))
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .padding(.top, 24)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -168,7 +168,7 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    Section(header: Text("테스트")) {
+                    Section(header: Text(NSLocalizedString("test_section_title", comment: "테스트"))) {
                         Button(action: {
                             let context = PersistenceController.shared.container.viewContext
                             let calendar = Calendar.current
@@ -186,7 +186,7 @@ struct SettingsView: View {
                             print("수입 카테고리 개수: \(existingIncomeCategories.count)")
                             print("지출 카테고리 개수: \(existingExpenseCategories.count)")
                             if existingIncomeCategories.isEmpty {
-                                let defaultIncomeNames = ["급여", "부수입"]
+                                let defaultIncomeNames = ["salary", "side_income"]
                                 for name in defaultIncomeNames {
                                     let cat = AppCategory(context: context)
                                     cat.id = UUID()
@@ -196,7 +196,7 @@ struct SettingsView: View {
                                 try? context.save() // 카테고리 생성 후 저장
                             }
                             if existingExpenseCategories.isEmpty {
-                                let defaultExpenseNames = ["식비", "교통비", "쇼핑", "여가", "기타"]
+                                let defaultExpenseNames = ["food", "beverage", "transportation", "shopping", "leisure", "etc"]
                                 for name in defaultExpenseNames {
                                     let cat = AppCategory(context: context)
                                     cat.id = UUID()
@@ -314,7 +314,7 @@ struct SettingsView: View {
                                 }
                             }
                         }) {
-                            Text("테스트 데이터 입력")
+                            Text(NSLocalizedString("insert_test_data_button", comment: "테스트 데이터 입력"))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(.red)
                         }
@@ -367,7 +367,7 @@ struct SettingsView: View {
             isHapticsEnabled = hapticsValue
         }
         .alert(isPresented: $showTestDataAlert) {
-            Alert(title: Text("테스트 데이터 입력 완료"), message: Text("테스트 데이터가 성공적으로 입력되었습니다.\n입력된 달: \(testDataInsertedMonth ?? "-")"), dismissButton: .default(Text("확인")))
+            Alert(title: Text(NSLocalizedString("test_data_inserted_title", comment: "테스트 데이터 입력 완료")), message: Text(String(format: NSLocalizedString("test_data_inserted_message", comment: "테스트 데이터가 성공적으로 입력되었습니다.\n입력된 달: %@"), testDataInsertedMonth ?? "-")), dismissButton: .default(Text(NSLocalizedString("confirm", comment: "확인"))))
         }
     }
 } 

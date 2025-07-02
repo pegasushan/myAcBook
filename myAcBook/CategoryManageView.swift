@@ -64,7 +64,7 @@ public struct CategoryManagerView: View {
             HStack(spacing: 12) {
                 Image(systemName: "tag")
                     .foregroundColor(.primary)
-                Text(row.name)
+                Text(NSLocalizedString(row.name, comment: ""))
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundColor(.primary)
                 Spacer()

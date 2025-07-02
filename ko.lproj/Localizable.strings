@@ -53,7 +53,7 @@
 "salary" = "급여";
 "side_income" = "부수입";
 "transportation" = "교통비";
-"food" = "식비";
+"food" = "식대";
 "shopping" = "쇼핑";
 "leisure" = "여가";
 "etc" = "기타";
@@ -106,3 +106,30 @@
 
 "registered_category_count" = "등록된 카테고리 %d개";
 "category_usage_hint" = "카테고리는 내역 추가/수정에서 선택할 수 있습니다.";
+
+"beverage" = "음료";
+
+"no_data_stats" = "표시할 데이터가 없습니다.";
+
+"period_3months" = "3개월";
+"period_6months" = "6개월";
+"period_1year" = "1년";
+"period_all" = "전체";
+
+"select_card_placeholder" = "카드 선택";
+
+"samsung_card" = "삼성카드";
+"shinhan_card" = "신한카드";
+"hyundai_card" = "현대카드";
+"kookmin_card" = "국민카드";
+
+"theme_light_pink" = "라이트 핑크";
+"theme_pastel_mint" = "파스텔 민트";
+"theme_light_yellow" = "라이트 옐로우";
+
+"recommended_theme_title" = "추천 테마";
+
+"test_section_title" = "테스트";
+"insert_test_data_button" = "테스트 데이터 입력";
+"test_data_inserted_title" = "테스트 데이터 입력 완료";
+"test_data_inserted_message" = "테스트 데이터가 성공적으로 입력되었습니다.\n입력된 달: %@";

@@ -2,10 +2,7 @@ import SwiftUI
 import Charts
 
 struct ChartView: View {
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Record.categoryRelation?.name, ascending: true)],
-        animation: .default)
-    private var records: FetchedResults<Record>
+    let records: [Record]
 
     var body: some View {
         ZStack {
@@ -18,11 +15,12 @@ struct ChartView: View {
                 } else {
                     Chart {
                         ForEach(groupedRecords, id: \.category) { group in
+                            let localizedCategory = NSLocalizedString(group.category, comment: "")
                             BarMark(
-                                x: .value(NSLocalizedString("category", comment: "카테고리"), group.category),
+                                x: .value(NSLocalizedString("category", comment: "카테고리"), localizedCategory),
                                 y: .value(NSLocalizedString("amount", comment: "금액"), group.totalAmount)
                             )
-                            .foregroundStyle(by: .value(NSLocalizedString("category", comment: "카테고리"), group.category))
+                            .foregroundStyle(by: .value(NSLocalizedString("category", comment: "카테고리"), localizedCategory))
                         }
                     }
                     .chartLegend(.visible)

@@ -153,7 +153,7 @@ struct AddRecordView: View {
                         VStack(spacing: 28) {
                             // 금액 입력란 강조
                             HStack {
-                                Image(systemName: "wonsign.circle.fill")
+                                Image(systemName: currencySymbolSystemName())
                                     .foregroundColor(Color("HighlightColor"))
                                     .font(.system(size: 28, weight: .bold))
                                 TextField(NSLocalizedString("example_amount", comment: ""), text: $amount)
@@ -219,7 +219,7 @@ struct AddRecordView: View {
                                         HStack(spacing: 8) {
                                             Image(systemName: "creditcard.fill")
                                                 .foregroundColor(.gray)
-                                            CustomDropdown(selectedIndex: $selectedCardIndex, options: cardViewModel.cards.map { $0.name ?? "" }, placeholder: NSLocalizedString("카드선택", comment: "카드선택"), onDropdownTap: {
+                                            CustomDropdown(selectedIndex: $selectedCardIndex, options: cardViewModel.cards.map { NSLocalizedString($0.name ?? "", comment: "") }, placeholder: NSLocalizedString("select_card_placeholder", comment: "카드 선택"), onDropdownTap: {
                                                 isAmountFieldFocused = false
                                                 isDetailFieldFocused = false
                                             })
@@ -243,7 +243,7 @@ struct AddRecordView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "folder.fill")
                                     .foregroundColor(.gray)
-                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.map { $0.name ?? "" }, placeholder: NSLocalizedString("카테고리 선택", comment: "카테고리 선택"), onDropdownTap: {
+                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.map { NSLocalizedString($0.name ?? "", comment: "") }, placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"), onDropdownTap: {
                                     isAmountFieldFocused = false
                                     isDetailFieldFocused = false
                                 })
@@ -439,6 +439,20 @@ struct AddRecordView: View {
             fetchedCategories = results.filter { !($0.name?.isEmpty ?? true) }
         } catch {
             print("❌ 카테고리 불러오기 실패: \(error)")
+        }
+    }
+
+    // 금액 입력란 왼쪽 아이콘에 사용할 통화별 SF Symbol 반환 함수 추가
+    private func currencySymbolSystemName() -> String {
+        if Locale.current.languageCode == "en" {
+            return "dollarsign.circle.fill"
+        }
+        switch Locale.current.currencyCode {
+        case "USD": return "dollarsign.circle.fill"
+        case "EUR": return "eurosign.circle.fill"
+        case "JPY": return "yensign.circle.fill"
+        case "KRW": return "wonsign.circle.fill"
+        default: return "banknote.fill"
         }
     }
 }

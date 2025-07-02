@@ -151,7 +151,7 @@ struct SearchFilterView: View {
                                 .foregroundColor(currentCategoryBinding.wrappedValue != NSLocalizedString("all", comment: "전체") ? highlightColor : .primary)
                             Spacer()
                         }
-                        CustomDropdown(selectedIndex: $selectedCategoryIndex, options: [NSLocalizedString("all", comment: "전체")] + fetchedCategories.map { $0.name ?? "" }, placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"))
+                        CustomDropdown(selectedIndex: $selectedCategoryIndex, options: [NSLocalizedString("all", comment: "전체")] + fetchedCategories.map { NSLocalizedString($0.name ?? "", comment: "") }, placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"))
                             .onChange(of: selectedCategoryIndex) {
                                 if let idx = selectedCategoryIndex {
                                     if idx == 0 {

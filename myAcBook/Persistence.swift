@@ -73,7 +73,7 @@ struct PersistenceController {
         }
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
-                fatalError(String(format: NSLocalizedString("persistence_error", comment: "Core Data unresolved error"), "\(error)", "\(error.userInfo)"))
+                fatalError("Unresolved error \(error), \(error.userInfo)")
             }
         })
 
@@ -116,13 +116,13 @@ struct PersistenceController {
             }
 
             let sampleCategories: [(String, String)] = [
-                ("식비", "expense"),
-                ("교통비", "expense"),
-                ("쇼핑", "expense"),
-                ("여가", "expense"),
-                ("기타", "expense"),
-                ("월급", "income"),
-                ("보너스", "income")
+                ("food", "expense"),
+                ("transportation", "expense"),
+                ("shopping", "expense"),
+                ("leisure", "expense"),
+                ("etc", "expense"),
+                ("salary", "income"),
+                ("side_income", "income")
             ]
 
             for (name, type) in sampleCategories {
@@ -206,11 +206,11 @@ struct PersistenceController {
         let defaults = UserDefaults.standard
         if !defaults.bool(forKey: "didInsertDefaultCategories") {
             let defaultCategories: [(String, String)] = [
-                ("급여", "income"),
-                ("부수입", "income"),
-                ("식대", "expense"),
-                ("음료", "expense"),
-                ("쇼핑", "expense")
+                ("salary", "income"),
+                ("side_income", "income"),
+                ("food", "expense"),
+                ("beverage", "expense"),
+                ("shopping", "expense")
             ]
             let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
             let existingCategories = (try? container.viewContext.fetch(categoryFetch)) ?? []
@@ -232,7 +232,7 @@ struct PersistenceController {
         }
         // 앱 최초 실행 시 기본 카드 자동 입력 (최초 1회만)
         if !defaults.bool(forKey: "didInsertDefaultCards") {
-            let defaultCards: [String] = ["신한카드", "삼성카드"]
+            let defaultCards: [String] = ["shinhan_card", "samsung_card"]
             let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
             let existingCards = (try? container.viewContext.fetch(cardFetch)) ?? []
             for name in defaultCards {
@@ -250,6 +250,43 @@ struct PersistenceController {
             } catch {
                 print("❌ 기본 카드 저장 실패: \(error)")
             }
+        }
+        // === 카드 한글 → 영문 키 마이그레이션 ===
+        let cardMigrationMap: [String: String] = [
+            "삼성카드": "samsung_card",
+            "신한카드": "shinhan_card",
+            "현대카드": "hyundai_card",
+            "국민카드": "kookmin_card"
+        ]
+        let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
+        if let cards = try? container.viewContext.fetch(cardFetch) {
+            for card in cards {
+                if let oldName = card.name, let newName = cardMigrationMap[oldName] {
+                    card.name = newName
+                }
+            }
+            try? container.viewContext.save()
+        }
+
+        // === 카테고리 한글 → 영문 키 마이그레이션 ===
+        let migrationMap: [String: String] = [
+            "쇼핑": "shopping",
+            "식대": "food",
+            "음료": "beverage",
+            "급여": "salary",
+            "부수입": "side_income",
+            "교통비": "transportation",
+            "여가": "leisure",
+            "기타": "etc"
+        ]
+        let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+        if let categories = try? container.viewContext.fetch(categoryFetch) {
+            for category in categories {
+                if let oldName = category.name, let newName = migrationMap[oldName] {
+                    category.name = newName
+                }
+            }
+            try? container.viewContext.save()
         }
     }
 }

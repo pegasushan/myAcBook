@@ -32,7 +32,7 @@
 "settings_tab" = "Settings ⚙️";
 "graph" = "Graph";
 "statistics_type" = "Statistics Type";
-"monthly_stats_title" = "Monthly Income/Expense Statistics";
+"monthly_stats_title" = "Monthly Stats";
 "show_bar_labels" = "Show Bar Labels";
 "no_data" = "No data to display";
 "amount" = "Amount";
@@ -63,7 +63,7 @@
 "food" = "Food";
 "shopping" = "Shopping";
 "leisure" = "Leisure";
-"etc" = "Other";
+"etc" = "Etc";
 "category_list" = "Category List";
 "add_new_category" = "Add New Category";
 "category_name_placeholder" = "Category Name";
@@ -95,8 +95,33 @@
 "duplicate_category_alert" = "This category already exists.";
 
 "unit_billion" = "B";
-"unit_ten_million" = "10M";
+"unit_ten_million" = "TenM";
 "unit_million" = "M";
-"unit_ten_thousand" = "10K";
+"unit_ten_thousand" = "TenK";
 "unit_thousand" = "K";
 "management_section" = "Management";
+
+"no_data_stats" = "No data to display.";
+
+"period_3months" = "3 months";
+"period_6months" = "6 months";
+"period_1year" = "1 year";
+"period_all" = "All";
+
+"select_card_placeholder" = "Select Card";
+
+"samsung_card" = "Samsung Card";
+"shinhan_card" = "Shinhan Card";
+"hyundai_card" = "Hyundai Card";
+"kookmin_card" = "Kookmin Card";
+
+"theme_light_pink" = "Light Pink";
+"theme_pastel_mint" = "Pastel Mint";
+"theme_light_yellow" = "Light Yellow";
+
+"recommended_theme_title" = "Recommended Themes";
+
+"test_section_title" = "Test";
+"insert_test_data_button" = "Insert Test Data";
+"test_data_inserted_title" = "Test Data Inserted";
+"test_data_inserted_message" = "Test data was successfully inserted.\nInserted month: %@";

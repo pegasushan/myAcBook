@@ -38,9 +38,9 @@ struct RecordRowView: View {
                         Text("")
                         + Text(dateLabel).foregroundColor(.secondary)
                         + Text(" ")
-                        + Text(record.categoryRelation?.name ?? "unknown").foregroundColor(Color("HighlightColor"))
+                        + Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: "")).foregroundColor(Color("HighlightColor"))
                     } else {
-                        Text(record.categoryRelation?.name ?? "unknown").appBody()
+                        Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: "")).appBody()
                             .foregroundColor(Color("HighlightColor"))
                     }
                     if record.paymentType == "카드" {
