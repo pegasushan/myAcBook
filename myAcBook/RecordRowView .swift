@@ -63,10 +63,19 @@ struct RecordRowView: View {
         .padding(.vertical, 6)
         .padding(.horizontal, 8)
         .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(colorScheme == .light ? customLightCardColor : Color("SectionBGColor"))
+            RoundedRectangle(cornerRadius: 18)
+                .fill(selectedRecords.contains(record) && isDeleteMode
+                      ? Color(red: 1.0, green: 0.7, blue: 0.8).opacity(0.35)
+                      : (colorScheme == .light ? customLightCardColor : Color("SectionBGColor")))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(selectedRecords.contains(record) && isDeleteMode
+                                ? Color(red: 1.0, green: 0.5, blue: 0.7).opacity(0.85) : Color.clear, lineWidth: 2)
+                )
         )
-        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.13), radius: 7, x: 0, y: 3)
+        .scaleEffect(selectedRecords.contains(record) && isDeleteMode ? 1.03 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedRecords)
         .onTapGesture {
             if isDeleteMode {
                 toggleSelection(record)

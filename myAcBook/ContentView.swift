@@ -69,24 +69,17 @@ struct ContentView: View {
     // 페이징 관련 상태
     @State private var loadedMonthCount: Int = 1
     @State private var records: [Record] = []
-    @State private var selectedMonth: String = ""
+    @State private var selectedMonth: String = "2025-07"
 
     // 1. 전체 월 리스트 생성
     private var allMonths: [String] {
-        let calendar = Calendar.current
-        let startComponents = DateComponents(year: 2024, month: 1)
-        let endComponents = calendar.dateComponents([.year, .month], from: Date())
-        let startDate = calendar.date(from: startComponents)!
-        let endDate = calendar.date(from: endComponents)!
-        var months: [String] = []
-        var date = startDate
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM"
-        while date <= endDate {
-            months.append(dateFormatter.string(from: date))
-            date = calendar.date(byAdding: .month, value: 1, to: date)!
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        let now = Date()
+        return (0..<12).map { offset in
+            let date = Calendar.current.date(byAdding: .month, value: -offset, to: now)!
+            return formatter.string(from: date)
         }
-        return months.reversed() // 최신순
     }
 
     @State private var selectedMonthIndex: Int = 0
@@ -243,8 +236,22 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                customBGColor.ignoresSafeArea()
-                mainContent
+                Color(red: 1.0, green: 0.93, blue: 0.96).ignoresSafeArea() // 전체 배경(연핑크)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    VStack(spacing: 0) {
+                        mainContent
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(customBGColor)
+                            .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 4)
+                    )
+                    .padding(.horizontal, 8)
+                    .padding(.top, 0)
+                    .padding(.bottom, 0)
+                    Spacer(minLength: 0)
+                }
             }
         }
         .onAppear {
@@ -356,29 +363,49 @@ struct ContentView: View {
             headerBar
             filterSummarySection
             if !allMonths.isEmpty {
-                HStack(spacing: 16) {
-                    Button(action: {
-                        if selectedMonthIndex < allMonths.count - 1 {
-                            selectedMonthIndex += 1
-                            selectedMonth = allMonths[selectedMonthIndex]
-                        }
-                    }) {
+                HStack(spacing: 8) {
+                    Button(action: { moveToPrevMonth() }) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(selectedMonthIndex < allMonths.count - 1 ? .primary : .gray)
+                            .font(.system(size: 18 * 0.7))
+                            .foregroundColor(.white)
+                            .padding(8 * 0.7)
+                            .background(pastelAccentColor)
+                            .clipShape(Circle())
+                            .shadow(color: pastelAccentColor.opacity(0.12), radius: 3 * 0.7, x: 0, y: 1)
                     }
-                    Text(allMonths[selectedMonthIndex])
-                        .font(.headline)
-                        .frame(minWidth: 80)
-                    Button(action: {
-                        if selectedMonthIndex > 0 {
-                            selectedMonthIndex -= 1
-                            selectedMonth = allMonths[selectedMonthIndex]
+                    Menu {
+                        ForEach(allMonths, id: \.self) { month in
+                            Button(action: { selectedMonth = month }) {
+                                Text(month)
+                            }
                         }
-                    }) {
+                    } label: {
+                        HStack {
+                            Text(selectedMonth)
+                                .font(.system(size: 20 * 0.7, weight: .bold))
+                                .foregroundColor(iconColor)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 18 * 0.7))
+                                .foregroundColor(iconColor)
+                        }
+                        .padding(.horizontal, 16 * 0.7)
+                        .padding(.vertical, 8 * 0.7)
+                        .background(Color.white.opacity(0.95))
+                        .cornerRadius(12 * 0.7)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12 * 0.7)
+                                .stroke(borderColor, lineWidth: 1.2 * 0.7)
+                        )
+                        .shadow(color: borderColor.opacity(0.06), radius: 2 * 0.7, x: 0, y: 1)
+                    }
+                    Button(action: { moveToNextMonth() }) {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(selectedMonthIndex > 0 ? .primary : .gray)
+                            .font(.system(size: 18 * 0.7))
+                            .foregroundColor(.white)
+                            .padding(8 * 0.7)
+                            .background(pastelAccentColor)
+                            .clipShape(Circle())
+                            .shadow(color: pastelAccentColor.opacity(0.12), radius: 3 * 0.7, x: 0, y: 1)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -448,7 +475,7 @@ struct ContentView: View {
                         }
                     }
                     .listStyle(.plain)
-                    .background(customBGColor.ignoresSafeArea())
+                    .background(customBGColor)
                 }
             }
             if isDeleteMode { deleteButtons }
@@ -562,22 +589,21 @@ struct ContentView: View {
             .buttonStyle(PlainButtonStyle())
             .alert(isPresented: $showingDeleteAlert) {
                 Alert(
-                    title: Text("정말 모든 내역을 삭제하시겠습니까?"),
-                    message: Text("이 작업은 되돌릴 수 없습니다."),
+                    title: Text("정말 현재 화면의 모든 내역을 삭제하시겠습니까?"),
+                    message: Text("현재 화면에 보이는 내역 \(monthFilteredRecords.count)건을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."),
                     primaryButton: .destructive(Text("전체 삭제")) {
                         withAnimation {
-                            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = Record.fetchRequest()
-                            let batchDeleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+                            for record in monthFilteredRecords {
+                                viewContext.delete(record)
+                            }
                             do {
-                                try viewContext.execute(batchDeleteRequest)
                                 try viewContext.save()
-                                fetchRecords()
-                                records.removeAll()
-                                selectedRecords.removeAll()
-                                isDeleteMode = false
                             } catch {
                                 // 에러 처리 (필요시)
                             }
+                            fetchRecords()
+                            selectedRecords.removeAll()
+                            isDeleteMode = false
                         }
                     },
                     secondaryButton: .cancel()
@@ -848,6 +874,18 @@ struct ContentView: View {
             }
         }
     }
+
+    private func moveToPrevMonth() {
+        if let idx = allMonths.firstIndex(of: selectedMonth), idx < allMonths.count - 1 {
+            selectedMonth = allMonths[idx + 1]
+        }
+    }
+
+    private func moveToNextMonth() {
+        if let idx = allMonths.firstIndex(of: selectedMonth), idx > 0 {
+            selectedMonth = allMonths[idx - 1]
+        }
+    }
 }
 
 struct BannerAdContainerView: View {
@@ -862,4 +900,8 @@ struct BannerAdContainerView: View {
         }
     }
 }
+
+let pastelAccentColor = Color(red: 1.0, green: 0.7, blue: 0.8) // 연한 파스텔 핑크
+let borderColor = Color(red: 0.95, green: 0.75, blue: 0.8) // 더 연한 핑크
+let iconColor = Color(red: 0.8, green: 0.5, blue: 0.6) // 톤다운 핑크
 

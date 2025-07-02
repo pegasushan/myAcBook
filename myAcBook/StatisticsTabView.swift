@@ -273,11 +273,8 @@ struct StatisticsTabView: View {
         let pastelBlue = Color(red: 0.55, green: 0.75, blue: 1.0)
         let pastelRed = Color(red: 1.0, green: 0.55, blue: 0.65)
         let screenWidth = UIScreen.main.bounds.width
-        let horizontalPadding: CGFloat = 32
+        let horizontalPadding: CGFloat = 40
         let visibleMonths = 3
-        let chartWidth = screenWidth - horizontalPadding
-        let barWidth: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.6
-        let barSpacing: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.4
         let months = sortedMonths
         let filteredMonths: [String] = {
             switch selectedPeriod {
@@ -291,6 +288,15 @@ struct StatisticsTabView: View {
                 return months
             }
         }()
+        let chartWidth: CGFloat = {
+            if filteredMonths.count == 3 {
+                return UIScreen.main.bounds.width - horizontalPadding
+            } else {
+                return UIScreen.main.bounds.width - horizontalPadding
+            }
+        }()
+        let barWidth: CGFloat = (chartWidth / CGFloat(max(filteredMonths.count, 1))) * 0.6
+        let barSpacing: CGFloat = (chartWidth / CGFloat(max(filteredMonths.count, 1))) * 0.4
         VStack {
             Picker(NSLocalizedString("statistics_type", comment: "통계 종류"), selection: $selectedStatTab) {
                 Text(NSLocalizedString("graph", comment: "그래프")).tag(NSLocalizedString("graph", comment: "그래프"))
@@ -300,23 +306,59 @@ struct StatisticsTabView: View {
             .pickerStyle(SegmentedPickerStyle())
             .padding()
 
-            Picker("기간", selection: $selectedPeriod) {
-                ForEach(periodOptions, id: \.self) { period in
-                    Text(period).tag(period)
-                }
-            }
-            .pickerStyle(MenuPickerStyle())
-            .padding(.horizontal, 24)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
-
             if isGraphTab {
                 Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundColor(Color.primary)
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundColor(Color.primary.opacity(0.7))
                     .frame(maxWidth: .infinity, alignment: .center)
                     .multilineTextAlignment(.center)
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 6)
+                HStack(spacing: 8) {
+                    Button(action: { moveToPrevPeriod() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18 * 0.7))
+                            .foregroundColor(.white)
+                            .padding(8 * 0.7)
+                            .background(pastelAccentColor)
+                            .clipShape(Circle())
+                            .shadow(color: pastelAccentColor.opacity(0.12), radius: 3 * 0.7, x: 0, y: 1)
+                    }
+                    Menu {
+                        ForEach(periodOptions, id: \.self) { period in
+                            Button(action: { selectedPeriod = period }) {
+                                Text(period)
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text(selectedPeriod)
+                                .font(.system(size: 20 * 0.7, weight: .bold))
+                                .foregroundColor(iconColor)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 18 * 0.7))
+                                .foregroundColor(iconColor)
+                        }
+                        .padding(.horizontal, 16 * 0.7)
+                        .padding(.vertical, 8 * 0.7)
+                        .background(Color.white.opacity(0.95))
+                        .cornerRadius(12 * 0.7)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12 * 0.7)
+                                .stroke(borderColor, lineWidth: 1.2 * 0.7)
+                        )
+                        .shadow(color: borderColor.opacity(0.06), radius: 2 * 0.7, x: 0, y: 1)
+                    }
+                    Button(action: { moveToNextPeriod() }) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 18 * 0.7))
+                            .foregroundColor(.white)
+                            .padding(8 * 0.7)
+                            .background(pastelAccentColor)
+                            .clipShape(Circle())
+                            .shadow(color: pastelAccentColor.opacity(0.12), radius: 3 * 0.7, x: 0, y: 1)
+                    }
+                }
+                .padding(.bottom, 10)
             }
 
             if isIncomeTab {
@@ -388,6 +430,14 @@ struct StatisticsTabView: View {
                                 .frame(height: 380)
                             Chart {
                                 ForEach(filteredMonths, id: \.self) { month in
+                                    // 수입 건수 계산
+                                    let incomeCount = records.filter { record in
+                                        record.type == "수입" && record.date != nil && {
+                                            let df = DateFormatter()
+                                            df.dateFormat = "yyyy-MM"
+                                            return df.string(from: record.date!) == month
+                                        }()
+                                    }.count
                                     BarMark(
                                         x: .value("Month", month),
                                         y: .value("수입", monthlyIncomeTotals[month] ?? 0)
@@ -396,12 +446,23 @@ struct StatisticsTabView: View {
                                     .position(by: .value("Type", "수입"))
                                     .cornerRadius(4)
                                     .annotation(position: .top) {
-                                        if let value = monthlyIncomeTotals[month], value > 0 {
-                                            Text(formattedCompactNumber(value))
+                                        VStack(spacing: 0) {
+                                            Text("\(incomeCount)건")
+                                                .font(.caption2)
+                                                .foregroundColor(.gray)
+                                            Text(formattedCompactNumber(monthlyIncomeTotals[month] ?? 0))
                                                 .font(.system(size: 10, weight: .bold, design: .rounded))
                                                 .foregroundColor(pastelBlue)
                                         }
                                     }
+                                    // 지출 건수 계산
+                                    let expenseCount = records.filter { record in
+                                        record.type == "지출" && record.date != nil && {
+                                            let df = DateFormatter()
+                                            df.dateFormat = "yyyy-MM"
+                                            return df.string(from: record.date!) == month
+                                        }()
+                                    }.count
                                     BarMark(
                                         x: .value("Month", month),
                                         y: .value("지출", monthlyExpenseTotals[month] ?? 0)
@@ -410,8 +471,11 @@ struct StatisticsTabView: View {
                                     .position(by: .value("Type", "지출"))
                                     .cornerRadius(4)
                                     .annotation(position: .top) {
-                                        if let value = monthlyExpenseTotals[month], value > 0 {
-                                            Text(formattedCompactNumber(value))
+                                        VStack(spacing: 0) {
+                                            Text("\(expenseCount)건")
+                                                .font(.caption2)
+                                                .foregroundColor(.gray)
+                                            Text(formattedCompactNumber(monthlyExpenseTotals[month] ?? 0))
                                                 .font(.system(size: 10, weight: .bold, design: .rounded))
                                                 .foregroundColor(pastelRed)
                                         }
@@ -445,10 +509,10 @@ struct StatisticsTabView: View {
                                 }
                             }
                             .frame(
-                                width: max(CGFloat(filteredMonths.count) * (barWidth + barSpacing), chartWidth),
+                                width: CGFloat(filteredMonths.count) == 3 ? chartWidth : max(CGFloat(filteredMonths.count) * (barWidth + barSpacing), chartWidth),
                                 height: 340
                             )
-                            .padding(.horizontal, 8)
+                            .padding(.horizontal, horizontalPadding / 2)
                         }
                     }
                     .padding(.horizontal, 8)
@@ -789,6 +853,18 @@ struct StatisticsTabView: View {
         let expenseRecords = records.filter { $0.type == "지출" }
         return Dictionary(grouping: expenseRecords) { record in
             dateFormatter.string(from: record.date ?? Date())
+        }
+    }
+
+    private func moveToPrevPeriod() {
+        if let idx = periodOptions.firstIndex(of: selectedPeriod), idx > 0 {
+            selectedPeriod = periodOptions[idx - 1]
+        }
+    }
+
+    private func moveToNextPeriod() {
+        if let idx = periodOptions.firstIndex(of: selectedPeriod), idx < periodOptions.count - 1 {
+            selectedPeriod = periodOptions[idx + 1]
         }
     }
 }
