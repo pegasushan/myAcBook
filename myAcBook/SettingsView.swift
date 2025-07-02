@@ -11,7 +11,7 @@ struct SettingsView: View {
     @State private var lockToggleValue: Bool = false
     @State private var showSaveConfirmation = false
     @State private var hapticsValue: Bool = true
-    @State private var selectedColorScheme: String = "system"
+    @State private var selectedColorScheme: String
     @EnvironmentObject var purchaseManager: PurchaseManager
     @State private var showCardManagerModal = false
     @State private var showCategoryManagerModal = false
@@ -25,6 +25,11 @@ struct SettingsView: View {
     @State private var showColorPicker = false
     @State private var showTestDataAlert = false
     @State private var testDataInsertedMonth: String? = nil
+
+    init() {
+        let stored = UserDefaults.standard.string(forKey: "colorScheme") ?? "system"
+        _selectedColorScheme = State(initialValue: stored)
+    }
 
     struct ColorPalette {
         let name: String
@@ -105,6 +110,9 @@ struct SettingsView: View {
                         }
                         .pickerStyle(.segmented)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
+                        .onChange(of: selectedColorScheme) { newValue in
+                            colorSchemeSetting = newValue
+                        }
 
                         Toggle(isOn: $lockToggleValue) {
                             Text(NSLocalizedString("app_lock", comment: "앱 잠금 (Face ID/암호"))
@@ -358,7 +366,6 @@ struct SettingsView: View {
             } else {
                 lockToggleValue = isAppLockEnabled
             }
-            selectedColorScheme = colorSchemeSetting
             hapticsValue = isHapticsEnabled
         }
         .onDisappear {
