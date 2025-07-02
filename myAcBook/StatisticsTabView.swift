@@ -2,6 +2,9 @@ import CoreData
 import SwiftUI
 import Charts
 
+let pastelIncomeColor = Color(red: 0.45, green: 0.65, blue: 1.0) // 파스텔 블루(수입)
+let pastelExpenseColor = Color(red: 1.0, green: 0.45, blue: 0.55) // 파스텔 레드(지출)
+
 // y축/라벨용 compact number formatter (다국어)
 func formattedCompactNumber(_ value: Double) -> String {
     let absValue = abs(value)
@@ -35,6 +38,7 @@ struct MonthValue: Identifiable {
     let month: String
     let type: String // "수입" or "지출"
     let value: Double
+    let count: Int // 추가: 해당 월/타입의 건수
 }
 
 struct ExpenseDetailView: View {
@@ -335,8 +339,6 @@ struct StatisticsTabView: View {
         let isGraphTab = selectedStatTab == NSLocalizedString("graph", comment: "그래프")
         let hasIncomeData = monthlyCategoryIncomeTotals.values.flatMap { $0.values }.reduce(0, +) > 0
         let hasExpenseData = monthlyCategoryExpenseTotals.values.flatMap { $0.values }.reduce(0, +) > 0
-        let incomeColor = Color("IncomeColor")
-        let expenseColor = Color("ExpenseColor")
         let pastelBG = colorScheme == .light ? Color.white : Color(UIColor.systemGray6)
         VStack {
             Picker(NSLocalizedString("statistics_type", comment: "통계 종류"), selection: $selectedStatTab) {
@@ -421,7 +423,7 @@ struct StatisticsTabView: View {
                     CategorySectionView(
                         records: Array(records),
                         monthlyCategoryTotals: filterMonths(dict: monthlyCategoryIncomeTotals),
-                        color: Color("IncomeColor"),
+                        color: pastelIncomeColor,
                         sectionTitleSuffix: NSLocalizedString("income", comment: ""),
                         formattedAmount: formattedAmount,
                         isAscendingSort: isAscendingSort,
@@ -469,9 +471,19 @@ struct StatisticsTabView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     let chartData: [MonthValue] = filteredMonths.flatMap { month in
-                        [
-                            MonthValue(month: month, type: NSLocalizedString("income", comment: ""), value: monthlyIncomeTotals[month] ?? 0),
-                            MonthValue(month: month, type: NSLocalizedString("expense", comment: ""), value: monthlyExpenseTotals[month] ?? 0)
+                        let incomeCount = records.filter { record in
+                            let dateFormatter = DateFormatter()
+                            dateFormatter.dateFormat = "yyyy-MM"
+                            return record.type == NSLocalizedString("income", comment: "") && dateFormatter.string(from: record.date ?? Date()) == month
+                        }.count
+                        let expenseCount = records.filter { record in
+                            let dateFormatter = DateFormatter()
+                            dateFormatter.dateFormat = "yyyy-MM"
+                            return record.type == NSLocalizedString("expense", comment: "") && dateFormatter.string(from: record.date ?? Date()) == month
+                        }.count
+                        return [
+                            MonthValue(month: month, type: NSLocalizedString("income", comment: ""), value: monthlyIncomeTotals[month] ?? 0, count: incomeCount),
+                            MonthValue(month: month, type: NSLocalizedString("expense", comment: ""), value: monthlyExpenseTotals[month] ?? 0, count: expenseCount)
                         ]
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -541,48 +553,48 @@ struct StatisticsTabView: View {
                                 HStack {
                                     Text("\(data.monthNumber)월 합계 (\(data.incomeCount)건)")
                                         .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(Color("IncomeColor"))
+                                        .foregroundColor(pastelIncomeColor)
                                         .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                     Spacer()
                                     Text(formattedAmount(data.incomeSum))
                                         .font(.system(size: 24, weight: .heavy))
-                                        .foregroundColor(Color("IncomeColor"))
-                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : Color("IncomeColor").opacity(0.18), radius: 2, x: 0, y: 2)
+                                        .foregroundColor(pastelIncomeColor)
+                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : pastelIncomeColor.opacity(0.18), radius: 2, x: 0, y: 2)
                                 }
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(PlainButtonStyle())
                             .padding(.bottom, 2)
                             // 하단 카테고리별 합계 리스트
-                            ForEach(data.categorySums.sorted(by: { $0.key < $1.key }), id: \ .key) { category, sum in
+                            let sortedCategorySums = data.categorySums.sorted { $0.key < $1.key }
+                            let filteredCategorySums = sortedCategorySums.filter { $0.value > 0 }
+                            ForEach(filteredCategorySums, id: \ .key) { category, sum in
                                 let categoryCount = records.filter { record in
                                     let dateFormatter = DateFormatter()
                                     dateFormatter.dateFormat = "yyyy-MM"
                                     let monthString = dateFormatter.string(from: record.date ?? Date())
                                     return record.type == "수입" && record.categoryRelation?.name == category && monthString == data.month
                                 }.count
-                                if sum > 0 {
-                                    NavigationLink(destination: IncomeDetailView(month: data.month, categoryName: category, customBGColor: customBGColor)) {
-                                        HStack {
-                                            Text("")
-                                            Text("")
-                                            Label("\(NSLocalizedString(category, comment: "")) (\(categoryCount)건)", systemImage: "tag")
-                                                .font(.system(size: 13, weight: .regular))
-                                                .foregroundColor(.secondary)
-                                            Spacer()
-                                            Text(formattedAmount(sum))
-                                                .font(.system(size: 17, weight: .bold))
-                                                .foregroundColor(Color("IncomeColor"))
-                                                .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
-                                        }
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal, 14)
-                                        .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
-                                        .cornerRadius(10)
-                                        .contentShape(Rectangle())
+                                NavigationLink(destination: IncomeDetailView(month: data.month, categoryName: category, customBGColor: customBGColor)) {
+                                    HStack {
+                                        Text("")
+                                        Text("")
+                                        Label("\(NSLocalizedString(category, comment: "")) (\(categoryCount)건)", systemImage: "tag")
+                                            .font(.system(size: 13, weight: .regular))
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        Text(formattedAmount(sum))
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(pastelIncomeColor)
+                                            .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                     }
-                                    .buttonStyle(PlainButtonStyle())
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 14)
+                                    .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
+                                    .cornerRadius(10)
+                                    .contentShape(Rectangle())
                                 }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                         .padding()
@@ -624,8 +636,7 @@ struct StatisticsTabView: View {
         expandedCardMonth: Binding<String?>
     ) -> some View {
         let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: false)
-        let incomeColor = Color("IncomeColor")
-        let expenseColor = Color("ExpenseColor")
+        let pastelBG = colorScheme == .light ? Color.white : Color(UIColor.systemGray6)
         ScrollView {
             VStack(spacing: 36) {
                 ForEach(sortedMonths, id: \.self) { month in
@@ -646,13 +657,13 @@ struct StatisticsTabView: View {
                             HStack {
                                 Text("\(monthNumber)월 합계 (\(monthCount)건)")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(expenseColor)
+                                    .foregroundColor(pastelExpenseColor)
                                     .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 Spacer()
                                 Text(formattedAmount(totals.values.reduce(0, +)))
                                     .font(.system(size: 24, weight: .heavy))
-                                    .foregroundColor(expenseColor)
-                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : expenseColor.opacity(0.18), radius: 2, x: 0, y: 2)
+                                    .foregroundColor(pastelExpenseColor)
+                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : pastelExpenseColor.opacity(0.18), radius: 2, x: 0, y: 2)
                             }
                             .contentShape(Rectangle())
                         }
@@ -668,7 +679,7 @@ struct StatisticsTabView: View {
                                     Spacer()
                                     Text(formattedAmount(cashSum))
                                         .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(expenseColor)
+                                        .foregroundColor(pastelExpenseColor)
                                         .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 }
                             }
@@ -689,7 +700,7 @@ struct StatisticsTabView: View {
                                 NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", customBGColor: customBGColor)) {
                                     Text(formattedAmount(cardSum))
                                         .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(expenseColor)
+                                        .foregroundColor(pastelExpenseColor)
                                         .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -725,7 +736,7 @@ struct StatisticsTabView: View {
                                                 Spacer()
                                                 Text(formattedAmount(value))
                                                     .font(.system(size: 15, weight: .semibold))
-                                                    .foregroundColor(expenseColor)
+                                                    .foregroundColor(pastelExpenseColor)
                                                     .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                             }
                                             .padding(8)
@@ -754,10 +765,10 @@ struct StatisticsTabView: View {
                             )
                     )
                     .cornerRadius(22)
-                    .shadow(color: colorScheme == .light ? expenseColor.opacity(0.10) : Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
+                    .shadow(color: colorScheme == .light ? pastelExpenseColor.opacity(0.10) : Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
                     .overlay(
                         RoundedRectangle(cornerRadius: 22)
-                            .stroke(colorScheme == .light ? expenseColor.opacity(0.18) : expenseColor.opacity(0.35), lineWidth: 1.5)
+                            .stroke(colorScheme == .light ? pastelExpenseColor.opacity(0.18) : pastelExpenseColor.opacity(0.35), lineWidth: 1.5)
                     )
                     .padding(.horizontal, 16)
                     .animation(.spring(), value: totals.values.reduce(0, +))
@@ -816,12 +827,10 @@ struct GroupedBarChartView: View {
         let chartWidth: CGFloat = monthCount > 3
             ? UIScreen.main.bounds.width * CGFloat(monthCount) / 3
             : UIScreen.main.bounds.width - 40
-        let incomeColor = Color("IncomeColor")
-        let expenseColor = Color("ExpenseColor")
         let chartBG = colorScheme == .light ? Color.white : Color(UIColor.systemGray6)
         let colorMap: [String: Color] = [
-            NSLocalizedString("income", comment: ""): incomeColor,
-            NSLocalizedString("expense", comment: ""): expenseColor
+            NSLocalizedString("income", comment: ""): pastelIncomeColor,
+            NSLocalizedString("expense", comment: ""): pastelExpenseColor
         ]
         let maxValue = data.map { $0.value }.max() ?? 0
         let yMax = ceil(maxValue / 500_000) * 500_000 + 500_000
@@ -846,16 +855,25 @@ struct GroupedBarChartView: View {
                         .position(by: .value("Type", d.type))
                         .foregroundStyle(barColor)
                         .annotation(position: .top, alignment: .center) {
-                            Text(label)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(barColor)
+                            VStack(spacing: 2) {
+                                if d.value > 0 {
+                                    Text(label)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(barColor)
+                                }
+                                if d.count > 0 {
+                                    Text("\(d.count)건")
+                                        .font(.system(size: 11, weight: .regular))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                         }
                     }
                 }
                 .chartForegroundStyleScale(
                     KeyValuePairs(dictionaryLiteral:
-                        (NSLocalizedString("income", comment: ""), incomeColor),
-                        (NSLocalizedString("expense", comment: ""), expenseColor)
+                        (NSLocalizedString("income", comment: ""), pastelIncomeColor),
+                        (NSLocalizedString("expense", comment: ""), pastelExpenseColor)
                     )
                 )
                 .chartYScale(domain: 0...yMax)
@@ -894,16 +912,16 @@ struct GroupedBarChartView: View {
             .padding(.vertical, 16)
             HStack(spacing: 20) {
                 HStack(spacing: 6) {
-                    Circle().fill(incomeColor).frame(width: 12, height: 12)
+                    Circle().fill(pastelIncomeColor).frame(width: 12, height: 12)
                     Text(NSLocalizedString("income", comment: ""))
                         .font(.system(size: 13, weight: .regular, design: .rounded))
-                        .foregroundColor(incomeColor)
+                        .foregroundColor(pastelIncomeColor)
                 }
                 HStack(spacing: 6) {
-                    Circle().fill(expenseColor).frame(width: 12, height: 12)
+                    Circle().fill(pastelExpenseColor).frame(width: 12, height: 12)
                     Text(NSLocalizedString("expense", comment: ""))
                         .font(.system(size: 13, weight: .regular, design: .rounded))
-                        .foregroundColor(expenseColor)
+                        .foregroundColor(pastelExpenseColor)
                 }
             }
             .frame(maxWidth: .infinity)
