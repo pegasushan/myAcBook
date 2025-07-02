@@ -16,6 +16,7 @@ struct RecordRowView: View {
     let formattedAmount: (Double) -> String
     let formattedDate: (Date) -> String
     let onDelete: () -> Void
+    let dateLabel: String?
     @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
     var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
     @Environment(\.colorScheme) var colorScheme
@@ -33,8 +34,15 @@ struct RecordRowView: View {
             
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    Text(record.categoryRelation?.name ?? "unknown").appBody()
-                        .foregroundColor(Color("HighlightColor"))
+                    if let dateLabel = dateLabel {
+                        Text("")
+                        + Text(dateLabel).foregroundColor(.secondary)
+                        + Text(" ")
+                        + Text(record.categoryRelation?.name ?? "unknown").foregroundColor(Color("HighlightColor"))
+                    } else {
+                        Text(record.categoryRelation?.name ?? "unknown").appBody()
+                            .foregroundColor(Color("HighlightColor"))
+                    }
                     if record.paymentType == "카드" {
                         Text("💳").appBody()
                             .foregroundColor(.secondary)

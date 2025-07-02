@@ -629,7 +629,8 @@ struct ContentView: View {
             onDelete: {
                 fetchRecords()
                 notifyStatisticsDataChanged()
-            }
+            },
+            dateLabel: nil
         )
         .onTapGesture { selectedRecord = record }
     }

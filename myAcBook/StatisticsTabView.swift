@@ -93,7 +93,91 @@ struct ExpenseDetailView: View {
                                     formatter.dateFormat = "yyyy/M/d"
                                     return formatter.string(from: date)
                                 },
-                                onDelete: { }
+                                onDelete: { },
+                                dateLabel: record.date != nil ? {
+                                    let formatter = DateFormatter()
+                                    formatter.dateFormat = "yyyy/M/d"
+                                    return formatter.string(from: record.date!)
+                                }() : nil
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                }
+            }
+        }
+        .background(customBGColor.ignoresSafeArea())
+    }
+}
+
+struct IncomeDetailView: View {
+    let month: String
+    var customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow)
+    @FetchRequest private var records: FetchedResults<Record>
+
+    init(month: String, customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow)) {
+        self.month = month
+        self.customBGColor = customBGColor
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        let startDate = dateFormatter.date(from: month) ?? Date()
+        var comps = DateComponents()
+        comps.month = 1
+        let endDate = Calendar.current.date(byAdding: comps, to: startDate) ?? Date()
+        let predicate = NSPredicate(format: "date >= %@ AND date < %@ AND type == %@", startDate as NSDate, endDate as NSDate, "수입")
+        _records = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(keyPath: \Record.date, ascending: false)],
+            predicate: predicate,
+            animation: .default
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("\(month) 수입 상세내역")
+                .font(.headline).bold()
+                .padding(.top, 16)
+            Text("\(records.count)건")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 2)
+            if records.isEmpty {
+                Spacer()
+                Text("표시할 내역이 없습니다.")
+                    .foregroundColor(.secondary)
+                Spacer()
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(records, id: \.objectID) { record in
+                            RecordRowView(
+                                record: record,
+                                isDeleteMode: false,
+                                selectedRecords: [],
+                                toggleSelection: { _ in },
+                                selectedRecord: .constant(nil),
+                                formattedAmount: { amount in
+                                    let numberFormatter = NumberFormatter()
+                                    numberFormatter.numberStyle = .decimal
+                                    numberFormatter.maximumFractionDigits = 0
+                                    numberFormatter.groupingSeparator = ","
+                                    return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
+                                },
+                                formattedDate: { date in
+                                    let formatter = DateFormatter()
+                                    formatter.dateFormat = "yyyy/M/d"
+                                    return formatter.string(from: date)
+                                },
+                                onDelete: { },
+                                dateLabel: record.date != nil ? {
+                                    let formatter = DateFormatter()
+                                    formatter.dateFormat = "yyyy/M/d"
+                                    return formatter.string(from: record.date!)
+                                }() : nil
                             )
                         }
                     }
@@ -181,6 +265,32 @@ struct StatisticsTabView: View {
 
     @ViewBuilder
     private var contentView: some View {
+        let isIncomeTab = selectedStatTab == NSLocalizedString("income", comment: "수입")
+        let isExpenseTab = selectedStatTab == NSLocalizedString("expense", comment: "지출")
+        let isGraphTab = selectedStatTab == NSLocalizedString("graph", comment: "그래프")
+        let hasIncomeData = monthlyCategoryIncomeTotals.values.flatMap { $0.values }.reduce(0, +) > 0
+        let hasExpenseData = monthlyCategoryExpenseTotals.values.flatMap { $0.values }.reduce(0, +) > 0
+        let pastelBlue = Color(red: 0.55, green: 0.75, blue: 1.0)
+        let pastelRed = Color(red: 1.0, green: 0.55, blue: 0.65)
+        let screenWidth = UIScreen.main.bounds.width
+        let horizontalPadding: CGFloat = 32
+        let visibleMonths = 3
+        let chartWidth = screenWidth - horizontalPadding
+        let barWidth: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.6
+        let barSpacing: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.4
+        let months = sortedMonths
+        let filteredMonths: [String] = {
+            switch selectedPeriod {
+            case "3개월":
+                return Array(months.suffix(3))
+            case "6개월":
+                return Array(months.suffix(6))
+            case "1년":
+                return Array(months.suffix(12))
+            default:
+                return months
+            }
+        }()
         VStack {
             Picker(NSLocalizedString("statistics_type", comment: "통계 종류"), selection: $selectedStatTab) {
                 Text(NSLocalizedString("graph", comment: "그래프")).tag(NSLocalizedString("graph", comment: "그래프"))
@@ -195,12 +305,12 @@ struct StatisticsTabView: View {
                     Text(period).tag(period)
                 }
             }
-            .pickerStyle(SegmentedPickerStyle())
+            .pickerStyle(MenuPickerStyle())
             .padding(.horizontal, 24)
             .padding(.top, 8)
             .padding(.bottom, 16)
 
-            if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
+            if isGraphTab {
                 Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(Color.primary)
@@ -209,8 +319,7 @@ struct StatisticsTabView: View {
                     .padding(.bottom, 12)
             }
 
-            if selectedStatTab == NSLocalizedString("income", comment: "수입") {
-                let hasIncomeData = monthlyCategoryIncomeTotals.values.flatMap { $0.values }.reduce(0, +) > 0
+            if isIncomeTab {
                 if !hasIncomeData {
                     VStack {
                         Spacer()
@@ -223,6 +332,7 @@ struct StatisticsTabView: View {
                     .background(customBGColor)
                 } else {
                     CategorySectionView(
+                        records: Array(records),
                         monthlyCategoryTotals: filterMonths(dict: monthlyCategoryIncomeTotals),
                         color: Color("IncomeColor"),
                         sectionTitleSuffix: NSLocalizedString("income", comment: ""),
@@ -233,8 +343,7 @@ struct StatisticsTabView: View {
                     )
                     .background(customBGColor).ignoresSafeArea()
                 }
-            } else if selectedStatTab == NSLocalizedString("expense", comment: "지출") {
-                let hasExpenseData = monthlyCategoryExpenseTotals.values.flatMap { $0.values }.reduce(0, +) > 0
+            } else if isExpenseTab {
                 if !hasExpenseData {
                     VStack {
                         Spacer()
@@ -256,28 +365,7 @@ struct StatisticsTabView: View {
                     )
                     .background(customBGColor).ignoresSafeArea()
                 }
-            } else if selectedStatTab == NSLocalizedString("graph", comment: "그래프") {
-                let pastelBlue = Color(red: 0.55, green: 0.75, blue: 1.0)
-                let pastelRed = Color(red: 1.0, green: 0.55, blue: 0.65)
-                let screenWidth = UIScreen.main.bounds.width
-                let horizontalPadding: CGFloat = 32 // 좌우 패딩 합계
-                let visibleMonths = 3
-                let chartWidth = screenWidth - horizontalPadding
-                let barWidth: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.6
-                let barSpacing: CGFloat = (chartWidth / CGFloat(visibleMonths)) * 0.4
-                let filteredMonths: [String] = {
-                    let months = sortedMonths
-                    switch selectedPeriod {
-                    case "3개월":
-                        return Array(months.suffix(3))
-                    case "6개월":
-                        return Array(months.suffix(6))
-                    case "1년":
-                        return Array(months.suffix(12))
-                    default:
-                        return months
-                    }
-                }()
+            } else if isGraphTab {
                 VStack(alignment: .leading, spacing: 4) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         ZStack {
@@ -400,6 +488,7 @@ struct StatisticsTabView: View {
 
     @ViewBuilder
     func CategorySectionView(
+        records: [Record],
         monthlyCategoryTotals: [String: [String: Double]],
         color: Color,
         sectionTitleSuffix: String,
@@ -409,6 +498,18 @@ struct StatisticsTabView: View {
         allCards: [Card]
     ) -> some View {
         let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: isAscendingSort)
+        let monthData: [(month: String, categorySums: [String: Double], incomeSum: Double, incomeCount: Int, monthNumber: String)] = sortedMonths.map { month in
+            let categorySums = monthlyCategoryTotals[month] ?? [:]
+            let incomeSum = categorySums.values.reduce(0, +)
+            let allRecords: [Record] = Array(records)
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM"
+            let monthString = month
+            let incomeRecords = allRecords.filter { $0.type == "수입" && $0.date != nil && dateFormatter.string(from: $0.date!) == monthString }
+            let incomeCount = incomeRecords.count
+            let monthNumber = month.split(separator: "-").count == 2 ? String(Int(month.split(separator: "-")[1]) ?? 0) : month
+            return (month, categorySums, incomeSum, incomeCount, monthNumber)
+        }
         if monthlyCategoryTotals.isEmpty {
             VStack {
                 Spacer()
@@ -422,26 +523,26 @@ struct StatisticsTabView: View {
         } else {
             ScrollView {
                 VStack(spacing: 28) {
-                    ForEach(sortedMonths, id: \.self) { month in
-                        let categorySums = monthlyCategoryTotals[month] ?? [:]
-                        let incomeSum = categorySums.values.reduce(0, +)
-                        let monthNumber = month.split(separator: "-").count == 2 ? String(Int(month.split(separator: "-")[1]) ?? 0) : month
-                        let incomeCount = categorySums.values.reduce(0) { $0 + ( $1 > 0 ? 1 : 0 ) }
+                    ForEach(monthData, id: \.month) { data in
                         VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("\(monthNumber)월 수입 합계 (\(incomeCount)건)")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(Color("IncomeColor"))
-                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
-                                Spacer()
-                                Text(formattedAmount(incomeSum))
-                                    .font(.system(size: 24, weight: .heavy))
-                                    .foregroundColor(Color("IncomeColor"))
-                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : Color("IncomeColor").opacity(0.18), radius: 2, x: 0, y: 2)
+                            NavigationLink(destination: IncomeDetailView(month: data.month, customBGColor: customBGColor)) {
+                                HStack {
+                                    Text("\(data.monthNumber)월 수입 합계 (\(data.incomeCount)건)")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(Color("IncomeColor"))
+                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
+                                    Spacer()
+                                    Text(formattedAmount(data.incomeSum))
+                                        .font(.system(size: 24, weight: .heavy))
+                                        .foregroundColor(Color("IncomeColor"))
+                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : Color("IncomeColor").opacity(0.18), radius: 2, x: 0, y: 2)
+                                }
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(PlainButtonStyle())
                             .padding(.bottom, 2)
                             VStack(spacing: 10) {
-                                ForEach(categorySums.sorted(by: { $0.key < $1.key }), id: \.key) { category, value in
+                                ForEach(data.categorySums.sorted(by: { $0.key < $1.key }), id: \.key) { category, value in
                                     HStack {
                                         Label(category, systemImage: "tag.fill")
                                             .font(.system(size: 14))
@@ -480,7 +581,7 @@ struct StatisticsTabView: View {
                                 .stroke(colorScheme == .light ? Color("HighlightColor").opacity(0.18) : Color("HighlightColor").opacity(0.35), lineWidth: 1.5)
                         )
                         .padding(.horizontal, 16)
-                        .animation(.spring(), value: incomeSum)
+                        .animation(.spring(), value: data.incomeSum)
                     }
                 }
                 .padding(.top, 8)
