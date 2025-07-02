@@ -372,14 +372,16 @@ struct StatisticsTabView: View {
             if isIncomeTab {
                 if !hasIncomeData {
                     VStack {
-                        Spacer()
-                        Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                        Spacer()
+                        Image(systemName: "chart.bar.xaxis")
+                            .resizable()
+                            .frame(width: 48, height: 48)
+                            .foregroundColor(.gray.opacity(0.3))
+                            .padding(.bottom, 8)
+                        Text("표시할 데이터가 없습니다.")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundColor(.secondary)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .background(customBGColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     CategorySectionView(
                         records: Array(records),
@@ -396,14 +398,16 @@ struct StatisticsTabView: View {
             } else if isExpenseTab {
                 if !hasExpenseData {
                     VStack {
-                        Spacer()
-                        Text(NSLocalizedString("no_data", comment: "표시할 데이터가 없습니다")).appBody()
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                        Spacer()
+                        Image(systemName: "chart.bar.xaxis")
+                            .resizable()
+                            .frame(width: 48, height: 48)
+                            .foregroundColor(.gray.opacity(0.3))
+                            .padding(.bottom, 8)
+                        Text("표시할 데이터가 없습니다.")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundColor(.secondary)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .background(customBGColor)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ExpenseAccordionSectionView(
                         monthRecordMap: monthRecordMap,
@@ -416,76 +420,90 @@ struct StatisticsTabView: View {
                     .background(customBGColor).ignoresSafeArea()
                 }
             } else if isGraphTab {
-                VStack(alignment: .leading, spacing: 4) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .fill(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            Color("customLightSectionColor").opacity(0.95),
-                                            Color.white.opacity(0.85)
-                                        ]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+                if filteredMonths.isEmpty || (filteredMonths.allSatisfy { (monthlyIncomeTotals[$0] ?? 0) == 0 && (monthlyExpenseTotals[$0] ?? 0) == 0 }) {
+                    VStack {
+                        Image(systemName: "chart.bar.xaxis")
+                            .resizable()
+                            .frame(width: 48, height: 48)
+                            .foregroundColor(.gray.opacity(0.3))
+                            .padding(.bottom, 8)
+                        Text("표시할 데이터가 없습니다.")
+                            .font(.system(size: 15, weight: .regular))
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color("customLightSectionColor").opacity(0.95),
+                                                Color.white.opacity(0.85)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
                                     )
-                                )
-                                .shadow(color: colorScheme == .light ? Color.black.opacity(0.12) : Color.black.opacity(0.25), radius: 18, x: 0, y: 10)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 24)
-                                        .stroke(Color.pink.opacity(0.18), lineWidth: 1.5)
-                                )
-                                .frame(height: 380)
-                            Chart {
-                                ForEach(filteredMonths, id: \.self) { month in
-                                    // 수입 건수 계산
-                                    let incomeCount = records.filter { record in
-                                        record.type == "수입" && record.date != nil && {
-                                            let df = DateFormatter()
-                                            df.dateFormat = "yyyy-MM"
-                                            return df.string(from: record.date!) == month
-                                        }()
-                                    }.count
-                                    BarMark(
-                                        x: .value("Month", month),
-                                        y: .value("수입", monthlyIncomeTotals[month] ?? 0)
+                                    .shadow(color: colorScheme == .light ? Color.black.opacity(0.12) : Color.black.opacity(0.25), radius: 18, x: 0, y: 10)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 24)
+                                            .stroke(Color.pink.opacity(0.18), lineWidth: 1.5)
                                     )
-                                    .foregroundStyle(pastelBlue)
-                                    .position(by: .value("Type", "수입"))
-                                    .cornerRadius(4)
-                                    .annotation(position: .top) {
-                                        VStack(spacing: 0) {
-                                            Text("\(incomeCount)건")
-                                                .font(.caption2)
-                                                .foregroundColor(.gray)
-                                            Text(formattedCompactNumber(monthlyIncomeTotals[month] ?? 0))
-                                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                                .foregroundColor(pastelBlue)
+                                    .frame(height: 380)
+                                Chart {
+                                    ForEach(filteredMonths, id: \.self) { month in
+                                        // 수입 건수 계산
+                                        let incomeCount = records.filter { record in
+                                            record.type == "수입" && record.date != nil && {
+                                                let df = DateFormatter()
+                                                df.dateFormat = "yyyy-MM"
+                                                return df.string(from: record.date!) == month
+                                            }()
+                                        }.count
+                                        BarMark(
+                                            x: .value("Month", month),
+                                            y: .value("수입", monthlyIncomeTotals[month] ?? 0)
+                                        )
+                                        .foregroundStyle(pastelBlue)
+                                        .position(by: .value("Type", "수입"))
+                                        .cornerRadius(4)
+                                        .annotation(position: .top) {
+                                            VStack(spacing: 0) {
+                                                Text("\(incomeCount)건")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.gray)
+                                                Text(formattedCompactNumber(monthlyIncomeTotals[month] ?? 0))
+                                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                                    .foregroundColor(pastelBlue)
+                                            }
                                         }
-                                    }
-                                    // 지출 건수 계산
-                                    let expenseCount = records.filter { record in
-                                        record.type == "지출" && record.date != nil && {
-                                            let df = DateFormatter()
-                                            df.dateFormat = "yyyy-MM"
-                                            return df.string(from: record.date!) == month
-                                        }()
-                                    }.count
-                                    BarMark(
-                                        x: .value("Month", month),
-                                        y: .value("지출", monthlyExpenseTotals[month] ?? 0)
-                                    )
-                                    .foregroundStyle(pastelRed)
-                                    .position(by: .value("Type", "지출"))
-                                    .cornerRadius(4)
-                                    .annotation(position: .top) {
-                                        VStack(spacing: 0) {
-                                            Text("\(expenseCount)건")
-                                                .font(.caption2)
-                                                .foregroundColor(.gray)
-                                            Text(formattedCompactNumber(monthlyExpenseTotals[month] ?? 0))
-                                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                                .foregroundColor(pastelRed)
+                                        // 지출 건수 계산
+                                        let expenseCount = records.filter { record in
+                                            record.type == "지출" && record.date != nil && {
+                                                let df = DateFormatter()
+                                                df.dateFormat = "yyyy-MM"
+                                                return df.string(from: record.date!) == month
+                                            }()
+                                        }.count
+                                        BarMark(
+                                            x: .value("Month", month),
+                                            y: .value("지출", monthlyExpenseTotals[month] ?? 0)
+                                        )
+                                        .foregroundStyle(pastelRed)
+                                        .position(by: .value("Type", "지출"))
+                                        .cornerRadius(4)
+                                        .annotation(position: .top) {
+                                            VStack(spacing: 0) {
+                                                Text("\(expenseCount)건")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.gray)
+                                                Text(formattedCompactNumber(monthlyExpenseTotals[month] ?? 0))
+                                                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                                                    .foregroundColor(pastelRed)
+                                            }
                                         }
                                     }
                                 }
@@ -522,22 +540,22 @@ struct StatisticsTabView: View {
                             )
                             .padding(.horizontal, horizontalPadding / 2)
                         }
-                    }
-                    .padding(.horizontal, 8)
-                    HStack(spacing: 20) {
-                        HStack(spacing: 6) {
-                            Circle().fill(pastelBlue).frame(width: 12, height: 12)
-                            Text(NSLocalizedString("income", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
-                                .foregroundColor(pastelBlue)
+                        .padding(.horizontal, 8)
+                        HStack(spacing: 20) {
+                            HStack(spacing: 6) {
+                                Circle().fill(pastelBlue).frame(width: 12, height: 12)
+                                Text(NSLocalizedString("income", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
+                                    .foregroundColor(pastelBlue)
+                            }
+                            HStack(spacing: 6) {
+                                Circle().fill(pastelRed).frame(width: 12, height: 12)
+                                Text(NSLocalizedString("expense", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
+                                    .foregroundColor(pastelRed)
+                            }
                         }
-                        HStack(spacing: 6) {
-                            Circle().fill(pastelRed).frame(width: 12, height: 12)
-                            Text(NSLocalizedString("expense", comment: "")).font(.system(size: 13, weight: .regular, design: .rounded))
-                                .foregroundColor(pastelRed)
-                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
                 }
             }
         }

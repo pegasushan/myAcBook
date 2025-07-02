@@ -478,7 +478,9 @@ struct ContentView: View {
                     .background(customBGColor)
                 }
             }
-            if isDeleteMode { deleteButtons }
+            if isDeleteMode && !monthFilteredRecords.isEmpty {
+                deleteButtons
+            }
         }
         .padding(.horizontal, 20)
         .frame(maxHeight: .infinity, alignment: .top)
