@@ -212,6 +212,12 @@ public struct CategoryManagerView: View {
                             do {
                                 try viewContext.save()
                                 UIApplication.shared.endEditing()
+                                // 강제 새로고침: selectedFilter를 토글했다가 원래대로 복원
+                                let old = selectedFilter
+                                selectedFilter = (old == "income" ? "expense" : "income")
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                    selectedFilter = old
+                                }
                             } catch {}
                             newCategoryName = ""
                         } else {

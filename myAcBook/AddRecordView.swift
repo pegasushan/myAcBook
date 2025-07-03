@@ -243,7 +243,7 @@ struct AddRecordView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "folder.fill")
                                     .foregroundColor(.gray)
-                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.map { NSLocalizedString($0.name ?? "", comment: "") }, placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"), onDropdownTap: {
+                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.filter { !($0.name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) }.map { NSLocalizedString($0.name ?? "", comment: "") }, placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"), onDropdownTap: {
                                     isAmountFieldFocused = false
                                     isDetailFieldFocused = false
                                 })

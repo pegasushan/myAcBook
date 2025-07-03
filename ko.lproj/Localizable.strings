@@ -126,6 +126,7 @@
 "theme_light_pink" = "라이트 핑크";
 "theme_pastel_mint" = "파스텔 민트";
 "theme_light_yellow" = "라이트 옐로우";
+"theme_white" = "화이트";
 
 "recommended_theme_title" = "추천 테마";
 
@@ -133,3 +134,6 @@
 "insert_test_data_button" = "테스트 데이터 입력";
 "test_data_inserted_title" = "테스트 데이터 입력 완료";
 "test_data_inserted_message" = "테스트 데이터가 성공적으로 입력되었습니다.\n입력된 달: %@";
+
+"cash_total" = "현금 합계";
+"card_total" = "카드 합계";

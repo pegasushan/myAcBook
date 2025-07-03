@@ -118,6 +118,7 @@
 "theme_light_pink" = "Light Pink";
 "theme_pastel_mint" = "Pastel Mint";
 "theme_light_yellow" = "Light Yellow";
+"theme_white" = "White";
 
 "recommended_theme_title" = "Recommended Themes";
 
@@ -125,3 +126,6 @@
 "insert_test_data_button" = "Insert Test Data";
 "test_data_inserted_title" = "Test Data Inserted";
 "test_data_inserted_message" = "Test data was successfully inserted.\nInserted month: %@";
+
+"cash_total" = "Cash Total";
+"card_total" = "Card Total";

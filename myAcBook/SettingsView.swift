@@ -59,6 +59,12 @@ struct SettingsView: View {
             lightBG: "#FFF9D6", darkBG: "#181A20",
             lightCard: "#FFFFFF", darkCard: "#23272F",
             lightSection: "#FDF6E3", darkSection: "#23272F"
+        ),
+        ColorPalette(
+            name: NSLocalizedString("theme_white", comment: "화이트"),
+            lightBG: "#FFFFFF", darkBG: "#181A20",
+            lightCard: "#FFFFFF", darkCard: "#23272F",
+            lightSection: "#FFFFFF", darkSection: "#23272F"
         )
     ]
 
@@ -69,7 +75,7 @@ struct SettingsView: View {
                     Text(NSLocalizedString("recommended_theme_title", comment: "추천 테마"))
                         .font(.system(size: 15, weight: .semibold, design: .rounded))
                         .padding(.top, 24)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    HStack(spacing: 12) {
                         ForEach(palettes, id: \.name) { palette in
                             Button(action: {
                                 customLightBGColorHex = palette.lightBG
@@ -79,20 +85,16 @@ struct SettingsView: View {
                                 customLightSectionColorHex = palette.lightSection
                                 customDarkSectionColorHex = palette.darkSection
                             }) {
-                                VStack {
-                                    Circle()
-                                        .fill(Color(UIColor(hex: palette.lightBG)))
-                                        .frame(width: 36, height: 36)
-                                        .overlay(Circle().stroke(Color.gray, lineWidth: 1))
-                                    Text(palette.name)
-                                        .font(.caption)
-                                }
+                                Circle()
+                                    .fill(Color(UIColor(hex: palette.lightBG)))
+                                    .frame(width: 28, height: 28)
+                                    .overlay(Circle().stroke(Color.gray, lineWidth: 1))
                             }
                             .contentShape(Rectangle())
                         }
                     }
                     .padding(.vertical, 8)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 12)
                 } else {
                     Text("추천 테마는 라이트 모드에서만 선택할 수 있습니다.")
                         .font(.caption)
