@@ -234,23 +234,26 @@ struct ContentView: View {
 
     // MARK: - Body
     var body: some View {
-        NavigationView {
-            ZStack {
-                (colorScheme == .light ? Color(red: 1.0, green: 0.93, blue: 0.96) : customBGColor).ignoresSafeArea() // 라이트: 연핑크, 다크: 어두운 테마
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
+        ZStack {
+            customBGColor.ignoresSafeArea()
+            NavigationView {
+                ZStack {
+                    customBGColor.ignoresSafeArea()
                     VStack(spacing: 0) {
-                        mainContent
+                        Spacer(minLength: 0)
+                        VStack(spacing: 0) {
+                            mainContent
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(customBGColor)
+                                .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 4)
+                        )
+                        .padding(.horizontal, 8)
+                        .padding(.top, 0)
+                        .padding(.bottom, 0)
+                        Spacer(minLength: 0)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .fill(customBGColor)
-                            .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 4)
-                    )
-                    .padding(.horizontal, 8)
-                    .padding(.top, 0)
-                    .padding(.bottom, 0)
-                    Spacer(minLength: 0)
                 }
             }
         }

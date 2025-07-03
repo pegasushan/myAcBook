@@ -328,7 +328,7 @@ struct StatisticsTabView: View {
             VStack {
                 contentView
             }
-            .background(customBGColor)
+            .background(customBGColor.ignoresSafeArea())
         }
     }
 
@@ -673,7 +673,7 @@ struct StatisticsTabView: View {
                         HStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 2) {
                                 NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "현금", customBGColor: customBGColor)) {
-                                    Label("현금 합계 (\(cashCount)건)", systemImage: "banknote")
+                                    Label(String(format: NSLocalizedString("cash_total", comment: "현금 합계"), cashCount), systemImage: "banknote")
                                         .font(.system(size: 12, weight: .regular))
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -691,7 +691,7 @@ struct StatisticsTabView: View {
                         .buttonStyle(PlainButtonStyle())
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                Label("카드 합계 (\(cardCount)건)", systemImage: "creditcard")
+                                Label(String(format: NSLocalizedString("card_total", comment: "카드 합계"), cardCount), systemImage: "creditcard")
                                     .font(.system(size: 12, weight: .regular))
                                     .foregroundColor(.secondary)
                                 Spacer()
