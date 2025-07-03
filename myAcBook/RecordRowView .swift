@@ -28,10 +28,15 @@ struct RecordRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
-            Image(systemName: (record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
-                .font(.system(size: 18, weight: .regular, design: .rounded))
-            
+            if record.paymentType == "카드" {
+                Text("💳")
+                    .font(.system(size: 18))
+                    .padding(.trailing, 2)
+            } else if record.paymentType == "현금" {
+                Text("💰")
+                    .font(.system(size: 18))
+                    .padding(.trailing, 2)
+            }
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     if let dateLabel = dateLabel {
@@ -40,12 +45,8 @@ struct RecordRowView: View {
                         + Text(" ")
                         + Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: "")).foregroundColor(Color("HighlightColor"))
                     } else {
-                        Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: "")).appBody()
+                        Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: ""))
                             .foregroundColor(Color("HighlightColor"))
-                    }
-                    if record.paymentType == "카드" {
-                        Text("💳").appBody()
-                            .foregroundColor(.secondary)
                     }
                 }
                 .font(.system(size: 15, weight: .regular, design: .rounded))
@@ -56,7 +57,7 @@ struct RecordRowView: View {
                     .padding(.top, 2)
             }
             Spacer()
-            Text(((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? "+ " : "- ") + formattedAmount(record.amount))
+            Text(formattedAmount(record.amount))
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundColor((record.type ?? NSLocalizedString("expense", comment: "")) == NSLocalizedString("income", comment: "") ? Color("IncomeColor") : Color("ExpenseColor"))
         }
