@@ -114,30 +114,27 @@ struct ExpenseDetailView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(records, id: \.objectID) { record in
-                            RecordRowView(
+                            CompactRecordRowView(
                                 record: record,
-                                isDeleteMode: false,
-                                selectedRecords: [],
-                                toggleSelection: { _ in },
-                                selectedRecord: .constant(nil),
-                                formattedAmount: { amount in
-                                    let numberFormatter = NumberFormatter()
-                                    numberFormatter.numberStyle = .decimal
-                                    numberFormatter.maximumFractionDigits = 0
-                                    numberFormatter.groupingSeparator = ","
-                                    return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
+                                onTap: nil,
+                                colorForCategory: { name in
+                                    switch name {
+                                    case "식대": return .pink
+                                    case "음료": return .blue
+                                    case "교통": return .green
+                                    case "부수입": return .purple
+                                    case "급여": return .orange
+                                    case "쿠팡33": return .yellow
+                                    case "food": return .brown
+                                    case "salary": return .mint
+                                    case "side_income": return .purple
+                                    case "beverage": return .blue
+                                    default: return .gray
+                                    }
                                 },
-                                formattedDate: { date in
-                                    let formatter = DateFormatter()
-                                    formatter.dateFormat = "yyyy/M/d"
-                                    return formatter.string(from: date)
-                                },
-                                onDelete: { },
-                                dateLabel: record.date != nil ? {
-                                    let formatter = DateFormatter()
-                                    formatter.dateFormat = "yyyy/M/d"
-                                    return formatter.string(from: record.date!)
-                                }() : nil
+                                isIncome: { record in
+                                    record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
+                                }
                             )
                         }
                     }
@@ -201,30 +198,27 @@ struct IncomeDetailView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(records, id: \.objectID) { record in
-                            RecordRowView(
+                            CompactRecordRowView(
                                 record: record,
-                                isDeleteMode: false,
-                                selectedRecords: [],
-                                toggleSelection: { _ in },
-                                selectedRecord: .constant(nil),
-                                formattedAmount: { amount in
-                                    let numberFormatter = NumberFormatter()
-                                    numberFormatter.numberStyle = .decimal
-                                    numberFormatter.maximumFractionDigits = 0
-                                    numberFormatter.groupingSeparator = ","
-                                    return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
+                                onTap: nil,
+                                colorForCategory: { name in
+                                    switch name {
+                                    case "식대": return .pink
+                                    case "음료": return .blue
+                                    case "교통": return .green
+                                    case "부수입": return .purple
+                                    case "급여": return .orange
+                                    case "쿠팡33": return .yellow
+                                    case "food": return .brown
+                                    case "salary": return .mint
+                                    case "side_income": return .purple
+                                    case "beverage": return .blue
+                                    default: return .gray
+                                    }
                                 },
-                                formattedDate: { date in
-                                    let formatter = DateFormatter()
-                                    formatter.dateFormat = "yyyy/M/d"
-                                    return formatter.string(from: date)
-                                },
-                                onDelete: { },
-                                dateLabel: record.date != nil ? {
-                                    let formatter = DateFormatter()
-                                    formatter.dateFormat = "yyyy/M/d"
-                                    return formatter.string(from: record.date!)
-                                }() : nil
+                                isIncome: { record in
+                                    record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
+                                }
                             )
                         }
                     }

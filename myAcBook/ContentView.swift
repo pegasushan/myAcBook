@@ -608,6 +608,7 @@ struct ContentView: View {
                                 // 에러 처리 (필요시)
                             }
                             fetchRecords()
+                            notifyStatisticsDataChanged()
                             selectedRecords.removeAll()
                             isDeleteMode = false
                         }
@@ -622,6 +623,8 @@ struct ContentView: View {
                     }
                     selectedRecords.removeAll()
                     try? viewContext.save()
+                    fetchRecords()
+                    notifyStatisticsDataChanged()
                     isDeleteMode = false
                 }
             }) {
@@ -650,56 +653,12 @@ struct ContentView: View {
     // MARK: - View Builders
     @ViewBuilder
     private func recordRowView(record: Record) -> some View {
-        HStack(spacing: 0) {
-            // 1. 지출구분 뱃지
-            Text(record.paymentType ?? "-")
-                .font(.caption2)
-                .foregroundColor(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(
-                    Capsule().fill((record.paymentType == "카드") ? Color.blue.opacity(0.7) : Color.green.opacity(0.7))
-                )
-                .frame(width: 56, alignment: .center)
-            // 2. 카테고리 아이콘+텍스트
-            HStack(spacing: 4) {
-                Image(systemName: iconForCategory(record.categoryRelation?.name))
-                    .foregroundColor(colorForCategory(record.categoryRelation?.name))
-                Text(record.categoryRelation?.name ?? "-")
-                    .font(.footnote)
-                    .foregroundColor(colorForCategory(record.categoryRelation?.name))
-            }
-            .frame(width: 70, alignment: .leading)
-            // 3. 설명
-            Text(record.detail?.isEmpty == false ? record.detail! : "-")
-                .font(.footnote)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .layoutPriority(5)
-            // 4. 금액 (수입/지출 색상)
-            Text(record.amount > 0 ? "\(record.amount, specifier: "%.0f")" : "-")
-                .font(.footnote)
-                .foregroundColor(isIncome(record) ? Color.blue : Color.red)
-                .frame(width: 70, alignment: .trailing)
-        }
-        .frame(height: 32)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(
-            LinearGradient(
-                gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.04)]),
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+        CompactRecordRowView(
+            record: record,
+            onTap: { selectedRecord = record },
+            colorForCategory: colorForCategory,
+            isIncome: isIncome
         )
-        .padding(.vertical, 2)
-        .padding(.horizontal, 0)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            selectedRecord = record
-        }
     }
 
     // 카테고리별 아이콘 매핑 함수
@@ -984,4 +943,81 @@ struct BannerAdContainerView: View {
 let pastelAccentColor = Color(red: 1.0, green: 0.7, blue: 0.8) // 연한 파스텔 핑크
 let borderColor = Color(red: 0.95, green: 0.75, blue: 0.8) // 더 연한 핑크
 let iconColor = Color(red: 0.8, green: 0.5, blue: 0.6) // 톤다운 핑크
+
+// MARK: - CompactRecordRowView: 가계부 스타일의 레코드 행 뷰
+struct CompactRecordRowView: View {
+    let record: Record
+    let onTap: (() -> Void)?
+    let colorForCategory: (String?) -> Color
+    let isIncome: (Record) -> Bool
+    @Environment(\.colorScheme) var colorScheme
+
+    // 배경 뷰 분리 (컴파일러 타입체크 최적화)
+    var backgroundView: some View {
+        if colorScheme == .dark {
+            return AnyView(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color("customDarkCardColor").opacity(0.92), Color("SectionBGColor").opacity(0.85)]),
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+            )
+        } else {
+            return AnyView(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.04)]),
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                )
+            )
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // 1. 지출구분 뱃지
+            Text(record.paymentType ?? "-")
+                .font(.caption2)
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule().fill((record.paymentType == "카드") ? Color.blue.opacity(0.7) : Color.green.opacity(0.7))
+                )
+                .frame(width: 56, alignment: .center)
+            // 2. 카테고리 텍스트만 (이모티콘/아이콘 제거)
+            Text(record.categoryRelation?.name ?? "-")
+                .font(.footnote)
+                .foregroundColor(colorScheme == .dark ? colorForCategory(record.categoryRelation?.name).opacity(0.95) : colorForCategory(record.categoryRelation?.name))
+                .frame(width: 70, alignment: .leading)
+            // 3. 설명
+            Text(record.detail?.isEmpty == false ? record.detail! : "-")
+                .font(.footnote)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(5)
+                .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.92) : .primary)
+            // 4. 금액 (수입/지출 색상)
+            Text(record.amount > 0 ? "\(record.amount, specifier: "%.0f")" : "-")
+                .font(.footnote)
+                .foregroundColor(colorScheme == .dark ? (isIncome(record) ? Color.cyan : Color.pink) : (isIncome(record) ? Color.blue : Color.red))
+                .frame(width: 70, alignment: .trailing)
+        }
+        .frame(height: 32)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(backgroundView)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear, lineWidth: 1.2)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .shadow(color: colorScheme == .dark ? Color.black.opacity(0.25) : Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+        .padding(.vertical, 2)
+        .padding(.horizontal, 0)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTap?()
+        }
+    }
+}
 
