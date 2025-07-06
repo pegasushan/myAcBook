@@ -50,6 +50,12 @@ struct ExpenseDetailView: View {
         sortDescriptors: [NSSortDescriptor(keyPath: \Record.date, ascending: false)],
         animation: .default
     ) private var records: FetchedResults<Record>
+    @Environment(\.colorScheme) var colorScheme
+    @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+    @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
+    var customCardColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
+    }
 
     var detailTitle: String {
         var title = "\(month) 지출"
@@ -481,6 +487,7 @@ struct StatisticsTabView: View {
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         GroupedBarChartView(data: chartData)
+                            .padding(.horizontal, 20)
                     }
                 }
             }
@@ -583,7 +590,7 @@ struct StatisticsTabView: View {
                                     }
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 14)
-                                    .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
+                                    .background(customCardColor)
                                     .cornerRadius(10)
                                     .contentShape(Rectangle())
                                 }
@@ -591,18 +598,7 @@ struct StatisticsTabView: View {
                             }
                         }
                         .padding()
-                        .background(
-                            colorScheme == .light ?
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
-                                    startPoint: .topLeading, endPoint: .bottomTrailing
-                                )
-                            :
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color("customDarkCardColor").opacity(0.85), Color("customDarkSectionColor").opacity(0.7)]),
-                                    startPoint: .topLeading, endPoint: .bottomTrailing
-                                )
-                        )
+                        .background(customCardColor)
                         .cornerRadius(22)
                         .shadow(color: colorScheme == .light ? Color("HighlightColor").opacity(0.10) : Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
                         .overlay(
@@ -677,7 +673,7 @@ struct StatisticsTabView: View {
                             }
                             .padding(.vertical, 10)
                             .padding(.horizontal, 14)
-                            .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
+                            .background(customCardColor)
                             .cornerRadius(12)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -699,7 +695,7 @@ struct StatisticsTabView: View {
                             }
                             .padding(.vertical, 10)
                             .padding(.horizontal, 14)
-                            .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
+                            .background(customCardColor)
                             .cornerRadius(12)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -732,7 +728,7 @@ struct StatisticsTabView: View {
                                                     .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                             }
                                             .padding(8)
-                                            .background(colorScheme == .light ? Color("customLightSectionColor").opacity(0.5) : Color("customDarkSectionColor").opacity(0.7))
+                                            .background(customCardColor)
                                             .cornerRadius(8)
                                         }
                                         .buttonStyle(PlainButtonStyle())
@@ -744,18 +740,7 @@ struct StatisticsTabView: View {
                         }
                     }
                     .padding()
-                    .background(
-                        colorScheme == .light ?
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color("customLightSectionColor").opacity(0.18), Color.white]),
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            )
-                        :
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color("customDarkCardColor").opacity(0.85), Color("customDarkSectionColor").opacity(0.7)]),
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            )
-                    )
+                    .background(customCardColor)
                     .cornerRadius(22)
                     .shadow(color: colorScheme == .light ? pastelExpenseColor.opacity(0.10) : Color.black.opacity(0.5), radius: 12, x: 0, y: 6)
                     .overlay(
@@ -897,7 +882,6 @@ struct GroupedBarChartView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 12)
             }
             .frame(width: chartWidth, height: 340)
             .padding(.vertical, 16)

@@ -951,26 +951,11 @@ struct CompactRecordRowView: View {
     let colorForCategory: (String?) -> Color
     let isIncome: (Record) -> Bool
     @Environment(\.colorScheme) var colorScheme
-
-    // 배경 뷰 분리 (컴파일러 타입체크 최적화)
-    var backgroundView: some View {
-        if colorScheme == .dark {
-            return AnyView(
-                LinearGradient(
-                    gradient: Gradient(colors: [Color("customDarkCardColor").opacity(0.92), Color("SectionBGColor").opacity(0.85)]),
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-        } else {
-            return AnyView(
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.04)]),
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
-        }
+    @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
+    @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
+    var customCardColor: Color {
+        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
     }
-
     var body: some View {
         HStack(spacing: 0) {
             // 1. 지출구분 뱃지
@@ -1005,7 +990,7 @@ struct CompactRecordRowView: View {
         .frame(height: 32)
         .padding(.vertical, 4)
         .padding(.horizontal, 8)
-        .background(backgroundView)
+        .background(customCardColor)
         .overlay(
             RoundedRectangle(cornerRadius: 18)
                 .stroke(colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear, lineWidth: 1.2)
