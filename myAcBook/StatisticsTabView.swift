@@ -798,6 +798,9 @@ struct StatisticsTabView: View {
 struct GroupedBarChartView: View {
     let data: [MonthValue]
     @Environment(\.colorScheme) var colorScheme
+    var chartBGColor: Color {
+        colorScheme == .dark ? Color(UIColor(hex: "#23272F")) : Color.white
+    }
     var body: some View {
         let monthCount = Set(data.map { $0.month }).count
         let chartWidth: CGFloat = monthCount > 3
@@ -812,7 +815,7 @@ struct GroupedBarChartView: View {
         return VStack(spacing: 0) {
             ZStack {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white)
+                    .fill(chartBGColor)
                     .shadow(color: Color.black.opacity(0.10), radius: 18, x: 0, y: 10)
                     .overlay(
                         RoundedRectangle(cornerRadius: 20)
