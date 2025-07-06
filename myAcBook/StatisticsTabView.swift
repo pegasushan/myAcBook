@@ -585,7 +585,7 @@ struct StatisticsTabView: View {
                                         Text("")
                                         Label("\(NSLocalizedString(category, comment: "")) (\(categoryCount)건)", systemImage: "tag")
                                             .font(.system(size: 13, weight: .regular))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(.primary)
                                         Spacer()
                                         Text(formattedAmount(sum))
                                             .font(.system(size: 17, weight: .bold))
