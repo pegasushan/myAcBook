@@ -650,21 +650,95 @@ struct ContentView: View {
     // MARK: - View Builders
     @ViewBuilder
     private func recordRowView(record: Record) -> some View {
-        RecordRowView(
-            record: record,
-            isDeleteMode: isDeleteMode,
-            selectedRecords: selectedRecords,
-            toggleSelection: toggleSelection,
-            selectedRecord: $selectedRecord,
-            formattedAmount: formattedAmount,
-            formattedDate: formattedDate,
-            onDelete: {
-                fetchRecords()
-                notifyStatisticsDataChanged()
-            },
-            dateLabel: nil
+        HStack(spacing: 0) {
+            // 1. 지출구분 뱃지
+            Text(record.paymentType ?? "-")
+                .font(.caption2)
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule().fill((record.paymentType == "카드") ? Color.blue.opacity(0.7) : Color.green.opacity(0.7))
+                )
+                .frame(width: 56, alignment: .center)
+            // 2. 카테고리 아이콘+텍스트
+            HStack(spacing: 4) {
+                Image(systemName: iconForCategory(record.categoryRelation?.name))
+                    .foregroundColor(colorForCategory(record.categoryRelation?.name))
+                Text(record.categoryRelation?.name ?? "-")
+                    .font(.footnote)
+                    .foregroundColor(colorForCategory(record.categoryRelation?.name))
+            }
+            .frame(width: 70, alignment: .leading)
+            // 3. 설명
+            Text(record.detail?.isEmpty == false ? record.detail! : "-")
+                .font(.footnote)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(5)
+            // 4. 금액 (수입/지출 색상)
+            Text(record.amount > 0 ? "\(record.amount, specifier: "%.0f")" : "-")
+                .font(.footnote)
+                .foregroundColor(isIncome(record) ? Color.blue : Color.red)
+                .frame(width: 70, alignment: .trailing)
+        }
+        .frame(height: 32)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.04)]),
+                startPoint: .topLeading, endPoint: .bottomTrailing
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
         )
-        .onTapGesture { selectedRecord = record }
+        .padding(.vertical, 2)
+        .padding(.horizontal, 0)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selectedRecord = record
+        }
+    }
+
+    // 카테고리별 아이콘 매핑 함수
+    private func iconForCategory(_ name: String?) -> String {
+        switch name {
+        case "식대": return "fork.knife"
+        case "음료": return "cup.and.saucer"
+        case "교통": return "car"
+        case "부수입": return "gift"
+        case "급여": return "dollarsign.circle"
+        case "쿠팡33": return "creditcard"
+        case "food": return "takeoutbag.and.cup.and.straw"
+        case "salary": return "banknote"
+        case "side_income": return "giftcard"
+        case "beverage": return "cup.and.saucer"
+        default: return "tag"
+        }
+    }
+
+    // 카테고리별 컬러 매핑 함수
+    private func colorForCategory(_ name: String?) -> Color {
+        switch name {
+        case "식대": return .pink
+        case "음료": return .blue
+        case "교통": return .green
+        case "부수입": return .purple
+        case "급여": return .orange
+        case "쿠팡33": return .yellow
+        case "food": return .brown
+        case "salary": return .mint
+        case "side_income": return .purple
+        case "beverage": return .blue
+        default: return .gray
+        }
+    }
+
+    // 수입/지출 판별 함수
+    private func isIncome(_ record: Record) -> Bool {
+        return record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
     }
 
     // MARK: - Helpers
