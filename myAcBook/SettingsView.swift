@@ -112,7 +112,7 @@ struct SettingsView: View {
                         }
                         .pickerStyle(.segmented)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .onChange(of: selectedColorScheme) { newValue in
+                        .onChange(of: selectedColorScheme) { newValue, _ in
                             colorSchemeSetting = newValue
                         }
 
@@ -120,7 +120,7 @@ struct SettingsView: View {
                             Text(NSLocalizedString("app_lock", comment: "앱 잠금 (Face ID/암호"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                         }
-                        .onChange(of: lockToggleValue) { _, newValue in
+                        .onChange(of: lockToggleValue) { newValue, _ in
                             showAppLockHint = newValue
                         }
                         if showAppLockHint {

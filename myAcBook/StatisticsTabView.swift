@@ -333,7 +333,6 @@ struct StatisticsTabView: View {
         let isGraphTab = selectedStatTab == NSLocalizedString("graph", comment: "그래프")
         let hasIncomeData = monthlyCategoryIncomeTotals.values.flatMap { $0.values }.reduce(0, +) > 0
         let hasExpenseData = monthlyCategoryExpenseTotals.values.flatMap { $0.values }.reduce(0, +) > 0
-        let pastelBG = colorScheme == .light ? Color.white : Color(UIColor.systemGray6)
         VStack {
             Picker(NSLocalizedString("statistics_type", comment: "통계 종류"), selection: $selectedStatTab) {
                 Text(NSLocalizedString("graph", comment: "그래프")).tag(NSLocalizedString("graph", comment: "그래프"))
@@ -345,7 +344,7 @@ struct StatisticsTabView: View {
 
             if isGraphTab {
                 Text(NSLocalizedString("monthly_stats_title", comment: "월별 수입/지출 통계 그래프"))
-                    .font(.system(size: Locale.current.languageCode == "en" ? 15 : 20, weight: .semibold, design: .rounded))
+                    .font(.system(size: (Locale.current.language.languageCode?.identifier == "en" ? 15 : 20), weight: .semibold, design: .rounded))
                     .foregroundColor(Color.primary.opacity(0.7))
                     .frame(maxWidth: .infinity, alignment: .center)
                     .multilineTextAlignment(.center)
@@ -630,7 +629,6 @@ struct StatisticsTabView: View {
         expandedCardMonth: Binding<String?>
     ) -> some View {
         let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: false)
-        let pastelBG = colorScheme == .light ? Color.white : Color(UIColor.systemGray6)
         ScrollView {
             VStack(spacing: 36) {
                 ForEach(sortedMonths, id: \.self) { month in
@@ -821,7 +819,6 @@ struct GroupedBarChartView: View {
         let chartWidth: CGFloat = monthCount > 3
             ? UIScreen.main.bounds.width * CGFloat(monthCount) / 3
             : UIScreen.main.bounds.width - 40
-        let chartBG = colorScheme == .light ? Color.white : Color(UIColor.systemGray6)
         let colorMap: [String: Color] = [
             NSLocalizedString("income", comment: ""): pastelIncomeColor,
             NSLocalizedString("expense", comment: ""): pastelExpenseColor
@@ -831,7 +828,7 @@ struct GroupedBarChartView: View {
         return VStack(spacing: 0) {
             ZStack {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(chartBG)
+                    .fill(Color.white)
                     .shadow(color: Color.black.opacity(0.10), radius: 18, x: 0, y: 10)
                     .overlay(
                         RoundedRectangle(cornerRadius: 20)

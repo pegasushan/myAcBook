@@ -445,10 +445,10 @@ struct AddRecordView: View {
 
     // 금액 입력란 왼쪽 아이콘에 사용할 통화별 SF Symbol 반환 함수 추가
     private func currencySymbolSystemName() -> String {
-        if Locale.current.languageCode == "en" {
+        if Locale.current.language.languageCode?.identifier == "en" {
             return "dollarsign.circle.fill"
         }
-        switch Locale.current.currencyCode {
+        switch Locale.current.currency?.identifier {
         case "USD": return "dollarsign.circle.fill"
         case "EUR": return "eurosign.circle.fill"
         case "JPY": return "yensign.circle.fill"
