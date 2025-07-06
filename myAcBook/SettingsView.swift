@@ -323,7 +323,7 @@ struct SettingsView: View {
                     }
                 }
                 .scrollContentBackground(.hidden)
-                .background(colorScheme == .light ? customLightBGColor : Color("BackgroundSolidColor"))
+                .background(colorScheme == .light ? customLightBGColor : Color(UIColor(hex: customDarkBGColorHex)))
                 .sheet(isPresented: $showCardManagerModal) {
                     NavigationStack {
                         CardListView()
