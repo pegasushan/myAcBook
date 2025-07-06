@@ -11,7 +11,6 @@ struct SettingsView: View {
     @State private var lockToggleValue: Bool = false
     @State private var showSaveConfirmation = false
     @State private var hapticsValue: Bool = true
-    @State private var selectedColorScheme: String
     @EnvironmentObject var purchaseManager: PurchaseManager
     @State private var showCardManagerModal = false
     @State private var showCategoryManagerModal = false
@@ -25,11 +24,6 @@ struct SettingsView: View {
     @State private var showColorPicker = false
     @State private var showTestDataAlert = false
     @State private var testDataInsertedMonth: String? = nil
-
-    init() {
-        let stored = UserDefaults.standard.string(forKey: "colorScheme") ?? "system"
-        _selectedColorScheme = State(initialValue: stored)
-    }
 
     struct ColorPalette {
         let name: String
@@ -105,17 +99,15 @@ struct SettingsView: View {
                 // 기존 Form
                 Form {
                     Section {
-                        Picker(NSLocalizedString("theme", comment: "테마"), selection: $selectedColorScheme) {
+                        Picker(NSLocalizedString("theme", comment: "테마"), selection: $colorSchemeSetting) {
                             Text(NSLocalizedString("system_default", comment: "시스템 기본값")).tag("system")
                             Text(NSLocalizedString("light_mode", comment: "라이트 모드")).tag("light")
                             Text(NSLocalizedString("dark_mode", comment: "다크 모드")).tag("dark")
                         }
                         .pickerStyle(.segmented)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
-                        .onChange(of: selectedColorScheme) { newValue, _ in
-                            colorSchemeSetting = newValue
-                        }
-
+                    }
+                    Section {
                         Toggle(isOn: $lockToggleValue) {
                             Text(NSLocalizedString("app_lock", comment: "앱 잠금 (Face ID/암호"))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
@@ -352,7 +344,6 @@ struct SettingsView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
                     isAppLockEnabled = lockToggleValue
-                    colorSchemeSetting = selectedColorScheme
                     isHapticsEnabled = hapticsValue
                     dismiss()
                 }) {
@@ -372,7 +363,6 @@ struct SettingsView: View {
         }
         .onDisappear {
             isAppLockEnabled = lockToggleValue
-            colorSchemeSetting = selectedColorScheme
             isHapticsEnabled = hapticsValue
         }
         .alert(isPresented: $showTestDataAlert) {

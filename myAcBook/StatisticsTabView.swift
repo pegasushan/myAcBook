@@ -244,6 +244,8 @@ struct StatisticsTabView: View {
     @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
     @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+    @AppStorage("colorScheme") private var colorSchemeSetting: String = "system"
+    @State private var themeRefreshID = UUID()
     @Environment(\.colorScheme) var colorScheme
     let monthlyIncomeTotals: [String: Double]
     let monthlyExpenseTotals: [String: Double]
@@ -324,12 +326,14 @@ struct StatisticsTabView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack {
-                contentView
-            }
-            .background(customBGColor.ignoresSafeArea())
+        VStack {
+            contentView
         }
+        .id(themeRefreshID)
+        .onChange(of: colorSchemeSetting) { _, _ in
+            themeRefreshID = UUID()
+        }
+        .background(customBGColor.ignoresSafeArea())
     }
 
     @ViewBuilder
