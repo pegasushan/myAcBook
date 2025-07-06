@@ -410,7 +410,8 @@ struct AddRecordView: View {
         record.type = type
         record.detail = detail
         record.amount = Double(intValue)
-        record.date = date
+        let dateOnly = Calendar.current.startOfDay(for: date)
+        record.date = dateOnly
         record.paymentType = paymentType
         record.card = selectedCard
         record.categoryRelation = selectedCategory
