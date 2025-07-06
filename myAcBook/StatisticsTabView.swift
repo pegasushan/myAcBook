@@ -650,12 +650,10 @@ struct StatisticsTabView: View {
                                 Text("\(monthNumber)월 합계 (\(monthCount)건)")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(pastelExpenseColor)
-                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 Spacer()
                                 Text(formattedAmount(totals.values.reduce(0, +)))
                                     .font(.system(size: 24, weight: .heavy))
                                     .foregroundColor(pastelExpenseColor)
-                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : pastelExpenseColor.opacity(0.18), radius: 2, x: 0, y: 2)
                             }
                             .contentShape(Rectangle())
                         }
@@ -667,12 +665,11 @@ struct StatisticsTabView: View {
                                 NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "현금", customBGColor: customBGColor)) {
                                     Label(String(format: NSLocalizedString("cash_total", comment: "현금 합계"), cashCount), systemImage: "banknote")
                                         .font(.system(size: 12, weight: .regular))
-                                        .foregroundColor(.secondary)
+                                        .foregroundColor(.primary)
                                     Spacer()
                                     Text(formattedAmount(cashSum))
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(pastelExpenseColor)
-                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 }
                             }
                             .padding(.vertical, 10)
@@ -685,7 +682,7 @@ struct StatisticsTabView: View {
                             HStack {
                                 Label(String(format: NSLocalizedString("card_total", comment: "카드 합계"), cardCount), systemImage: "creditcard")
                                     .font(.system(size: 12, weight: .regular))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(.primary)
                                 Spacer()
                                 Image(systemName: expandedCardMonth.wrappedValue == month ? "chevron.up" : "chevron.down")
                                     .foregroundColor(.gray)
@@ -693,7 +690,6 @@ struct StatisticsTabView: View {
                                     Text(formattedAmount(cardSum))
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(pastelExpenseColor)
-                                        .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -729,7 +725,6 @@ struct StatisticsTabView: View {
                                                 Text(formattedAmount(value))
                                                     .font(.system(size: 15, weight: .semibold))
                                                     .foregroundColor(pastelExpenseColor)
-                                                    .shadow(color: colorScheme == .dark ? .black.opacity(0.7) : .clear, radius: 1, x: 0, y: 1)
                                             }
                                             .padding(8)
                                             .background(customCardColor)

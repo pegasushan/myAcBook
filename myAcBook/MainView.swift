@@ -39,29 +39,31 @@ struct MainView: View {
                     Label(NSLocalizedString("ledger_tab", comment: "가계부 탭"), systemImage: "list.bullet.rectangle.portrait")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
                 }
-                StatisticsTabView(
-                    monthlyIncomeTotals: monthlyIncomeTotals,
-                    monthlyExpenseTotals: monthlyExpenseTotals,
-                    monthlyCategoryIncomeTotals: monthlyCategoryIncomeTotals,
-                    monthlyCategoryExpenseTotals: monthlyCategoryExpenseTotals,
-                    monthlyCardExpenseTotals: monthlyCardExpenseTotals,
-                    monthlyCashExpenseTotals: monthlyCashExpenseTotals,
-                    formattedAmount: { amount in
-                        let numberFormatter = NumberFormatter()
-                        numberFormatter.numberStyle = .decimal
-                        numberFormatter.maximumFractionDigits = 0
-                        numberFormatter.groupingSeparator = ","
-                        return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
-                    },
-                    allCards: cardViewModel.cards,
-                    selectedTypeFilter: selectedTypeFilter,
-                    selectedCategory: selectedCategory,
-                    selectedDateFilter: selectedDateFilter,
-                    dateRangeText: dateRangeText,
-                    onTap: {},
-                    onReset: {},
-                    records: Array(records)
-                )
+                NavigationView {
+                    StatisticsTabView(
+                        monthlyIncomeTotals: monthlyIncomeTotals,
+                        monthlyExpenseTotals: monthlyExpenseTotals,
+                        monthlyCategoryIncomeTotals: monthlyCategoryIncomeTotals,
+                        monthlyCategoryExpenseTotals: monthlyCategoryExpenseTotals,
+                        monthlyCardExpenseTotals: monthlyCardExpenseTotals,
+                        monthlyCashExpenseTotals: monthlyCashExpenseTotals,
+                        formattedAmount: { amount in
+                            let numberFormatter = NumberFormatter()
+                            numberFormatter.numberStyle = .decimal
+                            numberFormatter.maximumFractionDigits = 0
+                            numberFormatter.groupingSeparator = ","
+                            return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
+                        },
+                        allCards: cardViewModel.cards,
+                        selectedTypeFilter: selectedTypeFilter,
+                        selectedCategory: selectedCategory,
+                        selectedDateFilter: selectedDateFilter,
+                        dateRangeText: dateRangeText,
+                        onTap: {},
+                        onReset: {},
+                        records: Array(records)
+                    )
+                }
                 .tabItem {
                     Label(NSLocalizedString("statistics_tab", comment: "통계 탭"), systemImage: "chart.pie")
                         .font(.system(size: 14, weight: .regular, design: .rounded))
