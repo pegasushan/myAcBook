@@ -667,6 +667,15 @@ struct ContentView: View {
 
     // 카테고리별 컬러 매핑 함수
     private func colorForCategory(_ name: String?) -> Color {
+        // 1. AppCategory에서 colorHex 우선 적용
+        if let name = name {
+            let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+            fetch.predicate = NSPredicate(format: "name == %@", name)
+            if let cat = try? viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
+                return Color(UIColor(hex: hex))
+            }
+        }
+        // 2. fallback: 기존 하드코딩 색상
         switch name {
         case "식대": return .pink
         case "음료": return .blue

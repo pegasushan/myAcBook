@@ -2,7 +2,7 @@
 //  AppCategory+CoreDataProperties.swift
 //  myAcBook
 //
-//  Created by 한상욱 on 5/21/25.
+//  Created by 한상욱 on 7/7/25.
 //
 //
 
@@ -19,6 +19,7 @@ extension AppCategory {
     @NSManaged public var id: UUID?
     @NSManaged public var name: String?
     @NSManaged public var type: String?
+    @NSManaged public var colorHex: String?
     @NSManaged public var records: NSSet?
 
 }
