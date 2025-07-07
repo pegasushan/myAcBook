@@ -276,6 +276,7 @@ struct SettingsView: View {
                             }
                         }
                     }
+#if DEBUG
                     Section(header: Text(NSLocalizedString("test_section_title", comment: "테스트"))) {
                         // 기존 데이터 삭제 버튼 추가
                         Button(action: {
@@ -460,6 +461,7 @@ struct SettingsView: View {
                                 .foregroundColor(.red)
                         }
                     }
+#endif
                 }
                 .scrollContentBackground(.hidden)
                 .background(colorScheme == .light ? customLightBGColor : Color(UIColor(hex: customDarkBGColorHex)))

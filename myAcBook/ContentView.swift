@@ -76,7 +76,7 @@ struct ContentView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
         let now = Date()
-        return (0..<12).map { offset in
+        return (0..<36).map { offset in
             let date = Calendar.current.date(byAdding: .month, value: -offset, to: now)!
             return formatter.string(from: date)
         }
