@@ -124,6 +124,13 @@ struct ExpenseDetailView: View {
                                 record: record,
                                 onTap: nil,
                                 colorForCategory: { name in
+                                    if let name = name {
+                                        let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                                        fetch.predicate = NSPredicate(format: "name == %@", name)
+                                        if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
+                                            return Color(UIColor(hex: hex))
+                                        }
+                                    }
                                     switch name {
                                     case "식대": return .pink
                                     case "음료": return .blue
@@ -208,6 +215,13 @@ struct IncomeDetailView: View {
                                 record: record,
                                 onTap: nil,
                                 colorForCategory: { name in
+                                    if let name = name {
+                                        let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                                        fetch.predicate = NSPredicate(format: "name == %@", name)
+                                        if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
+                                            return Color(UIColor(hex: hex))
+                                        }
+                                    }
                                     switch name {
                                     case "식대": return .pink
                                     case "음료": return .blue

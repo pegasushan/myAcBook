@@ -888,6 +888,15 @@ struct ContentView: View {
 
     // 카테고리별 컬러 포인트 함수
     private func categoryColor(_ category: String?) -> Color {
+        // 1. AppCategory에서 colorHex 우선 적용
+        if let name = category {
+            let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+            fetch.predicate = NSPredicate(format: "name == %@", name)
+            if let cat = try? viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
+                return Color(UIColor(hex: hex)).opacity(0.7)
+            }
+        }
+        // 2. fallback: 기존 하드코딩 색상
         switch category {
         case "식대": return Color.pink.opacity(0.7)
         case "음료": return Color.blue.opacity(0.5)
