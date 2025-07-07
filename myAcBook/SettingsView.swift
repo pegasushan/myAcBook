@@ -235,6 +235,8 @@ struct SettingsView: View {
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(.primary)
                         }
+                    }
+                    Section(header: Text("데이터 관리")) {
                         Button(action: { exportBackup() }) {
                             Text("백업 내보내기")
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
