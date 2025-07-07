@@ -39,15 +39,12 @@ struct RecordRowView: View {
             }
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    if let dateLabel = dateLabel {
-                        Text("")
-                        + Text(dateLabel).foregroundColor(.secondary)
-                        + Text(" ")
-                        + Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: "")).foregroundColor(Color("HighlightColor"))
-                    } else {
-                        Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: ""))
-                            .foregroundColor(Color("HighlightColor"))
+                    if let date = record.date {
+                        Text(dateFormatter.string(from: date))
+                            .foregroundColor(.secondary)
                     }
+                    Text(NSLocalizedString(record.categoryRelation?.name ?? "unknown", comment: ""))
+                        .foregroundColor(Color("HighlightColor"))
                 }
                 .font(.system(size: 15, weight: .regular, design: .rounded))
             }

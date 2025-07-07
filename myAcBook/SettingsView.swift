@@ -1,5 +1,69 @@
 import SwiftUI
 import CoreData
+import UniformTypeIdentifiers
+import Combine
+
+// DocumentPickerCoordinator: NSObject + UIDocumentPickerDelegate
+class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
+    let context: NSManagedObjectContext
+    let resultSubject: PassthroughSubject<Bool, Never>
+    init(context: NSManagedObjectContext, resultSubject: PassthroughSubject<Bool, Never>) {
+        self.context = context
+        self.resultSubject = resultSubject
+    }
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else {
+            print("복원 실패: 파일 URL 없음")
+            resultSubject.send(false)
+            return
+        }
+        do {
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .secondsSince1970
+            print("[복원] decoder.dateDecodingStrategy = .secondsSince1970 적용됨")
+            let simpleRecords = try decoder.decode([SettingsView.SimpleRecord].self, from: data)
+            // 기존 Record 모두 삭제
+            let fetch = Record.fetchRequest()
+            if let oldRecords = try context.fetch(fetch) as? [Record] {
+                for r in oldRecords { context.delete(r) }
+            }
+            // 복원
+            for s in simpleRecords {
+                let r = Record(context: context)
+                r.amount = s.amount
+                r.date = s.date
+                r.detail = s.detail
+                r.type = s.type
+                r.paymentType = s.paymentType
+                // categoryRelation 연결
+                if let categoryName = s.categoryName {
+                    let catFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                    catFetch.predicate = NSPredicate(format: "name == %@", categoryName)
+                    if let cat = try? context.fetch(catFetch).first {
+                        r.categoryRelation = cat
+                    }
+                }
+            }
+            try context.save()
+            print("복원 성공: \(simpleRecords.count)개 레코드")
+            // 복원 후 실제 저장된 데이터 로그 출력
+            let fetchAll = Record.fetchRequest()
+            if let allRecords = try? context.fetch(fetchAll) as? [Record] {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+                for r in allRecords.prefix(20) {
+                    let dateStr = r.date != nil ? dateFormatter.string(from: r.date!) : "nil"
+                    print("[복원 후] amount: \(r.amount), date: \(dateStr), detail: \(r.detail ?? "nil"), type: \(r.type ?? "nil")")
+                }
+            }
+            resultSubject.send(true)
+        } catch {
+            print("복원 실패: \(error.localizedDescription)")
+            resultSubject.send(false)
+        }
+    }
+}
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -24,6 +88,12 @@ struct SettingsView: View {
     @State private var showColorPicker = false
     @State private var showTestDataAlert = false
     @State private var testDataInsertedMonth: String? = nil
+    @Environment(\.managedObjectContext) private var viewContext
+    @State private var showRestoreAlert = false
+    @State private var restoreResultMessage = ""
+    private let restoreResultSubject = PassthroughSubject<Bool, Never>()
+    @State private var documentPickerCoordinator: DocumentPickerCoordinator?
+    @State private var restoreResultCancellable: AnyCancellable?
 
     struct ColorPalette {
         let name: String
@@ -61,6 +131,25 @@ struct SettingsView: View {
             lightSection: "#FFFFFF", darkSection: "#23272F"
         )
     ]
+
+    // DTO 구조체 (Record만 예시)
+    struct SimpleRecord: Codable {
+        let amount: Double
+        let date: Date?
+        let detail: String?
+        let type: String?
+        let categoryName: String?
+        let paymentType: String?
+        // 필요한 필드만 추가
+        init(from record: Record) {
+            self.amount = record.amount
+            self.date = record.date
+            self.detail = record.detail
+            self.type = record.type
+            self.categoryName = record.categoryRelation?.name
+            self.paymentType = record.paymentType
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -141,6 +230,16 @@ struct SettingsView: View {
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(.primary)
                         }
+                        Button(action: { exportBackup() }) {
+                            Text("백업 내보내기")
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
+                                .foregroundColor(.primary)
+                        }
+                        Button(action: { importBackup() }) {
+                            Text("백업 가져오기")
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
+                                .foregroundColor(.primary)
+                        }
                     }
                     Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
                         if purchaseManager.isAdRemoved {
@@ -171,13 +270,36 @@ struct SettingsView: View {
                         }
                     }
                     Section(header: Text(NSLocalizedString("test_section_title", comment: "테스트"))) {
+                        // 기존 데이터 삭제 버튼 추가
+                        Button(action: {
+                            let context = PersistenceController.shared.container.viewContext
+                            let fetch: NSFetchRequest<Record> = Record.fetchRequest()
+                            let allRecords = (try? context.fetch(fetch)) ?? []
+                            for record in allRecords {
+                                context.delete(record)
+                            }
+                            do {
+                                try context.save()
+                                print("모든 Record 삭제 완료")
+                                showTestDataAlert = true
+                                testDataInsertedMonth = nil
+                            } catch {
+                                print("Record 삭제 실패:", error)
+                                showTestDataAlert = true
+                                testDataInsertedMonth = nil
+                            }
+                        }) {
+                            Text("모든 데이터 삭제")
+                                .font(.system(size: 15, weight: .regular, design: .rounded))
+                                .foregroundColor(.red)
+                        }
+                        // 기존 테스트 데이터 입력 버튼
                         Button(action: {
                             let context = PersistenceController.shared.container.viewContext
                             let calendar = Calendar.current
                             let now = Date()
                             let dateFormatter = DateFormatter()
                             dateFormatter.dateFormat = "yyyy-MM"
-
                             // 1. 카테고리 자동 생성 (수입/지출)
                             let incomeCategoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
                             incomeCategoryFetch.predicate = NSPredicate(format: "type == %@", "income")
@@ -237,11 +359,13 @@ struct SettingsView: View {
                             })
                             print("기존 데이터 월: \(existingMonths)")
 
-                            // 최근 12개월 중 데이터가 없는 달 후보 만들기
+                            // 최근 12개월 중 데이터가 없는 달 후보 만들기 (2020년~오늘 사이만)
                             var candidateMonths: [String] = []
                             var candidateMonthDates: [Date] = []
                             for offset in 0..<12 {
-                                if let monthDate = calendar.date(byAdding: .month, value: -offset, to: now) {
+                                if let monthDate = calendar.date(byAdding: .month, value: -offset, to: now),
+                                   calendar.component(.year, from: monthDate) >= 2020,
+                                   monthDate <= now {
                                     let monthString = dateFormatter.string(from: monthDate)
                                     if !existingMonths.contains(monthString) {
                                         candidateMonths.append(monthString)
@@ -249,20 +373,25 @@ struct SettingsView: View {
                                     }
                                 }
                             }
-                            print("후보 달 개수: \(candidateMonthDates.count), 후보 달: \(candidateMonths)")
-
-                            // 후보가 없으면 안내
+                            print("후보 달: \(candidateMonths)")
                             if candidateMonthDates.isEmpty {
                                 print("후보 달이 없습니다. 테스트 데이터 생성 스킵")
                                 showTestDataAlert = true
                                 return
                             }
-
-                            // 최신 달부터 차례로 입력 (랜덤이 아님)
-                            let sortedCandidateMonthDates = candidateMonthDates.sorted(by: >) // 최신순 정렬
-                            guard let selectedMonthDate = sortedCandidateMonthDates.first else { return }
+                            let sortedCandidateMonthDates = candidateMonthDates.sorted(by: >)
+                            guard let selectedMonthDate = sortedCandidateMonthDates.first else {
+                                print("선택된 달이 없음")
+                                showTestDataAlert = true
+                                return
+                            }
+                            print("선택된 달: \(selectedMonthDate) (year: \(calendar.component(.year, from: selectedMonthDate)))")
+                            if calendar.component(.year, from: selectedMonthDate) < 2020 || selectedMonthDate > now {
+                                print("선택된 달이 유효하지 않음. 테스트 데이터 생성 중단")
+                                showTestDataAlert = true
+                                return
+                            }
                             let selectedMonthString = dateFormatter.string(from: selectedMonthDate)
-
                             // 한 달치 데이터 입력
                             let range = calendar.range(of: .day, in: .month, for: selectedMonthDate) ?? (1..<29)
                             var createdCount = 0
@@ -270,6 +399,9 @@ struct SettingsView: View {
                                 var dateComponents = calendar.dateComponents([.year, .month], from: selectedMonthDate)
                                 dateComponents.day = day
                                 guard let date = calendar.date(from: dateComponents) else { continue }
+                                // 오늘 이후, 2020년 이전 날짜는 건너뜀
+                                if date > now { continue }
+                                if calendar.component(.year, from: date) < 2020 { continue }
                                 let count = Int.random(in: 1...5)
                                 for i in 0..<count {
                                     let record = Record(context: context)
@@ -360,6 +492,10 @@ struct SettingsView: View {
                 lockToggleValue = isAppLockEnabled
             }
             hapticsValue = isHapticsEnabled
+            restoreResultCancellable = restoreResultSubject.sink { success in
+                restoreResultMessage = success ? "백업 복원이 완료되었습니다." : "복원에 실패했습니다. 파일을 확인해주세요."
+                showRestoreAlert = true
+            }
         }
         .onDisappear {
             isAppLockEnabled = lockToggleValue
@@ -368,5 +504,41 @@ struct SettingsView: View {
         .alert(isPresented: $showTestDataAlert) {
             Alert(title: Text(NSLocalizedString("test_data_inserted_title", comment: "테스트 데이터 입력 완료")), message: Text(String(format: NSLocalizedString("test_data_inserted_message", comment: "테스트 데이터가 성공적으로 입력되었습니다.\n입력된 달: %@"), testDataInsertedMonth ?? "-")), dismissButton: .default(Text(NSLocalizedString("confirm", comment: "확인"))))
         }
+        .alert(isPresented: $showRestoreAlert) {
+            Alert(title: Text(restoreResultMessage), dismissButton: .default(Text("확인")))
+        }
+    }
+
+    // 백업 내보내기
+    func exportBackup() {
+        let records = (try? viewContext.fetch(Record.fetchRequest())) as? [Record] ?? []
+        let simpleRecords = records.map { SimpleRecord(from: $0) }
+        // 로그 출력
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        for s in simpleRecords.prefix(20) { // 너무 많을 경우 20개만
+            let dateStr = s.date != nil ? dateFormatter.string(from: s.date!) : "nil"
+            print("[백업] amount: \(s.amount), date: \(dateStr), detail: \(s.detail ?? "nil"), type: \(s.type ?? "nil")")
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        encoder.dateEncodingStrategy = .secondsSince1970
+        guard let data = try? encoder.encode(simpleRecords) else { return }
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let todayString = dateFormatter.string(from: Date())
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("myAcBookBackup_\(todayString).json")
+        try? data.write(to: url)
+        let picker = UIDocumentPickerViewController(forExporting: [url])
+        UIApplication.shared.windows.first?.rootViewController?.present(picker, animated: true)
+    }
+
+    // 백업 가져오기
+    func importBackup() {
+        let coordinator = DocumentPickerCoordinator(context: viewContext, resultSubject: restoreResultSubject)
+        self.documentPickerCoordinator = coordinator // 메모리에 유지
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.json], asCopy: true)
+        picker.allowsMultipleSelection = false
+        picker.delegate = coordinator
+        UIApplication.shared.windows.first?.rootViewController?.present(picker, animated: true)
     }
 } 
