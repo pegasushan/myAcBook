@@ -25,9 +25,8 @@ class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
             let simpleRecords = try decoder.decode([SettingsView.SimpleRecord].self, from: data)
             // 기존 Record 모두 삭제
             let fetch = Record.fetchRequest()
-            if let oldRecords = try context.fetch(fetch) as? [Record] {
-                for r in oldRecords { context.delete(r) }
-            }
+            let oldRecords = (try? context.fetch(fetch)) ?? []
+            for r in oldRecords { context.delete(r) }
             // 복원
             let calendar = Calendar.current
             for s in simpleRecords {
@@ -54,13 +53,12 @@ class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
             print("복원 성공: \(simpleRecords.count)개 레코드")
             // 복원 후 실제 저장된 데이터 로그 출력
             let fetchAll = Record.fetchRequest()
-            if let allRecords = try? context.fetch(fetchAll) as? [Record] {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                for r in allRecords.prefix(20) {
-                    let dateStr = r.date != nil ? dateFormatter.string(from: r.date!) : "nil"
-                    print("[복원 후] amount: \(r.amount), date: \(dateStr), detail: \(r.detail ?? "nil"), type: \(r.type ?? "nil")")
-                }
+            let allRecords = (try? context.fetch(fetchAll)) ?? []
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            for r in allRecords.prefix(20) {
+                let dateStr = r.date != nil ? dateFormatter.string(from: r.date!) : "nil"
+                print("[복원 후] amount: \(r.amount), date: \(dateStr), detail: \(r.detail ?? "nil"), type: \(r.type ?? "nil")")
             }
             resultSubject.send(true)
         } catch {
@@ -520,7 +518,7 @@ struct SettingsView: View {
 
     // 백업 내보내기
     func exportBackup() {
-        let records = (try? viewContext.fetch(Record.fetchRequest())) as? [Record] ?? []
+        let records = (try? viewContext.fetch(Record.fetchRequest())) ?? []
         let simpleRecords = records.map { SimpleRecord(from: $0) }
         // 로그 출력
         let dateFormatter = DateFormatter()
@@ -538,7 +536,10 @@ struct SettingsView: View {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("myAcBookBackup_\(todayString).json")
         try? data.write(to: url)
         let picker = UIDocumentPickerViewController(forExporting: [url])
-        UIApplication.shared.windows.first?.rootViewController?.present(picker, animated: true)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController?.present(picker, animated: true)
+        }
     }
 
     // 백업 가져오기
@@ -548,6 +549,9 @@ struct SettingsView: View {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.json], asCopy: true)
         picker.allowsMultipleSelection = false
         picker.delegate = coordinator
-        UIApplication.shared.windows.first?.rootViewController?.present(picker, animated: true)
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController?.present(picker, animated: true)
+        }
     }
 } 
