@@ -29,10 +29,15 @@ class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
                 for r in oldRecords { context.delete(r) }
             }
             // 복원
+            let calendar = Calendar.current
             for s in simpleRecords {
                 let r = Record(context: context)
                 r.amount = s.amount
-                r.date = s.date
+                if let date = s.date {
+                    r.date = calendar.startOfDay(for: date)
+                } else {
+                    r.date = nil
+                }
                 r.detail = s.detail
                 r.type = s.type
                 r.paymentType = s.paymentType

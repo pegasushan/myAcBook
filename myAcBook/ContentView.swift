@@ -449,37 +449,24 @@ struct ContentView: View {
                         }
                     }
                 } else {
-                    List {
-                        ForEach(monthFilteredRecords, id: \.id) { idxRecord in
-                            let record = idxRecord
-                            let idx = monthFilteredRecords.firstIndex(where: { $0.id == record.id }) ?? 0
-                            let previousRecord: Record? = idx > 0 ? monthFilteredRecords[idx-1] : nil
-                            VStack(alignment: .leading, spacing: 0) {
-                                if isNewDate(record, previousRecord) {
-                                    Text(displayDate(record.date))
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
-                                        .padding(.top, 6)
-                                        .padding(.bottom, 2)
-                                        .padding(.leading, 2)
-                                    recordRowView(record: record)
-                                        .padding(.bottom, 2)
-                                } else {
-                                    recordRowView(record: record)
-                                        .padding(.bottom, 0)
-                                }
-                            }
-                            .onAppear {
-                                if selectedDateFilter == NSLocalizedString("all", comment: "") && record == monthFilteredRecords.last {
-                                    loadedMonthCount += 1
-                                    fetchRecords()
-                                }
-                            }
-                            .listRowSeparator(.hidden)
-                        }
-                    }
-                    .listStyle(.plain)
-                    .background(customBGColor)
+                    RecordListSectionView(
+                        records: monthFilteredRecords,
+                        isNewDate: isNewDate,
+                        displayDate: displayDate,
+                        isTodayOrYesterday: isTodayOrYesterday,
+                        recordRowView: { rec in
+                            CompactRecordRowView(
+                                record: rec,
+                                onTap: { selectedRecord = rec },
+                                colorForCategory: colorForCategory,
+                                isIncome: isIncome
+                            )
+                        },
+                        selectedDateFilter: selectedDateFilter,
+                        loadedMonthCount: $loadedMonthCount,
+                        fetchRecords: fetchRecords,
+                        customBGColor: customBGColor
+                    )
                 }
             }
             if isDeleteMode && !monthFilteredRecords.isEmpty {
@@ -1003,6 +990,69 @@ struct CompactRecordRowView: View {
         .onTapGesture {
             onTap?()
         }
+    }
+}
+
+struct RecordRowSectionView: View {
+    let record: Record
+    let showDateLabel: Bool
+    let displayDate: (Date?) -> String
+    let isTodayOrYesterday: (Date?) -> Bool
+    let recordRowView: (Record) -> CompactRecordRowView
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if showDateLabel {
+                Text(displayDate(record.date))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
+                    .padding(.top, 6)
+                    .padding(.bottom, 2)
+                    .padding(.leading, 2)
+                recordRowView(record)
+                    .padding(.bottom, 2)
+            } else {
+                recordRowView(record)
+                    .padding(.bottom, 0)
+            }
+        }
+    }
+}
+
+struct RecordListSectionView: View {
+    let records: [Record]
+    let isNewDate: (Record, Record?) -> Bool
+    let displayDate: (Date?) -> String
+    let isTodayOrYesterday: (Date?) -> Bool
+    let recordRowView: (Record) -> CompactRecordRowView
+    let selectedDateFilter: String
+    @Binding var loadedMonthCount: Int
+    let fetchRecords: () -> Void
+    let customBGColor: Color
+
+    var body: some View {
+        List {
+            ForEach(Array(records.enumerated()), id: \.1.objectID) { idx, record in
+                let previousRecord: Record? = idx > 0 ? records[idx-1] : nil
+                let showDateLabel = isNewDate(record, previousRecord)
+                RecordRowSectionView(
+                    record: record,
+                    showDateLabel: showDateLabel,
+                    displayDate: displayDate,
+                    isTodayOrYesterday: isTodayOrYesterday,
+                    recordRowView: recordRowView
+                )
+                .onAppear {
+                    if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
+                        loadedMonthCount += 1
+                        fetchRecords()
+                    }
+                }
+                .listRowSeparator(.hidden)
+            }
+        }
+        .listStyle(.plain)
+        .background(customBGColor)
     }
 }
 
