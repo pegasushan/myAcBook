@@ -249,7 +249,7 @@ struct ContentView: View {
                                 .fill(customBGColor)
                                 .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 4)
                         )
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 10)
                         .padding(.top, 0)
                         .padding(.bottom, 0)
                         Spacer(minLength: 0)
@@ -992,17 +992,18 @@ struct CompactRecordRowView: View {
                 .foregroundColor(colorScheme == .dark ? (isIncome(record) ? Color.cyan : Color.pink) : (isIncome(record) ? Color.blue : Color.red))
                 .frame(width: 70, alignment: .trailing)
         }
-        .frame(height: 32)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
+        .frame(height: 29)
+        .padding(.vertical, 2)
+        .padding(.horizontal, 2)
         .background(customCardColor)
         .overlay(
-            RoundedRectangle(cornerRadius: 18)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear, lineWidth: 1.2)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: colorScheme == .dark ? Color.black.opacity(0.25) : Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-        .padding(.vertical, 2)
+        .font(.system(size: 10))
+        .padding(.vertical, 0)
         .padding(.horizontal, 0)
         .contentShape(Rectangle())
         .onTapGesture {
@@ -1024,14 +1025,20 @@ struct RecordRowSectionView: View {
                 Text(displayDate(record.date))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
-                    .padding(.top, 6)
+                    .padding(.top, 10)
                     .padding(.bottom, 2)
-                    .padding(.leading, 2)
+                    .padding(.leading, 4)
                 recordRowView(record)
                     .padding(.bottom, 2)
+                    .padding(.leading, 4)
+                    .padding(.trailing, 4)
             } else {
+                Color.clear
+                    .frame(height: 20) // 날짜 라벨 높이와 맞춤
                 recordRowView(record)
-                    .padding(.bottom, 0)
+                    .padding(.bottom, 2)
+                    .padding(.leading, 4)
+                    .padding(.trailing, 4)
             }
         }
     }
@@ -1067,10 +1074,44 @@ struct RecordListSectionView: View {
                     }
                 }
                 .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)) // 여백 최소화
             }
         }
         .listStyle(.plain)
-        .background(customBGColor)
+        .listRowSpacing(0) // iOS 16+
+        .background(Color.black) // 전체 배경을 까만색으로
     }
 }
+
+#if DEBUG
+import CoreData
+
+class DummyIAPManager: ObservableObject {}
+
+struct ContentView_LivePreview: View {
+    @State private var listPadding: CGFloat = 0
+
+    var body: some View {
+        VStack {
+            ContentView()
+                .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+                .environmentObject(IAPManager())
+                .padding(.horizontal, listPadding)
+            VStack {
+                Text("List Padding: \(Int(listPadding))")
+                Slider(value: $listPadding, in: 0...40)
+            }
+            .padding()
+        }
+        .background(Color(.systemBackground))
+    }
+}
+
+struct ContentView_LivePreview_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView_LivePreview()
+            .previewDevice("iPhone 16 Pro")
+    }
+}
+#endif
 
