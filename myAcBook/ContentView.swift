@@ -1079,7 +1079,8 @@ struct RecordListSectionView: View {
         }
         .listStyle(.plain)
         .listRowSpacing(0) // iOS 16+
-        .background(Color.black) // 전체 배경을 까만색으로
+        .background(Color.clear) // 전체 배경을 까만색으로
+        .scrollContentBackground(.hidden)
     }
 }
 
