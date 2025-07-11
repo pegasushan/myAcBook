@@ -137,3 +137,5 @@
 
 "cash_total" = "현금 합계";
 "card_total" = "카드 합계";
+"export_backup" = "백업 내보내기";
+"import_backup" = "백업 가져오기";

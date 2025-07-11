@@ -129,3 +129,5 @@
 
 "cash_total" = "Cash Total";
 "card_total" = "Card Total";
+"export_backup" = "Export Backup";
+"import_backup" = "Import Backup";

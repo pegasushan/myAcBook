@@ -236,12 +236,12 @@ struct SettingsView: View {
                     }
                     Section(header: Text("데이터 관리")) {
                         Button(action: { exportBackup() }) {
-                            Text("백업 내보내기")
+                            Text(NSLocalizedString("export_backup", comment: "백업 내보내기"))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(.primary)
                         }
                         Button(action: { importBackup() }) {
-                            Text("백업 가져오기")
+                            Text(NSLocalizedString("import_backup", comment: "백업 가져오기"))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))
                                 .foregroundColor(.primary)
                         }
