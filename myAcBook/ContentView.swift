@@ -1059,32 +1059,113 @@ struct RecordListSectionView: View {
         groupedRecordsByDate.keys.sorted(by: >)
     }
 
+    // RecordListSectionView 내부에 formattedAmount 함수 추가
+    private func formattedAmount(_ amount: Double) -> String {
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.maximumFractionDigits = 0
+        numberFormatter.groupingSeparator = ","
+        return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
+    }
+
+    private func makeSectionHeader(
+        date: Date,
+        incomeText: String?,
+        expenseText: String?,
+        isToday: Bool,
+        isYesterday: Bool,
+        displayDate: (Date) -> String,
+        customSectionColor: Color
+    ) -> some View {
+        HStack(spacing: 0) {
+            // 결제수단 자리: 아이콘 or 빈칸
+            Group {
+                if isToday {
+                    Image(systemName: "sun.max.fill").foregroundColor(.yellow)
+                } else if isYesterday {
+                    Image(systemName: "moon.stars.fill").foregroundColor(.mint)
+                } else {
+                    Text("") // 빈칸
+                }
+            }
+            .frame(width: 56, alignment: .center)
+            // 카테고리 자리: 날짜 텍스트 (행과 동일 폰트/정렬)
+            Text(displayDate(date))
+                .font(.footnote)
+                .frame(width: 70, alignment: .leading)
+                .foregroundColor(.primary)
+            // 상세/금액 영역은 기존과 동일
+            Text("")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 8) {
+                if let incomeText = incomeText {
+                    Text(incomeText)
+                        .font(.caption)
+                        .fontWeight(isToday ? .bold : .regular)
+                        .foregroundColor(.blue)
+                        .frame(width: 70, alignment: .trailing)
+                }
+                if let expenseText = expenseText {
+                    Text(expenseText)
+                        .font(.caption)
+                        .fontWeight(isToday ? .bold : .regular)
+                        .foregroundColor(.red)
+                        .frame(width: 70, alignment: .trailing)
+                }
+            }
+            .padding(.trailing, 2)
+        }
+        .frame(height: 29)
+        .padding(.vertical, 0)
+        .padding(.horizontal, 0)
+        .background(customSectionColor)
+    }
+
     var body: some View {
-        List {
-            ForEach(sortedRecordDates, id: \.self) { date in
-                Section(header:
-                    Text(displayDate(date))
-                        .font(.headline)
-                        .padding(.vertical, 4)
-                ) {
-                    ForEach(groupedRecordsByDate[date] ?? [], id: \ .objectID) { record in
+        ScrollView {
+            LazyVStack(spacing: 0, pinnedViews: []) {
+                ForEach(sortedRecordDates, id: \.self) { date in
+                    let dayRecords = groupedRecordsByDate[date] ?? []
+                    let income = dayRecords.filter { $0.type == NSLocalizedString("income", comment: "수입") || $0.type == "수입" }.reduce(0.0) { $0 + $1.amount }
+                    let expense = dayRecords.filter { $0.type != NSLocalizedString("income", comment: "수입") && $0.type != "수입" }.reduce(0.0) { $0 + $1.amount }
+                    let incomeText = income > 0 ? formattedAmount(income) : nil
+                    let expenseText = expense > 0 ? formattedAmount(expense) : nil
+                    let isToday = isTodayOrYesterday(date) && Calendar.current.isDateInToday(date)
+                    let isYesterday = isTodayOrYesterday(date) && Calendar.current.isDateInYesterday(date)
+                    makeSectionHeader(
+                        date: date,
+                        incomeText: incomeText,
+                        expenseText: expenseText,
+                        isToday: isToday,
+                        isYesterday: isYesterday,
+                        displayDate: displayDate,
+                        customSectionColor: {
+                            #if canImport(UIKit)
+                            if UITraitCollection.current.userInterfaceStyle == .dark {
+                                return Color(UIColor(hex: "#23272F"))
+                            } else {
+                                return Color(UIColor(hex: "#F6F7FA"))
+                            }
+                            #else
+                            return Color.white
+                            #endif
+                        }()
+                    )
+                    .padding(.horizontal, 0)
+                    ForEach(dayRecords, id: \ .objectID) { record in
                         recordRowView(record)
+                            .padding(.horizontal, 0)
                             .onAppear {
                                 if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
                                     loadedMonthCount += 1
                                     fetchRecords()
                                 }
                             }
-                            .listRowSeparator(.visible)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     }
                 }
             }
+            .background(Color.clear)
         }
-        .listStyle(.plain)
-        .listRowSpacing(0)
-        .background(Color.clear)
-        .scrollContentBackground(.hidden)
     }
 }
 
