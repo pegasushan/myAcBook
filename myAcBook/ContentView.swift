@@ -159,11 +159,10 @@ struct ContentView: View {
             return matchesCategory && matchesType && matchesPaymentType && record.categoryRelation != nil
         }
     }
+    // 날짜별 그룹핑 유틸 추가
     private var groupedRecordsByDate: [Date: [Record]] {
-        var calendar = Calendar.current
-        calendar.timeZone = TimeZone(identifier: "Asia/Seoul")!
-        let filtered = filteredRecords
-        return Dictionary(grouping: filtered) { record in
+        let calendar = Calendar.current
+        return Dictionary(grouping: records) { record in
             guard let date = record.date else { return Date.distantPast }
             return calendar.startOfDay(for: date)
         }
@@ -963,7 +962,6 @@ struct CompactRecordRowView: View {
     }
     var body: some View {
         HStack(spacing: 0) {
-            // 1. 지출구분 뱃지
             Text(record.paymentType ?? "-")
                 .font(.caption2)
                 .foregroundColor(.white)
@@ -973,12 +971,10 @@ struct CompactRecordRowView: View {
                     Capsule().fill((record.paymentType == "카드") ? Color.blue.opacity(0.7) : Color.green.opacity(0.7))
                 )
                 .frame(width: 56, alignment: .center)
-            // 2. 카테고리 텍스트만 (이모티콘/아이콘 제거)
             Text(record.categoryRelation?.name ?? "-")
                 .font(.footnote)
                 .foregroundColor(colorScheme == .dark ? colorForCategory(record.categoryRelation?.name).opacity(0.95) : colorForCategory(record.categoryRelation?.name))
                 .frame(width: 70, alignment: .leading)
-            // 3. 설명
             Text(record.detail?.isEmpty == false ? record.detail! : "-")
                 .font(.footnote)
                 .lineLimit(1)
@@ -986,22 +982,20 @@ struct CompactRecordRowView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .layoutPriority(5)
                 .foregroundColor(colorScheme == .dark ? Color.white.opacity(0.92) : .primary)
-            // 4. 금액 (수입/지출 색상)
             Text(record.amount > 0 ? "\(record.amount, specifier: "%.0f")" : "-")
                 .font(.footnote)
                 .foregroundColor(colorScheme == .dark ? (isIncome(record) ? Color.cyan : Color.pink) : (isIncome(record) ? Color.blue : Color.red))
                 .frame(width: 70, alignment: .trailing)
+                .padding(.trailing, 2)
         }
         .frame(height: 29)
         .padding(.vertical, 2)
         .padding(.horizontal, 2)
-        .background(customCardColor)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(colorScheme == .dark ? Color.white.opacity(0.15) : Color.clear, lineWidth: 1.2)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: colorScheme == .dark ? Color.black.opacity(0.25) : Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+        // 카드형 스타일 제거: 배경, 둥근 모서리, 그림자, 오버레이 모두 삭제
+        // .background(customCardColor)
+        // .overlay(...)
+        // .clipShape(...)
+        // .shadow(...)
         .font(.system(size: 10))
         .padding(.vertical, 0)
         .padding(.horizontal, 0)
@@ -1055,31 +1049,43 @@ struct RecordListSectionView: View {
     let fetchRecords: () -> Void
     let customBGColor: Color
 
+    // 날짜별 그룹핑
+    private var groupedRecordsByDate: [Date: [Record]] {
+        let calendar = Calendar.current
+        return Dictionary(grouping: records) { record in
+            guard let date = record.date else { return Date.distantPast }
+            return calendar.startOfDay(for: date)
+        }
+    }
+    private var sortedRecordDates: [Date] {
+        groupedRecordsByDate.keys.sorted(by: >)
+    }
+
     var body: some View {
         List {
-            ForEach(Array(records.enumerated()), id: \.1.objectID) { idx, record in
-                let previousRecord: Record? = idx > 0 ? records[idx-1] : nil
-                let showDateLabel = isNewDate(record, previousRecord)
-                RecordRowSectionView(
-                    record: record,
-                    showDateLabel: showDateLabel,
-                    displayDate: displayDate,
-                    isTodayOrYesterday: isTodayOrYesterday,
-                    recordRowView: recordRowView
-                )
-                .onAppear {
-                    if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
-                        loadedMonthCount += 1
-                        fetchRecords()
+            ForEach(sortedRecordDates, id: \.self) { date in
+                Section(header:
+                    Text(displayDate(date))
+                        .font(.headline)
+                        .padding(.vertical, 4)
+                ) {
+                    ForEach(groupedRecordsByDate[date] ?? [], id: \ .objectID) { record in
+                        recordRowView(record)
+                            .onAppear {
+                                if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
+                                    loadedMonthCount += 1
+                                    fetchRecords()
+                                }
+                            }
+                            .listRowSeparator(.visible)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     }
                 }
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)) // 여백 최소화
             }
         }
         .listStyle(.plain)
-        .listRowSpacing(0) // iOS 16+
-        .background(Color.clear) // 전체 배경을 까만색으로
+        .listRowSpacing(0)
+        .background(Color.clear)
         .scrollContentBackground(.hidden)
     }
 }
