@@ -243,14 +243,15 @@ struct ContentView: View {
                         VStack(spacing: 0) {
                             mainContent
                         }
-                        .background(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .fill(customBGColor)
-                                .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 4)
-                        )
-                        .padding(.horizontal, 10)
-                        .padding(.top, 0)
-                        .padding(.bottom, 0)
+                        // 카드 스타일(.background, .cornerRadius, .shadow 등) 모두 제거
+                        // .background(
+                        //     RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        //         .fill(customBGColor)
+                        //         .shadow(color: Color.black.opacity(0.07), radius: 12, x: 0, y: 4)
+                        // )
+                        // .padding(.horizontal, 10)
+                        // .padding(.top, 0)
+                        // .padding(.bottom, 0)
                         Spacer(minLength: 0)
                     }
                 }
@@ -458,7 +459,8 @@ struct ContentView: View {
                                 record: rec,
                                 onTap: { selectedRecord = rec },
                                 colorForCategory: colorForCategory,
-                                isIncome: isIncome
+                                isIncome: isIncome,
+                                customSectionColor: customSectionColor
                             )
                         },
                         selectedDateFilter: selectedDateFilter,
@@ -643,7 +645,8 @@ struct ContentView: View {
             record: record,
             onTap: { selectedRecord = record },
             colorForCategory: colorForCategory,
-            isIncome: isIncome
+            isIncome: isIncome,
+            customSectionColor: customSectionColor
         )
     }
 
@@ -954,6 +957,7 @@ struct CompactRecordRowView: View {
     let onTap: (() -> Void)?
     let colorForCategory: (String?) -> Color
     let isIncome: (Record) -> Bool
+    let customSectionColor: Color // 추가
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
     @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
@@ -989,16 +993,10 @@ struct CompactRecordRowView: View {
                 .padding(.trailing, 2)
         }
         .frame(height: 29)
-        .padding(.vertical, 2)
-        .padding(.horizontal, 2)
-        // 카드형 스타일 제거: 배경, 둥근 모서리, 그림자, 오버레이 모두 삭제
-        // .background(customCardColor)
-        // .overlay(...)
-        // .clipShape(...)
-        // .shadow(...)
-        .font(.system(size: 10))
         .padding(.vertical, 0)
         .padding(.horizontal, 0)
+        .background(customSectionColor)
+        .font(.system(size: 10))
         .contentShape(Rectangle())
         .onTapGesture {
             onTap?()

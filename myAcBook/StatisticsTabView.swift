@@ -56,6 +56,7 @@ struct ExpenseDetailView: View {
     var customCardColor: Color {
         colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
     }
+    let customSectionColor: Color // 추가
 
     var detailTitle: String {
         var title = "\(month) 지출"
@@ -70,11 +71,12 @@ struct ExpenseDetailView: View {
         return title
     }
 
-    init(month: String, paymentType: String? = nil, cardName: String? = nil, customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow)) {
+    init(month: String, paymentType: String? = nil, cardName: String? = nil, customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow), customSectionColor: Color) {
         self.month = month
         self.paymentType = paymentType
         self.cardName = cardName
         self.customBGColor = customBGColor
+        self.customSectionColor = customSectionColor
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
         let startDate = dateFormatter.date(from: month) ?? Date()
@@ -100,6 +102,31 @@ struct ExpenseDetailView: View {
     }
 
     var body: some View {
+        let colorForCategory: (String?) -> Color = { name in
+            if let name = name {
+                let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                fetch.predicate = NSPredicate(format: "name == %@", name)
+                if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
+                    return Color(UIColor(hex: hex))
+                }
+            }
+            switch name {
+            case "식대": return .pink
+            case "음료": return .blue
+            case "교통": return .green
+            case "부수입": return .purple
+            case "급여": return .orange
+            case "쿠팡33": return .yellow
+            case "food": return .brown
+            case "salary": return .mint
+            case "side_income": return .purple
+            case "beverage": return .blue
+            default: return .gray
+            }
+        }
+        let isIncome: (Record) -> Bool = { record in
+            record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
+        }
         VStack(spacing: 0) {
             Text(detailTitle)
                 .font(.headline).bold()
@@ -123,31 +150,9 @@ struct ExpenseDetailView: View {
                             CompactRecordRowView(
                                 record: record,
                                 onTap: nil,
-                                colorForCategory: { name in
-                                    if let name = name {
-                                        let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
-                                        fetch.predicate = NSPredicate(format: "name == %@", name)
-                                        if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
-                                            return Color(UIColor(hex: hex))
-                                        }
-                                    }
-                                    switch name {
-                                    case "식대": return .pink
-                                    case "음료": return .blue
-                                    case "교통": return .green
-                                    case "부수입": return .purple
-                                    case "급여": return .orange
-                                    case "쿠팡33": return .yellow
-                                    case "food": return .brown
-                                    case "salary": return .mint
-                                    case "side_income": return .purple
-                                    case "beverage": return .blue
-                                    default: return .gray
-                                    }
-                                },
-                                isIncome: { record in
-                                    record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
-                                }
+                                colorForCategory: colorForCategory,
+                                isIncome: isIncome,
+                                customSectionColor: customSectionColor
                             )
                         }
                     }
@@ -165,11 +170,13 @@ struct IncomeDetailView: View {
     let categoryName: String?
     var customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow)
     @FetchRequest private var records: FetchedResults<Record>
+    let customSectionColor: Color // 추가
 
-    init(month: String, categoryName: String? = nil, customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow)) {
+    init(month: String, categoryName: String? = nil, customBGColor: Color = Color(UIColor(named: "customLightBGColor") ?? .yellow), customSectionColor: Color) {
         self.month = month
         self.categoryName = categoryName
         self.customBGColor = customBGColor
+        self.customSectionColor = customSectionColor
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
         let startDate = dateFormatter.date(from: month) ?? Date()
@@ -191,6 +198,31 @@ struct IncomeDetailView: View {
     }
 
     var body: some View {
+        let colorForCategory: (String?) -> Color = { name in
+            if let name = name {
+                let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                fetch.predicate = NSPredicate(format: "name == %@", name)
+                if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
+                    return Color(UIColor(hex: hex))
+                }
+            }
+            switch name {
+            case "식대": return .pink
+            case "음료": return .blue
+            case "교통": return .green
+            case "부수입": return .purple
+            case "급여": return .orange
+            case "쿠팡33": return .yellow
+            case "food": return .brown
+            case "salary": return .mint
+            case "side_income": return .purple
+            case "beverage": return .blue
+            default: return .gray
+            }
+        }
+        let isIncome: (Record) -> Bool = { record in
+            record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
+        }
         VStack(spacing: 0) {
             Text(categoryName != nil ? "\(month) 수입(\(NSLocalizedString(categoryName!, comment: ""))) 상세내역" : "\(month) 수입 상세내역")
                 .font(.headline).bold()
@@ -214,31 +246,9 @@ struct IncomeDetailView: View {
                             CompactRecordRowView(
                                 record: record,
                                 onTap: nil,
-                                colorForCategory: { name in
-                                    if let name = name {
-                                        let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
-                                        fetch.predicate = NSPredicate(format: "name == %@", name)
-                                        if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
-                                            return Color(UIColor(hex: hex))
-                                        }
-                                    }
-                                    switch name {
-                                    case "식대": return .pink
-                                    case "음료": return .blue
-                                    case "교통": return .green
-                                    case "부수입": return .purple
-                                    case "급여": return .orange
-                                    case "쿠팡33": return .yellow
-                                    case "food": return .brown
-                                    case "salary": return .mint
-                                    case "side_income": return .purple
-                                    case "beverage": return .blue
-                                    default: return .gray
-                                    }
-                                },
-                                isIncome: { record in
-                                    record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
-                                }
+                                colorForCategory: colorForCategory,
+                                isIncome: isIncome,
+                                customSectionColor: customSectionColor
                             )
                         }
                     }
@@ -340,6 +350,31 @@ struct StatisticsTabView: View {
     }
 
     var body: some View {
+        let colorForCategory: (String?) -> Color = { name in
+            if let name = name {
+                let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
+                fetch.predicate = NSPredicate(format: "name == %@", name)
+                if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
+                    return Color(UIColor(hex: hex))
+                }
+            }
+            switch name {
+            case "식대": return .pink
+            case "음료": return .blue
+            case "교통": return .green
+            case "부수입": return .purple
+            case "급여": return .orange
+            case "쿠팡33": return .yellow
+            case "food": return .brown
+            case "salary": return .mint
+            case "side_income": return .purple
+            case "beverage": return .blue
+            default: return .gray
+            }
+        }
+        let isIncome: (Record) -> Bool = { record in
+            record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
+        }
         VStack {
             contentView
         }
@@ -469,7 +504,8 @@ struct StatisticsTabView: View {
                         monthlyCardExpenseTotals: filterMonths(dict: monthlyCardExpenseTotals),
                         monthlyCashExpenseTotals: filterMonths(dict: monthlyCashExpenseTotals),
                         formattedAmount: formattedAmount,
-                        expandedCardMonth: $expandedCardMonth
+                        expandedCardMonth: $expandedCardMonth,
+                        customSectionColor: customSectionColor
                     )
                     .background(customBGColor).ignoresSafeArea()
                 }
@@ -567,7 +603,7 @@ struct StatisticsTabView: View {
                     ForEach(monthData, id: \.month) { data in
                         VStack(alignment: .leading, spacing: 18) {
                             // 월별 합계 (상단)
-                            NavigationLink(destination: IncomeDetailView(month: data.month, customBGColor: customBGColor)) {
+                            NavigationLink(destination: IncomeDetailView(month: data.month, customBGColor: customBGColor, customSectionColor: customSectionColor)) {
                                 HStack {
                                     Text("\(data.monthNumber)월 합계 (\(data.incomeCount)건)")
                                         .font(.system(size: 18, weight: .bold))
@@ -593,7 +629,7 @@ struct StatisticsTabView: View {
                                     let monthString = dateFormatter.string(from: record.date ?? Date())
                                     return record.type == "수입" && record.categoryRelation?.name == category && monthString == data.month
                                 }.count
-                                NavigationLink(destination: IncomeDetailView(month: data.month, categoryName: category, customBGColor: customBGColor)) {
+                                NavigationLink(destination: IncomeDetailView(month: data.month, categoryName: category, customBGColor: customBGColor, customSectionColor: customSectionColor)) {
                                     HStack {
                                         Text("")
                                         Text("")
@@ -640,7 +676,8 @@ struct StatisticsTabView: View {
         monthlyCardExpenseTotals: [String: [String: Double]],
         monthlyCashExpenseTotals: [String: Double],
         formattedAmount: @escaping (Double) -> String,
-        expandedCardMonth: Binding<String?>
+        expandedCardMonth: Binding<String?>,
+        customSectionColor: Color // 추가
     ) -> some View {
         let sortedMonths = getSortedMonths(from: monthlyCategoryTotals, ascending: false)
         ScrollView {
@@ -659,7 +696,7 @@ struct StatisticsTabView: View {
                     let monthNumber = month.split(separator: "-").count == 2 ? String(Int(month.split(separator: "-")[1]) ?? 0) : month
                     VStack(alignment: .leading, spacing: 18) {
                         // 월별 합계
-                        NavigationLink(destination: ExpenseDetailView(month: month, customBGColor: customBGColor)) {
+                        NavigationLink(destination: ExpenseDetailView(month: month, customBGColor: customBGColor, customSectionColor: customSectionColor)) {
                             HStack {
                                 Text("\(monthNumber)월 합계 (\(monthCount)건)")
                                     .font(.system(size: 18, weight: .bold))
@@ -676,7 +713,7 @@ struct StatisticsTabView: View {
                         // 현금/카드 합계 카드 박스
                         HStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 2) {
-                                NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "현금", customBGColor: customBGColor)) {
+                                NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "현금", customBGColor: customBGColor, customSectionColor: customSectionColor)) {
                                     Label(String(format: NSLocalizedString("cash_total", comment: "현금 합계"), cashCount), systemImage: "banknote")
                                         .font(.system(size: 12, weight: .regular))
                                         .foregroundColor(.primary)
@@ -700,7 +737,7 @@ struct StatisticsTabView: View {
                                 Spacer()
                                 Image(systemName: expandedCardMonth.wrappedValue == month ? "chevron.up" : "chevron.down")
                                     .foregroundColor(.gray)
-                                NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", customBGColor: customBGColor)) {
+                                NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", customBGColor: customBGColor, customSectionColor: customSectionColor)) {
                                     Text(formattedAmount(cardSum))
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(pastelExpenseColor)
@@ -730,7 +767,7 @@ struct StatisticsTabView: View {
                                     }
                                     ForEach(cardSums.sorted(by: { $0.key < $1.key }), id: \.key) { cardName, value in
                                         let cardNameCount = filteredCardNameRecords(cardName).count
-                                        NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", cardName: cardName, customBGColor: customBGColor)) {
+                                        NavigationLink(destination: ExpenseDetailView(month: month, paymentType: "카드", cardName: cardName, customBGColor: customBGColor, customSectionColor: customSectionColor)) {
                                             HStack {
                                                 Label("\(NSLocalizedString(cardName, comment: "")) (\(cardNameCount)건)", systemImage: "creditcard.fill")
                                                     .font(.system(size: 12))
