@@ -460,7 +460,8 @@ struct ContentView: View {
                                 onTap: { selectedRecord = rec },
                                 colorForCategory: colorForCategory,
                                 isIncome: isIncome,
-                                customSectionColor: customSectionColor
+                                customSectionColor: customSectionColor,
+                                customBGColor: customBGColor
                             )
                         },
                         selectedDateFilter: selectedDateFilter,
@@ -646,7 +647,8 @@ struct ContentView: View {
             onTap: { selectedRecord = record },
             colorForCategory: colorForCategory,
             isIncome: isIncome,
-            customSectionColor: customSectionColor
+            customSectionColor: customSectionColor,
+            customBGColor: customBGColor
         )
     }
 
@@ -958,6 +960,7 @@ struct CompactRecordRowView: View {
     let colorForCategory: (String?) -> Color
     let isIncome: (Record) -> Bool
     let customSectionColor: Color // 추가
+    let customBGColor: Color // 추가
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
     @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
@@ -995,7 +998,7 @@ struct CompactRecordRowView: View {
         .frame(height: 29)
         .padding(.vertical, 0)
         .padding(.horizontal, 0)
-        .background(customSectionColor)
+        .background(colorScheme == .light ? customBGColor : customSectionColor)
         .font(.system(size: 10))
         .contentShape(Rectangle())
         .onTapGesture {
@@ -1046,6 +1049,7 @@ struct RecordListSectionView: View {
     @Binding var loadedMonthCount: Int
     let fetchRecords: () -> Void
     let customBGColor: Color
+    @Environment(\.colorScheme) var colorScheme
 
     // 날짜별 그룹핑
     private var groupedRecordsByDate: [Date: [Record]] {
@@ -1068,6 +1072,7 @@ struct RecordListSectionView: View {
         return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
     }
 
+    // In makeSectionHeader, set background to customBGColor in light mode
     private func makeSectionHeader(
         date: Date,
         incomeText: String?,
@@ -1075,20 +1080,14 @@ struct RecordListSectionView: View {
         isToday: Bool,
         isYesterday: Bool,
         displayDate: (Date) -> String,
-        customSectionColor: Color
+        customSectionColor: Color,
+        customBGColor: Color,
+        colorScheme: ColorScheme
     ) -> some View {
         HStack(spacing: 0) {
-            // 결제수단 자리: 아이콘 or 빈칸
-            Group {
-                if isToday {
-                    Image(systemName: "sun.max.fill").foregroundColor(.yellow)
-                } else if isYesterday {
-                    Image(systemName: "moon.stars.fill").foregroundColor(.mint)
-                } else {
-                    Text("") // 빈칸
-                }
-            }
-            .frame(width: 56, alignment: .center)
+            // 결제수단 자리: 아이콘 제거, 항상 빈칸
+            Text("")
+                .frame(width: 20, alignment: .center)
             // 카테고리 자리: 날짜 텍스트 (행과 동일 폰트/정렬)
             Text(displayDate(date))
                 .font(.footnote)
@@ -1101,14 +1100,14 @@ struct RecordListSectionView: View {
                 if let incomeText = incomeText {
                     Text(incomeText)
                         .font(.caption)
-                        .fontWeight(isToday ? .bold : .regular)
+                        .fontWeight(.bold)
                         .foregroundColor(.blue)
                         .frame(width: 70, alignment: .trailing)
                 }
                 if let expenseText = expenseText {
                     Text(expenseText)
                         .font(.caption)
-                        .fontWeight(isToday ? .bold : .regular)
+                        .fontWeight(.bold)
                         .foregroundColor(.red)
                         .frame(width: 70, alignment: .trailing)
                 }
@@ -1118,50 +1117,76 @@ struct RecordListSectionView: View {
         .frame(height: 29)
         .padding(.vertical, 0)
         .padding(.horizontal, 0)
-        .background(customSectionColor)
+        .background(colorScheme == .light ? Color.white.opacity(0.85) : customSectionColor)
+    }
+
+    @ViewBuilder
+    private func dateGroupView(idx: Int, date: Date) -> some View {
+        let dayRecords = groupedRecordsByDate[date] ?? []
+        let income = dayRecords.filter { $0.type == NSLocalizedString("income", comment: "수입") || $0.type == "수입" }.reduce(0.0) { $0 + $1.amount }
+        let expense = dayRecords.filter { $0.type != NSLocalizedString("income", comment: "수입") && $0.type != "수입" }.reduce(0.0) { $0 + $1.amount }
+        let incomeText = income > 0 ? formattedAmount(income) : nil
+        let expenseText = expense > 0 ? formattedAmount(expense) : nil
+        let isToday = isTodayOrYesterday(date) && Calendar.current.isDateInToday(date)
+        let isYesterday = isTodayOrYesterday(date) && Calendar.current.isDateInYesterday(date)
+        if idx != 0 {
+            Spacer().frame(height: 12)
+        }
+        VStack(spacing: 0) {
+            makeSectionHeader(
+                date: date,
+                incomeText: incomeText,
+                expenseText: expenseText,
+                isToday: isToday,
+                isYesterday: isYesterday,
+                displayDate: displayDate,
+                customSectionColor: {
+                    #if canImport(UIKit)
+                    if UITraitCollection.current.userInterfaceStyle == .dark {
+                        return Color(UIColor(hex: "#23272F"))
+                    } else {
+                        return Color(UIColor(hex: "#F6F7FA"))
+                    }
+                    #else
+                    return Color.white
+                    #endif
+                }(),
+                customBGColor: customBGColor,
+                colorScheme: colorScheme
+            )
+            .padding(.horizontal, 0)
+            ForEach(Array(dayRecords.enumerated()), id: \ .element.objectID) { rowIdx, record in
+                recordRowView(record)
+                    .padding(.horizontal, 0)
+                    .onAppear {
+                        if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
+                            loadedMonthCount += 1
+                            fetchRecords()
+                        }
+                    }
+                // Add subtle separator except after last row
+                if rowIdx < dayRecords.count - 1 {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.10))
+                        .frame(height: 1)
+                        .padding(.leading, 0)
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: "#23272F")))
+                .shadow(color: colorScheme == .light ? Color.black.opacity(0.07) : Color.black.opacity(0.18), radius: 8, x: 0, y: 2)
+        )
+        .padding(.horizontal, 10)
+        .padding(.vertical, 2)
     }
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 0, pinnedViews: []) {
-                ForEach(sortedRecordDates, id: \.self) { date in
-                    let dayRecords = groupedRecordsByDate[date] ?? []
-                    let income = dayRecords.filter { $0.type == NSLocalizedString("income", comment: "수입") || $0.type == "수입" }.reduce(0.0) { $0 + $1.amount }
-                    let expense = dayRecords.filter { $0.type != NSLocalizedString("income", comment: "수입") && $0.type != "수입" }.reduce(0.0) { $0 + $1.amount }
-                    let incomeText = income > 0 ? formattedAmount(income) : nil
-                    let expenseText = expense > 0 ? formattedAmount(expense) : nil
-                    let isToday = isTodayOrYesterday(date) && Calendar.current.isDateInToday(date)
-                    let isYesterday = isTodayOrYesterday(date) && Calendar.current.isDateInYesterday(date)
-                    makeSectionHeader(
-                        date: date,
-                        incomeText: incomeText,
-                        expenseText: expenseText,
-                        isToday: isToday,
-                        isYesterday: isYesterday,
-                        displayDate: displayDate,
-                        customSectionColor: {
-                            #if canImport(UIKit)
-                            if UITraitCollection.current.userInterfaceStyle == .dark {
-                                return Color(UIColor(hex: "#23272F"))
-                            } else {
-                                return Color(UIColor(hex: "#F6F7FA"))
-                            }
-                            #else
-                            return Color.white
-                            #endif
-                        }()
-                    )
-                    .padding(.horizontal, 0)
-                    ForEach(dayRecords, id: \ .objectID) { record in
-                        recordRowView(record)
-                            .padding(.horizontal, 0)
-                            .onAppear {
-                                if selectedDateFilter == NSLocalizedString("all", comment: "") && record == records.last {
-                                    loadedMonthCount += 1
-                                    fetchRecords()
-                                }
-                            }
-                    }
+                ForEach(Array(sortedRecordDates.enumerated()), id: \ .element) { idx, date in
+                    dateGroupView(idx: idx, date: date)
                 }
             }
             .background(Color.clear)

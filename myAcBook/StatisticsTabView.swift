@@ -152,7 +152,8 @@ struct ExpenseDetailView: View {
                                 onTap: nil,
                                 colorForCategory: colorForCategory,
                                 isIncome: isIncome,
-                                customSectionColor: customSectionColor
+                                customSectionColor: customSectionColor,
+                                customBGColor: customBGColor
                             )
                         }
                     }
@@ -248,7 +249,8 @@ struct IncomeDetailView: View {
                                 onTap: nil,
                                 colorForCategory: colorForCategory,
                                 isIncome: isIncome,
-                                customSectionColor: customSectionColor
+                                customSectionColor: customSectionColor,
+                                customBGColor: customBGColor
                             )
                         }
                     }
