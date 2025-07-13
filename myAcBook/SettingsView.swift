@@ -249,7 +249,8 @@ struct SettingsView: View {
                             print("수입 카테고리 개수: \(existingIncomeCategories.count)")
                             print("지출 카테고리 개수: \(existingExpenseCategories.count)")
                             if existingIncomeCategories.isEmpty {
-                                let defaultIncomeNames = ["salary", "side_income"]
+                                let isKorean = Locale.preferredLanguages.first?.hasPrefix("ko") == true
+                                let defaultIncomeNames = isKorean ? ["급여", "부수입"] : ["Salary", "Side Income"]
                                 for name in defaultIncomeNames {
                                     let cat = AppCategory(context: context)
                                     cat.id = UUID()
@@ -259,7 +260,8 @@ struct SettingsView: View {
                                 try? context.save() // 카테고리 생성 후 저장
                             }
                             if existingExpenseCategories.isEmpty {
-                                let defaultExpenseNames = ["food", "beverage", "transportation", "shopping", "leisure", "etc"]
+                                let isKorean = Locale.preferredLanguages.first?.hasPrefix("ko") == true
+                                let defaultExpenseNames = isKorean ? ["식비", "음료", "교통", "쇼핑", "여가", "기타"] : ["Food", "Beverage", "Transportation", "Shopping", "Leisure", "Etc"]
                                 for name in defaultExpenseNames {
                                     let cat = AppCategory(context: context)
                                     cat.id = UUID()

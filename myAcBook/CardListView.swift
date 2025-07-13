@@ -74,13 +74,6 @@ struct CardListView: View {
                                         .foregroundColor(.primary)
                                     Spacer()
                                     Button(action: {
-                                        editingCard = card
-                                        newName = card.name ?? ""
-                                    }) {
-                                        Image(systemName: "pencil")
-                                            .foregroundColor(.blue)
-                                    }
-                                    Button(action: {
                                         cardViewModel.deleteCard(card: card)
                                     }) {
                                         Image(systemName: "trash")

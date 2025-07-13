@@ -49,7 +49,6 @@ public struct CategoryManagerView: View {
     struct CategoryRowView: View {
         let row: CategoryRowData
         let customCardColor: Color
-        let onEdit: () -> Void
         let onDelete: () -> Void
 
         var body: some View {
@@ -67,10 +66,6 @@ public struct CategoryManagerView: View {
                     .padding(.vertical, 3)
                     .background(row.type == "income" ? Color(red: 0.7, green: 0.9, blue: 0.7) : Color(red: 1.0, green: 0.7, blue: 0.7))
                     .cornerRadius(8)
-                Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                        .foregroundColor(.blue)
-                }
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .foregroundColor(Color(red: 1.0, green: 0.7, blue: 0.7))
@@ -151,10 +146,6 @@ public struct CategoryManagerView: View {
                             CategoryRowView(
                                 row: row,
                                 customCardColor: AppColors.card,
-                                onEdit: {
-                                    editingCategory = row.managedObject
-                                    newCategoryName = row.name
-                                },
                                 onDelete: {
                                     if let context = row.managedObject.managedObjectContext {
                                         context.delete(row.managedObject)

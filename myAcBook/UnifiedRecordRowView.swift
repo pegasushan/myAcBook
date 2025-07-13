@@ -28,7 +28,7 @@ struct UnifiedRecordRowView: View {
                 .buttonStyle(PlainButtonStyle())
                 .padding(.trailing, 4)
             }
-            Text(record.paymentType ?? "-")
+            Text(NSLocalizedString(record.paymentType ?? "-", comment: ""))
                 .font(.caption2)
                 .foregroundColor(.white)
                 .padding(.horizontal, 8)
@@ -37,7 +37,7 @@ struct UnifiedRecordRowView: View {
                     Capsule().fill((record.paymentType == "카드") ? Color.blue.opacity(0.7) : Color.green.opacity(0.7))
                 )
                 .frame(width: 56, alignment: .center)
-            Text(record.categoryRelation?.name ?? "-")
+            Text(NSLocalizedString(record.categoryRelation?.name ?? "-", comment: ""))
                 .font(.footnote)
                 .foregroundColor(colorScheme == .dark ? colorForCategory(record.categoryRelation?.name).opacity(0.95) : colorForCategory(record.categoryRelation?.name))
                 .frame(width: 70, alignment: .leading)

@@ -31,7 +31,8 @@ struct CustomDropdown: View {
                 withAnimation { isExpanded.toggle() }
             }) {
                 HStack {
-                    Text(selectedIndex.flatMap { options[safe: $0] } ?? placeholder)
+                    // 선택된 카테고리명에 로컬라이징 적용
+                    Text(selectedIndex.flatMap { NSLocalizedString(options[safe: $0] ?? "", comment: "") } ?? placeholder)
                         .foregroundColor(colorScheme == .light ? .primary : .white)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                     Spacer()
@@ -58,7 +59,7 @@ struct CustomDropdown: View {
                             withAnimation { isExpanded = false }
                         }) {
                             HStack {
-                                Text(options[idx])
+                                Text(NSLocalizedString(options[idx], comment: ""))
                                     .foregroundColor(colorScheme == .light ? .primary : .white)
                                     .font(.system(size: 15, weight: .regular, design: .rounded))
                                 Spacer()

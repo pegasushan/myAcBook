@@ -72,7 +72,7 @@ struct FilterSummaryView: View {
         .shadow(color: Color.black.opacity(0.07), radius: 6, x: 0, y: 2)
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(isDefaultFilter ? Color.gray.opacity(0.15) : activeBorder, lineWidth: isDefaultFilter ? 1 : 2)
+                .stroke(isDefaultFilter ? Color.gray.opacity(0.15) : activeBorder, lineWidth: 2)
         )
         .padding(.vertical, 8)
         .contentShape(Rectangle())
