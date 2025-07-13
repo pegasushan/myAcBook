@@ -6,12 +6,13 @@
 //
 
 import SwiftUI
+import CoreData
 
 struct RecordRowView: View {
     let record: Record
     let isDeleteMode: Bool
-    let selectedRecords: Set<Record>
-    let toggleSelection: (Record) -> Void
+    let selectedRecords: Set<NSManagedObjectID>
+    let toggleSelection: (NSManagedObjectID) -> Void
     @Binding var selectedRecord: Record?
     let formattedAmount: (Double) -> String
     let formattedDate: (Date) -> String
@@ -26,6 +27,14 @@ struct RecordRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
+            if isDeleteMode {
+                Button(action: { toggleSelection(record.objectID) }) {
+                    Image(systemName: selectedRecords.contains(record.objectID) ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(selectedRecords.contains(record.objectID) ? .pink : .gray)
+                        .font(.system(size: 22))
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
             if record.paymentType == "카드" {
                 Text("💳")
                     .font(.system(size: 18))
@@ -60,21 +69,21 @@ struct RecordRowView: View {
         .padding(.horizontal, 8)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(selectedRecords.contains(record) && isDeleteMode
+                .fill(selectedRecords.contains(record.objectID) && isDeleteMode
                       ? Color(red: 1.0, green: 0.7, blue: 0.8).opacity(0.35)
                       : (colorScheme == .light ? AppColors.card : AppColors.section))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18)
-                        .stroke(selectedRecords.contains(record) && isDeleteMode
+                        .stroke(selectedRecords.contains(record.objectID) && isDeleteMode
                                 ? Color(red: 1.0, green: 0.5, blue: 0.7).opacity(0.85) : Color.clear, lineWidth: 2)
                 )
         )
         .shadow(color: Color.black.opacity(0.13), radius: 7, x: 0, y: 3)
-        .scaleEffect(selectedRecords.contains(record) && isDeleteMode ? 1.03 : 1.0)
+        .scaleEffect(selectedRecords.contains(record.objectID) && isDeleteMode ? 1.03 : 1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedRecords)
         .onTapGesture {
             if isDeleteMode {
-                toggleSelection(record)
+                toggleSelection(record.objectID)
             } else {
                 selectedRecord = record
             }

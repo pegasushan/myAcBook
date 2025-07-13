@@ -35,7 +35,7 @@ struct ContentView: View {
     @AppStorage("isHapticsEnabled") private var isHapticsEnabled: Bool = true
     @AppStorage("isAdRemoved") private var isAdRemoved: Bool = false
 
-    @State private var selectedRecords = Set<Record>()
+    @State private var selectedRecords = Set<NSManagedObjectID>()
     @State private var editMode: EditMode = .inactive
     @State private var isAddingNewRecord = false
     @State private var selectedRecord: Record? = nil
@@ -455,13 +455,26 @@ struct ContentView: View {
                         displayDate: displayDate,
                         isTodayOrYesterday: isTodayOrYesterday,
                         recordRowView: { rec in
-                            CompactRecordRowView(
-                                record: rec,
-                                onTap: { selectedRecord = rec },
-                                colorForCategory: colorForCategory,
-                                isIncome: isIncome,
-                                customSectionColor: AppColors.section,
-                                customBGColor: AppColors.background
+                            AnyView(
+                                UnifiedRecordRowView(
+                                    record: rec,
+                                    isDeleteMode: isDeleteMode,
+                                    selected: selectedRecords.contains(rec.objectID),
+                                    onSelect: {
+                                        if selectedRecords.contains(rec.objectID) {
+                                            selectedRecords.remove(rec.objectID)
+                                        } else {
+                                            selectedRecords.insert(rec.objectID)
+                                        }
+                                    },
+                                    onTap: {
+                                        selectedRecord = rec
+                                    },
+                                    colorForCategory: colorForCategory,
+                                    isIncome: isIncome,
+                                    customSectionColor: AppColors.section,
+                                    customBGColor: AppColors.background
+                                )
                             )
                         },
                         selectedDateFilter: selectedDateFilter,
@@ -608,7 +621,9 @@ struct ContentView: View {
             Button(action: {
                 withAnimation {
                     for record in selectedRecords {
-                        viewContext.delete(record)
+                        if let record = try? viewContext.existingObject(with: record) as? Record {
+                            viewContext.delete(record)
+                        }
                     }
                     selectedRecords.removeAll()
                     try? viewContext.save()
@@ -709,10 +724,10 @@ struct ContentView: View {
         return numberFormatter.string(from: NSNumber(value: amount)) ?? "0"
     }
     private func toggleSelection(for record: Record) {
-        if selectedRecords.contains(record) {
-            selectedRecords.remove(record)
+        if selectedRecords.contains(record.objectID) {
+            selectedRecords.remove(record.objectID)
         } else {
-            selectedRecords.insert(record)
+            selectedRecords.insert(record.objectID)
         }
     }
     private func formattedDate(_ date: Date) -> String {
@@ -934,6 +949,22 @@ struct ContentView: View {
             selectedMonth = allMonths[idx - 1]
         }
     }
+
+    private func deleteSelectedRecords() {
+        for id in selectedRecords {
+            if let record = try? viewContext.existingObject(with: id) as? Record {
+                viewContext.delete(record)
+            }
+        }
+        do {
+            try viewContext.save()
+            selectedRecords.removeAll()
+            isDeleteMode = false
+            fetchRecords()
+        } catch {
+            // 에러 처리
+        }
+    }
 }
 
 struct BannerAdContainerView: View {
@@ -1044,7 +1075,7 @@ struct RecordListSectionView: View {
     let isNewDate: (Record, Record?) -> Bool
     let displayDate: (Date?) -> String
     let isTodayOrYesterday: (Date?) -> Bool
-    let recordRowView: (Record) -> CompactRecordRowView
+    let recordRowView: (Record) -> AnyView
     let selectedDateFilter: String
     @Binding var loadedMonthCount: Int
     let fetchRecords: () -> Void
