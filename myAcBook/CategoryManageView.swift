@@ -18,15 +18,7 @@ public struct CategoryManagerView: View {
     @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
 
-    var customBGColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
-    }
-    var customCardColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
-    }
-    var customSectionColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
-    }
+    // customBGColor, customCardColor, customSectionColor 등 변수 선언부 모두 삭제
     @Environment(\.colorScheme) var colorScheme
     @FetchRequest private var categories: FetchedResults<AppCategory>
     var selectedType: String
@@ -158,7 +150,7 @@ public struct CategoryManagerView: View {
                         ForEach(categoryRows) { row in
                             CategoryRowView(
                                 row: row,
-                                customCardColor: customCardColor,
+                                customCardColor: AppColors.card,
                                 onEdit: {
                                     editingCategory = row.managedObject
                                     newCategoryName = row.name
@@ -234,7 +226,7 @@ public struct CategoryManagerView: View {
                 }
                 .padding(.vertical, 10)
                 .padding(.horizontal, 12)
-                .background(RoundedRectangle(cornerRadius: 14).fill(customCardColor).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
+                .background(RoundedRectangle(cornerRadius: 14).fill(AppColors.card).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
@@ -245,7 +237,7 @@ public struct CategoryManagerView: View {
                 .foregroundColor(.secondary)
                 .padding(.bottom, 10)
         }
-        .background(customBGColor)
+        .background(AppColors.background.ignoresSafeArea())
         .alert(LocalizedStringKey("empty_input_alert"), isPresented: $showEmptyNameAlert) {
             Button(LocalizedStringKey("confirm"), role: .cancel) { }
         }

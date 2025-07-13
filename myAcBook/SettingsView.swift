@@ -70,7 +70,6 @@ class DocumentPickerCoordinator: NSObject, UIDocumentPickerDelegate {
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("colorScheme") private var colorSchemeSetting: String = "system"
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("isAppLockEnabled") private var isAppLockEnabled: Bool = false
     @AppStorage("isHapticsEnabled") private var isHapticsEnabled: Bool = true
@@ -82,7 +81,7 @@ struct SettingsView: View {
     @State private var showCardManagerModal = false
     @State private var showCategoryManagerModal = false
     @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
-    var customLightBGColor: Color { Color(UIColor(hex: customLightBGColorHex)) }
+    var customLightBGColor: Color { Color("#F6F7FA") }
     @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
     @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
     @AppStorage("customDarkCardColor") private var customDarkCardColorHex: String = "#23272F"
@@ -97,43 +96,7 @@ struct SettingsView: View {
     private let restoreResultSubject = PassthroughSubject<Bool, Never>()
     @State private var documentPickerCoordinator: DocumentPickerCoordinator?
     @State private var restoreResultCancellable: AnyCancellable?
-
-    struct ColorPalette {
-        let name: String
-        let lightBG: String
-        let darkBG: String
-        let lightCard: String
-        let darkCard: String
-        let lightSection: String
-        let darkSection: String
-    }
-
-    let palettes = [
-        ColorPalette(
-            name: NSLocalizedString("theme_light_pink", comment: "라이트 핑크"),
-            lightBG: "#FEEAF2", darkBG: "#181A20",
-            lightCard: "#FFFFFF", darkCard: "#23272F",
-            lightSection: "#F6F7FA", darkSection: "#23272F"
-        ),
-        ColorPalette(
-            name: NSLocalizedString("theme_pastel_mint", comment: "파스텔 민트"),
-            lightBG: "#D6F5E6", darkBG: "#181A20",
-            lightCard: "#FFFFFF", darkCard: "#23272F",
-            lightSection: "#E6F9F2", darkSection: "#23272F"
-        ),
-        ColorPalette(
-            name: NSLocalizedString("theme_light_yellow", comment: "라이트 옐로우"),
-            lightBG: "#FFF9D6", darkBG: "#181A20",
-            lightCard: "#FFFFFF", darkCard: "#23272F",
-            lightSection: "#FDF6E3", darkSection: "#23272F"
-        ),
-        ColorPalette(
-            name: NSLocalizedString("theme_white", comment: "화이트"),
-            lightBG: "#FFFFFF", darkBG: "#181A20",
-            lightCard: "#FFFFFF", darkCard: "#23272F",
-            lightSection: "#FFFFFF", darkSection: "#23272F"
-        )
-    ]
+    @AppStorage("colorScheme") private var colorSchemeSetting: String = "system"
 
     // DTO 구조체 (Record만 예시)
     struct SimpleRecord: Codable {
@@ -157,44 +120,12 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if colorScheme == .light {
-                    Text(NSLocalizedString("recommended_theme_title", comment: "추천 테마"))
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .padding(.top, 24)
-                    HStack(spacing: 12) {
-                        ForEach(palettes, id: \.name) { palette in
-                            Button(action: {
-                                customLightBGColorHex = palette.lightBG
-                                customDarkBGColorHex = palette.darkBG
-                                customLightCardColorHex = palette.lightCard
-                                customDarkCardColorHex = palette.darkCard
-                                customLightSectionColorHex = palette.lightSection
-                                customDarkSectionColorHex = palette.darkSection
-                            }) {
-                                Circle()
-                                    .fill(Color(UIColor(hex: palette.lightBG)))
-                                    .frame(width: 28, height: 28)
-                                    .overlay(Circle().stroke(Color.gray, lineWidth: 1))
-                            }
-                            .contentShape(Rectangle())
-                        }
-                    }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
-                } else {
-                    Text("추천 테마는 라이트 모드에서만 선택할 수 있습니다.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 24)
-                        .padding(.bottom, 8)
-                }
-                // 기존 Form
                 Form {
                     Section {
-                        Picker(NSLocalizedString("theme", comment: "테마"), selection: $colorSchemeSetting) {
-                            Text(NSLocalizedString("system_default", comment: "시스템 기본값")).tag("system")
-                            Text(NSLocalizedString("light_mode", comment: "라이트 모드")).tag("light")
-                            Text(NSLocalizedString("dark_mode", comment: "다크 모드")).tag("dark")
+                        Picker("화면 모드", selection: $colorSchemeSetting) {
+                            Text("시스템 기본값").tag("system")
+                            Text("라이트 모드").tag("light")
+                            Text("다크 모드").tag("dark")
                         }
                         .pickerStyle(.segmented)
                         .font(.system(size: 15, weight: .regular, design: .rounded))

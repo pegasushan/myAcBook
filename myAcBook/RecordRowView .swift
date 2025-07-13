@@ -17,8 +17,6 @@ struct RecordRowView: View {
     let formattedDate: (Date) -> String
     let onDelete: () -> Void
     let dateLabel: String?
-    @AppStorage("customLightCardColor") private var customLightCardColorHex: String = "#FFFFFF"
-    var customLightCardColor: Color { Color(UIColor(hex: customLightCardColorHex)) }
     @Environment(\.colorScheme) var colorScheme
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -64,7 +62,7 @@ struct RecordRowView: View {
             RoundedRectangle(cornerRadius: 18)
                 .fill(selectedRecords.contains(record) && isDeleteMode
                       ? Color(red: 1.0, green: 0.7, blue: 0.8).opacity(0.35)
-                      : (colorScheme == .light ? customLightCardColor : Color("SectionBGColor")))
+                      : (colorScheme == .light ? AppColors.card : AppColors.section))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18)
                         .stroke(selectedRecords.contains(record) && isDeleteMode

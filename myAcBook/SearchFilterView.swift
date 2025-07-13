@@ -22,11 +22,13 @@ struct SearchFilterView: View {
 
     @State private var fetchedCategories: [AppCategory] = []
 
-    @AppStorage("customLightBGColor") private var customLightBGColorHex: String = "#FEEAF2"
-    @AppStorage("customDarkBGColor") private var customDarkBGColorHex: String = "#181A20"
+    // customBGColor, customCardColor, customSectionColor 등 변수 선언부 모두 삭제
+    // 배경색, 카드색, 섹션색 사용하는 모든 곳을 AppColors.background, AppColors.card, AppColors.section으로 교체
+    // 예시: .background(customBGColor.ignoresSafeArea()) -> .background(AppColors.background.ignoresSafeArea())
+    // ZStack, VStack, Section 등에서 배경색 지정 시 AppColors 사용
     @Environment(\.colorScheme) var colorScheme
     var customBGColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
+        colorScheme == .light ? Color(UIColor(hex: "#FEEAF2")) : Color(UIColor(hex: "#181A20"))
     }
 
     var currentCategoryBinding: Binding<String> {
@@ -102,7 +104,7 @@ struct SearchFilterView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                customBGColor.ignoresSafeArea()
+                AppColors.background.ignoresSafeArea()
                 VStack(spacing: 24) {
                     // 유형 필터 카드
                     FilterCard {
@@ -245,11 +247,13 @@ struct FilterCard<Content: View>: View {
     let content: Content
     var isActive: Bool = false
     var highlightColor: Color = .clear
-    @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
-    @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
+    // customLightSectionColorHex, customDarkSectionColorHex 변수 삭제
+    // 배경색, 카드색, 섹션색 사용하는 모든 곳을 AppColors.background, AppColors.card, AppColors.section으로 교체
+    // 예시: .background(customBGColor.ignoresSafeArea()) -> .background(AppColors.background.ignoresSafeArea())
+    // ZStack, VStack, Section 등에서 배경색 지정 시 AppColors 사용
     @Environment(\.colorScheme) var colorScheme
     var customSectionColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
+        colorScheme == .light ? Color(UIColor(hex: "#F6F7FA")) : Color(UIColor(hex: "#23272F"))
     }
     init(isActive: Bool = false, highlightColor: Color = .clear, @ViewBuilder content: () -> Content) {
         self.isActive = isActive

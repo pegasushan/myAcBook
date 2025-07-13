@@ -25,20 +25,10 @@ struct CardListView: View {
     @State private var showEmptyNameAlert = false
     @State private var showDuplicateAlert = false
 
-    var customBGColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
-    }
-    var customCardColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
-    }
-    var customSectionColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
-    }
-
     var body: some View {
         NavigationStack {
             ZStack {
-                customBGColor.ignoresSafeArea()
+                AppColors.background.ignoresSafeArea()
                 VStack(spacing: 0) {
                     // 상단 카드 아이콘과 타이틀 복구
                     VStack(spacing: 8) {
@@ -99,7 +89,7 @@ struct CardListView: View {
                                 }
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 16)
-                                .background(RoundedRectangle(cornerRadius: 14).fill(customCardColor).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
+                                .background(RoundedRectangle(cornerRadius: 14).fill(AppColors.card).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
                             }
                         }
                         .padding(.horizontal, 20)
@@ -141,7 +131,7 @@ struct CardListView: View {
                         }
                         .padding(.vertical, 10)
                         .padding(.horizontal, 12)
-                        .background(RoundedRectangle(cornerRadius: 14).fill(customCardColor).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
+                        .background(RoundedRectangle(cornerRadius: 14).fill(AppColors.card).shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 2))
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 24)

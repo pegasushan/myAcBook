@@ -16,14 +16,8 @@ struct FilterSummaryView: View {
     var onReset: () -> Void
     var selectedPaymentType: String
 
-    @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
-    @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
     @Environment(\.colorScheme) var colorScheme
     
-    var customSectionColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
-    }
-    // 강조 테두리 색상도 테마에 맞게
     var activeBorder: Color {
         colorScheme == .light ? Color(red: 1.0, green: 0.5, blue: 0.7) : Color(red: 0.9, green: 0.4, blue: 0.6)
     }
@@ -73,7 +67,7 @@ struct FilterSummaryView: View {
             .font(.system(size: 14, weight: .regular, design: .rounded))
         }
         .padding()
-        .background(customSectionColor)
+        .background(AppColors.section)
         .cornerRadius(14)
         .shadow(color: Color.black.opacity(0.07), radius: 6, x: 0, y: 2)
         .overlay(

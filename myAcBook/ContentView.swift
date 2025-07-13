@@ -234,10 +234,10 @@ struct ContentView: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            customBGColor.ignoresSafeArea()
+            AppColors.background.ignoresSafeArea()
             NavigationView {
                 ZStack {
-                    customBGColor.ignoresSafeArea()
+                    AppColors.background.ignoresSafeArea()
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
                         VStack(spacing: 0) {
@@ -460,14 +460,14 @@ struct ContentView: View {
                                 onTap: { selectedRecord = rec },
                                 colorForCategory: colorForCategory,
                                 isIncome: isIncome,
-                                customSectionColor: customSectionColor,
-                                customBGColor: customBGColor
+                                customSectionColor: AppColors.section,
+                                customBGColor: AppColors.background
                             )
                         },
                         selectedDateFilter: selectedDateFilter,
                         loadedMonthCount: $loadedMonthCount,
                         fetchRecords: fetchRecords,
-                        customBGColor: customBGColor
+                        customBGColor: AppColors.background
                     )
                 }
             }
@@ -647,8 +647,8 @@ struct ContentView: View {
             onTap: { selectedRecord = record },
             colorForCategory: colorForCategory,
             isIncome: isIncome,
-            customSectionColor: customSectionColor,
-            customBGColor: customBGColor
+            customSectionColor: AppColors.section,
+            customBGColor: AppColors.background
         )
     }
 

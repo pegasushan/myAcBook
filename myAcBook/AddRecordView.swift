@@ -98,15 +98,10 @@ struct AddRecordView: View {
     @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
 
-    var customBGColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightBGColorHex)) : Color(UIColor(hex: customDarkBGColorHex))
-    }
-    var customCardColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
-    }
-    var customSectionColor: Color {
-        colorScheme == .light ? Color(UIColor(hex: customLightSectionColorHex)) : Color(UIColor(hex: customDarkSectionColorHex))
-    }
+    // customBGColor, customCardColor, customSectionColor 등 변수 선언부 모두 삭제
+    // 배경색, 카드색, 섹션색 사용하는 모든 곳을 AppColors.background, AppColors.card, AppColors.section으로 교체
+    // 예시: .background(customBGColor.ignoresSafeArea()) -> .background(AppColors.background.ignoresSafeArea())
+    // ZStack, VStack, Section 등에서 배경색 지정 시 AppColors 사용
     @Environment(\.colorScheme) var colorScheme
 
     @State private var type: String = NSLocalizedString("expense", comment: "") // ✨ 기본값 로컬라이즈된 '지출'
@@ -147,7 +142,7 @@ struct AddRecordView: View {
         let expenseText = NSLocalizedString("expense", comment: "")
         NavigationView {
             ZStack {
-                customBGColor.ignoresSafeArea()
+                AppColors.background.ignoresSafeArea()
                 VStack(spacing: 0) {
                     ScrollView {
                         VStack(spacing: 28) {

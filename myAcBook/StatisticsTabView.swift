@@ -162,7 +162,7 @@ struct ExpenseDetailView: View {
                 }
             }
         }
-        .background(customBGColor.ignoresSafeArea())
+        .background(AppColors.background.ignoresSafeArea())
     }
 }
 
@@ -259,7 +259,7 @@ struct IncomeDetailView: View {
                 }
             }
         }
-        .background(customBGColor.ignoresSafeArea())
+        .background(AppColors.background.ignoresSafeArea())
     }
 }
 
@@ -384,7 +384,7 @@ struct StatisticsTabView: View {
         .onChange(of: colorSchemeSetting) { _, _ in
             themeRefreshID = UUID()
         }
-        .background(customBGColor.ignoresSafeArea())
+        .background(AppColors.background.ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -484,7 +484,7 @@ struct StatisticsTabView: View {
                         onToggleSort: { isAscendingSort.toggle() },
                         allCards: allCards
                     )
-                    .background(customBGColor).ignoresSafeArea()
+                    .background(AppColors.background.ignoresSafeArea())
                 }
             } else if isExpenseTab {
                 if !hasExpenseData {
@@ -509,7 +509,7 @@ struct StatisticsTabView: View {
                         expandedCardMonth: $expandedCardMonth,
                         customSectionColor: customSectionColor
                     )
-                    .background(customBGColor).ignoresSafeArea()
+                    .background(AppColors.background.ignoresSafeArea())
                 }
             } else if isGraphTab {
                 if filteredMonths.isEmpty || (filteredMonths.allSatisfy { (monthlyIncomeTotals[$0] ?? 0) == 0 && (monthlyExpenseTotals[$0] ?? 0) == 0 }) {
@@ -598,7 +598,7 @@ struct StatisticsTabView: View {
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .background(customBGColor)
+            .background(AppColors.background)
         } else {
             ScrollView {
                 VStack(spacing: 28) {
