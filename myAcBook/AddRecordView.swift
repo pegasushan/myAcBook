@@ -88,6 +88,283 @@ extension Array {
     }
 }
 
+struct CategoryDropdown: View {
+    @Binding var selectedCategoryIndex: Int?
+    let options: [String]
+    let onDropdownTap: () -> Void
+    var body: some View {
+        CustomDropdown(
+            selectedIndex: $selectedCategoryIndex,
+            options: options,
+            placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"),
+            onDropdownTap: onDropdownTap
+        )
+    }
+}
+
+struct AmountInputView: View {
+    @Binding var amount: String
+    @FocusState var isAmountFieldFocused: Bool
+    var colorScheme: ColorScheme
+    var body: some View {
+        HStack {
+            Image(systemName: "wonsign.circle.fill")
+                .foregroundColor(Color("HighlightColor"))
+                .font(.system(size: 28, weight: .bold))
+            TextField(NSLocalizedString("example_amount", comment: ""), text: $amount)
+                .keyboardType(.decimalPad)
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .padding(12)
+                .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
+                .foregroundColor(colorScheme == .light ? .primary : .white)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
+                )
+                .focused($isAmountFieldFocused)
+                .onTapGesture {
+                    isAmountFieldFocused = true
+                }
+                .onChange(of: amount) {
+                    let numberString = amount.replacingOccurrences(of: ",", with: "")
+                    if let value = Int(numberString) {
+                        let formatter = NumberFormatter()
+                        formatter.numberStyle = .decimal
+                        amount = formatter.string(from: NSNumber(value: value)) ?? ""
+                    }
+                }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct TypePickerView: View {
+    @Binding var type: String
+    let types: [String]
+    var recordToEdit: Record?
+    @FocusState var isAmountFieldFocused: Bool
+    @FocusState var isDetailFieldFocused: Bool
+    var body: some View {
+        HStack {
+            Image(systemName: "arrow.2.squarepath")
+                .foregroundColor(.gray)
+            Picker(NSLocalizedString("type_label", comment: ""), selection: $type) {
+                ForEach(types, id: \.self) { t in
+                    Text(t)
+                        .font(.system(size: 15, weight: .regular, design: .rounded))
+                }
+            }
+            .pickerStyle(.segmented)
+            .font(.system(size: 15, weight: .regular, design: .rounded))
+            .disabled(recordToEdit != nil)
+            .onTapGesture {
+                isAmountFieldFocused = false
+                isDetailFieldFocused = false
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct PaymentTypeView: View {
+    @Binding var paymentType: String
+    @Binding var selectedCardIndex: Int?
+    @Binding var selectedCard: Card?
+    @ObservedObject var cardViewModel: CardViewModel
+    @FocusState var isAmountFieldFocused: Bool
+    @FocusState var isDetailFieldFocused: Bool
+    var colorScheme: ColorScheme
+    let showCardManager: () -> Void // 추가
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "creditcard")
+                    .foregroundColor(.gray)
+                Picker(NSLocalizedString("payment_type_label", comment: "지출 구분"), selection: $paymentType) {
+                    Text(NSLocalizedString("cash", comment: "현금")).tag(NSLocalizedString("cash", comment: "현금"))
+                    Text(NSLocalizedString("card", comment: "카드")).tag(NSLocalizedString("card", comment: "카드"))
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .font(.system(size: 15, weight: .regular, design: .rounded))
+                .onTapGesture {
+                    isAmountFieldFocused = false
+                    isDetailFieldFocused = false
+                }
+            }
+            if paymentType == NSLocalizedString("card", comment: "카드") {
+                HStack(spacing: 8) {
+                    Image(systemName: "creditcard.fill")
+                        .foregroundColor(.gray)
+                    CustomDropdown(
+                        selectedIndex: $selectedCardIndex,
+                        options: cardViewModel.cards.map { NSLocalizedString($0.name ?? "", comment: "") },
+                        placeholder: NSLocalizedString("select_card_placeholder", comment: "카드 선택"),
+                        onDropdownTap: {
+                            isAmountFieldFocused = false
+                            isDetailFieldFocused = false
+                        }
+                    )
+                    .frame(maxWidth: .infinity)
+                    Button(action: showCardManager) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.blue)
+                            .padding(6)
+                            .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(.top, 12)
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct CategoryInputView: View {
+    @Binding var selectedCategoryIndex: Int?
+    let options: [String]
+    let onDropdownTap: () -> Void
+    let showCategoryManager: () -> Void
+    var colorScheme: ColorScheme
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "folder.fill")
+                .foregroundColor(.gray)
+            CategoryDropdown(
+                selectedCategoryIndex: $selectedCategoryIndex,
+                options: options,
+                onDropdownTap: onDropdownTap
+            )
+            .frame(maxWidth: .infinity)
+            Button(action: showCategoryManager) {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.blue)
+                    .padding(6)
+                    .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct DetailInputView: View {
+    @Binding var detail: String
+    @FocusState var isDetailFieldFocused: Bool
+    @FocusState var isAmountFieldFocused: Bool
+    var colorScheme: ColorScheme
+    var body: some View {
+        HStack {
+            Image(systemName: "text.alignleft")
+                .foregroundColor(.gray)
+            TextField(NSLocalizedString("detail_placeholder", comment: ""), text: $detail)
+                .font(.system(size: 15, weight: .regular, design: .rounded))
+                .padding(10)
+                .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
+                .foregroundColor(colorScheme == .light ? .primary : .white)
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
+                )
+                .focused($isDetailFieldFocused)
+                .onTapGesture {
+                    isDetailFieldFocused = true
+                    isAmountFieldFocused = false
+                }
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct DateInputView: View {
+    @Binding var date: Date
+    var colorScheme: ColorScheme
+    var body: some View {
+        HStack {
+            Image(systemName: "calendar")
+                .foregroundColor(.gray)
+            DatePicker(NSLocalizedString("date", comment: ""), selection: $date, displayedComponents: .date)
+                .font(.system(size: 15, weight: .regular, design: .rounded))
+        }
+        .padding(.horizontal)
+    }
+}
+
+struct RecordFormView: View {
+    @Binding var amount: String
+    @Binding var type: String
+    let types: [String]
+    var recordToEdit: Record?
+    @Binding var paymentType: String
+    @Binding var selectedCardIndex: Int?
+    @Binding var selectedCard: Card?
+    @ObservedObject var cardViewModel: CardViewModel
+    @Binding var selectedCategoryIndex: Int?
+    let categoryOptions: [String]
+    @Binding var detail: String
+    @Binding var date: Date
+    @FocusState var isAmountFieldFocused: Bool
+    @FocusState var isDetailFieldFocused: Bool
+    let expenseText: String
+    let colorScheme: ColorScheme
+    let showCategoryManager: () -> Void
+    let showCardManager: () -> Void // 추가
+    let onDropdownTap: () -> Void
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 28) {
+                AmountInputView(amount: $amount, isAmountFieldFocused: _isAmountFieldFocused, colorScheme: colorScheme)
+                TypePickerView(
+                    type: $type,
+                    types: types,
+                    recordToEdit: recordToEdit,
+                    isAmountFieldFocused: _isAmountFieldFocused,
+                    isDetailFieldFocused: _isDetailFieldFocused
+                )
+                if type == expenseText {
+                    PaymentTypeView(
+                        paymentType: $paymentType,
+                        selectedCardIndex: $selectedCardIndex,
+                        selectedCard: $selectedCard,
+                        cardViewModel: cardViewModel,
+                        isAmountFieldFocused: _isAmountFieldFocused,
+                        isDetailFieldFocused: _isDetailFieldFocused,
+                        colorScheme: colorScheme,
+                        showCardManager: showCardManager // 전달
+                    )
+                }
+                CategoryInputView(
+                    selectedCategoryIndex: $selectedCategoryIndex,
+                    options: categoryOptions,
+                    onDropdownTap: onDropdownTap,
+                    showCategoryManager: showCategoryManager,
+                    colorScheme: colorScheme
+                )
+                DetailInputView(
+                    detail: $detail,
+                    isDetailFieldFocused: _isDetailFieldFocused,
+                    isAmountFieldFocused: _isAmountFieldFocused,
+                    colorScheme: colorScheme
+                )
+                DateInputView(date: $date, colorScheme: colorScheme)
+            }
+            .padding(.top, 48)
+            .padding(.bottom, 32)
+        }
+        .background(Color.clear)
+        .onTapGesture {
+            isAmountFieldFocused = false
+            isDetailFieldFocused = false
+        }
+    }
+}
+
 struct AddRecordView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
@@ -123,8 +400,22 @@ struct AddRecordView: View {
         NSLocalizedString("income", comment: ""),
         NSLocalizedString("expense", comment: "")
     ]
-    @State private var categories: [String] = []
-    @State private var fetchedCategories: [AppCategory] = []
+    @FetchRequest(
+        entity: AppCategory.entity(),
+        sortDescriptors: [NSSortDescriptor(keyPath: \AppCategory.name, ascending: true)]
+    ) var fetchedCategories: FetchedResults<AppCategory>
+
+    var categoryOptions: [String] {
+        let typeKey: String
+        if type == NSLocalizedString("income", comment: "") || type == "수입" {
+            typeKey = "income"
+        } else {
+            typeKey = "expense"
+        }
+        return fetchedCategories
+            .filter { ($0.type == typeKey) && !($0.name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) }
+            .map { $0.name ?? "" }
+    }
 
     var recordToEdit: Record?
     var onSave: (() -> Void)? = nil
@@ -141,157 +432,34 @@ struct AddRecordView: View {
     var body: some View {
         let expenseText = NSLocalizedString("expense", comment: "")
         NavigationView {
-            ZStack {
+            ZStack(alignment: .bottom) {
                 AppColors.background.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    ScrollView {
-                        VStack(spacing: 28) {
-                            // 금액 입력란 강조
-                            HStack {
-                                Image(systemName: currencySymbolSystemName())
-                                    .foregroundColor(Color("HighlightColor"))
-                                    .font(.system(size: 28, weight: .bold))
-                                TextField(NSLocalizedString("example_amount", comment: ""), text: $amount)
-                                    .keyboardType(.decimalPad)
-                                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                                    .padding(12)
-                                    .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
-                                    .foregroundColor(colorScheme == .light ? .primary : .white)
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
-                                    )
-                                    .focused($isAmountFieldFocused)
-                                    .onTapGesture {
-                                        isAmountFieldFocused = true
-                                        isDetailFieldFocused = false
-                                    }
-                                    .onChange(of: amount) {
-                                        let numberString = amount.replacingOccurrences(of: ",", with: "")
-                                        if let value = Int(numberString) {
-                                            let formatter = NumberFormatter()
-                                            formatter.numberStyle = .decimal
-                                            amount = formatter.string(from: NSNumber(value: value)) ?? ""
-                                        }
-                                    }
-                            }
-                            .padding(.horizontal)
-                            // 유형 선택
-                            HStack {
-                                Image(systemName: "arrow.2.squarepath")
-                                    .foregroundColor(.gray)
-                                Picker(NSLocalizedString("type_label", comment: ""), selection: $type) {
-                                    ForEach(types, id: \.self) { Text($0).font(.system(size: 15, weight: .regular, design: .rounded)) }
-                                }
-                                .pickerStyle(.segmented)
-                                .font(.system(size: 15, weight: .regular, design: .rounded))
-                                .disabled(recordToEdit != nil)
-                                .onTapGesture {
-                                    isAmountFieldFocused = false
-                                    isDetailFieldFocused = false
-                                }
-                            }
-                            .padding(.horizontal)
-                            // 결제수단/카드
-                            if type == expenseText {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Image(systemName: "creditcard")
-                                            .foregroundColor(.gray)
-                                        Picker(NSLocalizedString("payment_type_label", comment: "지출 구분"), selection: $paymentType) {
-                                            Text(NSLocalizedString("cash", comment: "현금")).tag(NSLocalizedString("cash", comment: "현금"))
-                                            Text(NSLocalizedString("card", comment: "카드")).tag(NSLocalizedString("card", comment: "카드"))
-                                        }
-                                        .pickerStyle(SegmentedPickerStyle())
-                                        .font(.system(size: 15, weight: .regular, design: .rounded))
-                                        .onTapGesture {
-                                            isAmountFieldFocused = false
-                                            isDetailFieldFocused = false
-                                        }
-                                    }
-                                    if paymentType == NSLocalizedString("card", comment: "카드") {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "creditcard.fill")
-                                                .foregroundColor(.gray)
-                                            CustomDropdown(selectedIndex: $selectedCardIndex, options: cardViewModel.cards.map { NSLocalizedString($0.name ?? "", comment: "") }, placeholder: NSLocalizedString("select_card_placeholder", comment: "카드 선택"), onDropdownTap: {
-                                                isAmountFieldFocused = false
-                                                isDetailFieldFocused = false
-                                            })
-                                                .frame(maxWidth: .infinity)
-                                            Button(action: { showCardManager = true }) {
-                                                Image(systemName: "plus")
-                                                    .font(.system(size: 18, weight: .bold))
-                                                    .foregroundColor(.blue)
-                                                    .padding(6)
-                                                    .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
-                                                    .clipShape(Circle())
-                                            }
-                                            .buttonStyle(PlainButtonStyle())
-                                        }
-                                        .padding(.top, 12)
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                            // 카테고리
-                            HStack(spacing: 8) {
-                                Image(systemName: "folder.fill")
-                                    .foregroundColor(.gray)
-                                CustomDropdown(selectedIndex: $selectedCategoryIndex, options: fetchedCategories.filter { !($0.name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) }.map { NSLocalizedString($0.name ?? "", comment: "") }, placeholder: NSLocalizedString("select_category", comment: "카테고리 선택"), onDropdownTap: {
-                                    isAmountFieldFocused = false
-                                    isDetailFieldFocused = false
-                                })
-                                    .frame(maxWidth: .infinity)
-                                Button(action: { showCategoryManager = true }) {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 18, weight: .bold))
-                                        .foregroundColor(.blue)
-                                        .padding(6)
-                                        .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
-                                        .clipShape(Circle())
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                            .padding(.horizontal)
-                            // 상세내용
-                            HStack {
-                                Image(systemName: "text.alignleft")
-                                    .foregroundColor(.gray)
-                                TextField(NSLocalizedString("detail_placeholder", comment: ""), text: $detail)
-                                    .font(.system(size: 15, weight: .regular, design: .rounded))
-                                    .padding(10)
-                                    .background(colorScheme == .light ? Color.white.opacity(0.7) : Color("customDarkCardColor").opacity(0.85))
-                                    .foregroundColor(colorScheme == .light ? .primary : .white)
-                                    .cornerRadius(8)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(colorScheme == .dark ? Color("HighlightColor").opacity(0.25) : Color.gray.opacity(0.15), lineWidth: 1)
-                                    )
-                                    .focused($isDetailFieldFocused)
-                                    .onTapGesture {
-                                        isDetailFieldFocused = true
-                                        isAmountFieldFocused = false
-                                    }
-                            }
-                            .padding(.horizontal)
-                            // 날짜
-                            HStack {
-                                Image(systemName: "calendar")
-                                    .foregroundColor(.gray)
-                                DatePicker(NSLocalizedString("date", comment: ""), selection: $date, displayedComponents: .date)
-                                    .font(.system(size: 15, weight: .regular, design: .rounded))
-                            }
-                            .padding(.horizontal)
-                        }
-                        .padding(.top, 48)
-                        .padding(.bottom, 32)
-                    }
-                    .background(Color.clear)
-                    .onTapGesture {
+                RecordFormView(
+                    amount: $amount,
+                    type: $type,
+                    types: types,
+                    recordToEdit: recordToEdit,
+                    paymentType: $paymentType,
+                    selectedCardIndex: $selectedCardIndex,
+                    selectedCard: $selectedCard,
+                    cardViewModel: cardViewModel,
+                    selectedCategoryIndex: $selectedCategoryIndex,
+                    categoryOptions: categoryOptions,
+                    detail: $detail,
+                    date: $date,
+                    isAmountFieldFocused: _isAmountFieldFocused,
+                    isDetailFieldFocused: _isDetailFieldFocused,
+                    expenseText: expenseText,
+                    colorScheme: colorScheme,
+                    showCategoryManager: { showCategoryManager = true },
+                    showCardManager: { showCardManager = true },
+                    onDropdownTap: {
                         isAmountFieldFocused = false
                         isDetailFieldFocused = false
                     }
+                )
+                VStack {
+                    Spacer()
                     Button(action: {
                         saveRecord()
                     }) {
@@ -307,6 +475,7 @@ struct AddRecordView: View {
                             .padding(.bottom, 16)
                     }
                 }
+                .ignoresSafeArea(.keyboard, edges: .bottom)
                 .alert(isPresented: $showAlert) {
                     Alert(title: Text(NSLocalizedString("input_error", comment: "")), message: Text(alertMessage), dismissButton: .default(Text(NSLocalizedString("confirm", comment: ""))))
                 }
@@ -343,10 +512,9 @@ struct AddRecordView: View {
                         type = NSLocalizedString("expense", comment: "")
                         selectedCategory = nil
                     }
-                    fetchCategories()
                 }
                 .onChange(of: type) {
-                    fetchCategories()
+                    // No longer needed
                 }
                 .onChange(of: selectedCategoryIndex) {
                     if let idx = selectedCategoryIndex, fetchedCategories.indices.contains(idx) {
@@ -358,7 +526,7 @@ struct AddRecordView: View {
                         selectedCard = cardViewModel.cards[idx]
                     }
                 }
-                .onChange(of: fetchedCategories) {
+                .onReceive(fetchedCategories.publisher.collect()) { _ in
                     if let selected = selectedCategory,
                        let idx = fetchedCategories.firstIndex(where: { $0.objectID == selected.objectID }) {
                         selectedCategoryIndex = idx
@@ -425,17 +593,7 @@ struct AddRecordView: View {
     }
     
     private func fetchCategories() {
-        let request: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \AppCategory.name, ascending: true)]
-        request.predicate = NSPredicate(format: "type == %@", type == NSLocalizedString("income", comment: "") ? "income" : "expense")
-
-        do {
-            let results = try viewContext.fetch(request)
-            // 필터: 이름이 비어 있지 않고 실제로 사용되거나 추가된 것으로 간주
-            fetchedCategories = results.filter { !($0.name?.isEmpty ?? true) }
-        } catch {
-            print("❌ 카테고리 불러오기 실패: \(error)")
-        }
+        // This function is no longer needed as fetchedCategories is a @FetchRequest
     }
 
     // 금액 입력란 왼쪽 아이콘에 사용할 통화별 SF Symbol 반환 함수 추가
@@ -450,5 +608,11 @@ struct AddRecordView: View {
         case "KRW": return "wonsign.circle.fill"
         default: return "banknote.fill"
         }
+    }
+}
+
+extension AddRecordView {
+    var expenseText: String {
+        NSLocalizedString("expense", comment: "")
     }
 }

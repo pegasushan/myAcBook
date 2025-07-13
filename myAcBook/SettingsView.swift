@@ -374,17 +374,12 @@ struct SettingsView: View {
                             do {
                                 try context.save()
                                 print("테스트 데이터 저장 성공 (입력된 달: \(selectedMonthString)), 생성된 Record 수: \(createdCount)")
-                                DispatchQueue.main.async {
-                                    NotificationCenter.default.post(name: Notification.Name("TestDataInserted"), object: nil)
-                                    showTestDataAlert = true
-                                    testDataInsertedMonth = selectedMonthString
-                                }
+                                testDataInsertedMonth = selectedMonthString
+                                showTestDataAlert = true
                             } catch {
                                 print("테스트 데이터 저장 실패:", error)
-                                DispatchQueue.main.async {
-                                    showTestDataAlert = true
-                                    testDataInsertedMonth = nil
-                                }
+                                testDataInsertedMonth = nil
+                                showTestDataAlert = true
                             }
                         }) {
                             Text(NSLocalizedString("insert_test_data_button", comment: "테스트 데이터 입력"))
@@ -442,7 +437,12 @@ struct SettingsView: View {
             isHapticsEnabled = hapticsValue
         }
         .alert(isPresented: $showTestDataAlert) {
-            Alert(title: Text(NSLocalizedString("test_data_inserted_title", comment: "테스트 데이터 입력 완료")), message: Text(String(format: NSLocalizedString("test_data_inserted_message", comment: "테스트 데이터가 성공적으로 입력되었습니다.\n입력된 달: %@"), testDataInsertedMonth ?? "-")), dismissButton: .default(Text(NSLocalizedString("confirm", comment: "확인"))))
+            let success = testDataInsertedMonth != nil
+            return Alert(
+                title: Text(success ? "테스트 데이터 입력 완료" : "테스트 데이터 입력 실패"),
+                message: Text(success ? "입력된 달: \(testDataInsertedMonth!)" : "테스트 데이터 입력에 실패했습니다."),
+                dismissButton: .default(Text("확인"))
+            )
         }
         .alert(isPresented: $showRestoreAlert) {
             Alert(title: Text(restoreResultMessage), dismissButton: .default(Text("확인")))
