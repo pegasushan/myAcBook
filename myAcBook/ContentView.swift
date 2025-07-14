@@ -518,7 +518,7 @@ struct ContentView: View {
 
             Spacer()
             let locale = Locale.current.language.languageCode?.identifier ?? "en"
-            Text(locale == "ko" ? "가계부.." : "myAcBook")
+            Text(locale == "ko" ? "myAcBook" : "myAcBook")
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundColor(colorScheme == .light ? Color(red: 0.18, green: 0.32, blue: 0.55) : Color(red: 0.7, green: 0.8, blue: 1.0))
                 .shadow(color: .black.opacity(0.08), radius: 2, x: 0, y: 1)
@@ -733,7 +733,7 @@ struct ContentView: View {
     }
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/M/d"
+        formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
     }
     private func dateRangeText() -> String {
@@ -868,7 +868,7 @@ struct ContentView: View {
         if calendar.isDateInToday(date) { return "오늘" }
         if calendar.isDateInYesterday(date) { return "어제" }
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/M/d"
+        formatter.dateFormat = "MM-dd"
         return formatter.string(from: date)
     }
 
@@ -1061,19 +1061,20 @@ struct RecordRowSectionView: View {
                 Text(displayDate(record.date))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
+                    .frame(width: 100, alignment: .leading)
                     .padding(.top, 10)
                     .padding(.bottom, 2)
-                    .padding(.leading, 4)
+                    .padding(.leading, 0)
                 recordRowView(record)
                     .padding(.bottom, 2)
-                    .padding(.leading, 4)
+                    .padding(.leading, 0)
                     .padding(.trailing, 4)
             } else {
                 Color.clear
                     .frame(height: 20) // 날짜 라벨 높이와 맞춤
                 recordRowView(record)
                     .padding(.bottom, 2)
-                    .padding(.leading, 4)
+                    .padding(.leading, 0)
                     .padding(.trailing, 4)
             }
         }
@@ -1219,7 +1220,7 @@ struct RecordListSectionView: View {
                 .fill(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: "#23272F")))
                 .shadow(color: colorScheme == .light ? Color.black.opacity(0.07) : Color.black.opacity(0.18), radius: 8, x: 0, y: 2)
         )
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 4)
         .padding(.vertical, 2)
     }
 
