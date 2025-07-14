@@ -865,10 +865,12 @@ struct ContentView: View {
     private func displayDate(_ date: Date?) -> String {
         guard let date = date else { return "-" }
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) { return "오늘" }
-        if calendar.isDateInYesterday(date) { return "어제" }
         let formatter = DateFormatter()
-        formatter.dateFormat = "MM-dd"
+        formatter.dateFormat = "(E)"
+        let weekday = formatter.string(from: date)
+        if calendar.isDateInToday(date) { return "오늘 " + weekday }
+        if calendar.isDateInYesterday(date) { return "어제 " + weekday }
+        formatter.dateFormat = "MM-dd (E)"
         return formatter.string(from: date)
     }
 
@@ -1059,9 +1061,9 @@ struct RecordRowSectionView: View {
         VStack(alignment: .leading, spacing: 0) {
             if showDateLabel {
                 Text(displayDate(record.date))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 9.6, weight: .semibold))
                     .foregroundColor(isTodayOrYesterday(record.date) ? .accentColor : .secondary)
-                    .frame(width: 100, alignment: .leading)
+                    .frame(width: 120, alignment: .leading)
                     .padding(.top, 10)
                     .padding(.bottom, 2)
                     .padding(.leading, 0)
@@ -1133,7 +1135,7 @@ struct RecordListSectionView: View {
             // 카테고리 자리: 날짜 텍스트 (행과 동일 폰트/정렬)
             Text(displayDate(date))
                 .font(.footnote)
-                .frame(width: 70, alignment: .leading)
+                .frame(width: 84, alignment: .leading)
                 .foregroundColor(.primary)
             // 상세/금액 영역은 기존과 동일
             Text("")
