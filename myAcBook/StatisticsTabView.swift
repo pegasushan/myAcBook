@@ -886,14 +886,16 @@ struct GroupedBarChartView: View {
         let chartWidth: CGFloat = monthCount > 3
             ? UIScreen.main.bounds.width * CGFloat(monthCount) / 3
             : UIScreen.main.bounds.width - 40
-        let colorMap: [String: Color] = [
+        let incomeKey = NSLocalizedString("income", comment: "")
+        let expenseKey = NSLocalizedString("expense", comment: "")
+        var colorMap: [String: Color] = [
             "수입": pastelIncomeColor,
             "지출": pastelExpenseColor,
             "income": pastelIncomeColor,
-            "expense": pastelExpenseColor,
-            NSLocalizedString("income", comment: ""): pastelIncomeColor,
-            NSLocalizedString("expense", comment: ""): pastelExpenseColor
+            "expense": pastelExpenseColor
         ]
+        colorMap[incomeKey] = pastelIncomeColor
+        colorMap[expenseKey] = pastelExpenseColor
         let maxValue = data.map { $0.value }.max() ?? 0
         let yMax = ceil(maxValue / 500_000) * 500_000 + 500_000
         return VStack(spacing: 0) {

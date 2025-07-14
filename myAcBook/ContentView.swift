@@ -786,7 +786,8 @@ struct ContentView: View {
         var totals = [String: Double]()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
-        for record in records where record.type == NSLocalizedString("income", comment: "") {
+        let incomeTypes = ["수입", "income", NSLocalizedString("income", comment: "수입")]
+        for record in records where incomeTypes.contains(record.type ?? "") {
             let month = dateFormatter.string(from: record.date ?? Date())
             totals[month, default: 0] += record.amount
         }
@@ -796,7 +797,8 @@ struct ContentView: View {
         var totals = [String: Double]()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
-        for record in records where record.type != NSLocalizedString("income", comment: "") {
+        let incomeTypes = ["수입", "income", NSLocalizedString("income", comment: "수입")]
+        for record in records where !(incomeTypes.contains(record.type ?? "")) {
             let month = dateFormatter.string(from: record.date ?? Date())
             totals[month, default: 0] += record.amount
         }
@@ -806,7 +808,8 @@ struct ContentView: View {
         var totals = [String: [String: Double]]()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
-        for record in records where record.type != NSLocalizedString("income", comment: "") {
+        let incomeTypes = ["수입", "income", NSLocalizedString("income", comment: "수입")]
+        for record in records where !(incomeTypes.contains(record.type ?? "")) {
             let month = dateFormatter.string(from: record.date ?? Date())
             let categoryKey = record.categoryRelation?.name ?? "etc"
             totals[month, default: [:]][categoryKey, default: 0] += record.amount
@@ -817,7 +820,8 @@ struct ContentView: View {
         var totals = [String: [String: Double]]()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
-        for record in records where record.type == NSLocalizedString("income", comment: "") {
+        let incomeTypes = ["수입", "income", NSLocalizedString("income", comment: "수입")]
+        for record in records where incomeTypes.contains(record.type ?? "") {
             let month = dateFormatter.string(from: record.date ?? Date())
             let categoryKey = record.categoryRelation?.name ?? "etc"
             totals[month, default: [:]][categoryKey, default: 0] += record.amount
@@ -828,7 +832,9 @@ struct ContentView: View {
         var totals = [String: [String: Double]]()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
-        for record in records where record.type == NSLocalizedString("expense", comment: "") && record.paymentType == NSLocalizedString("card", comment: "") {
+        let expenseTypes = ["지출", "expense", NSLocalizedString("expense", comment: "지출")]
+        let cardTypes = ["카드", "card", NSLocalizedString("card", comment: "카드")]
+        for record in records where expenseTypes.contains(record.type ?? "") && cardTypes.contains(record.paymentType ?? "") {
             let month = dateFormatter.string(from: record.date ?? Date())
             let cardName = record.card?.name ?? "알 수 없음"
             totals[month, default: [:]][cardName, default: 0] += record.amount
