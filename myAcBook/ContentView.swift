@@ -1039,7 +1039,7 @@ struct CompactRecordRowView: View {
         .frame(height: 29)
         .padding(.vertical, 0)
         .padding(.horizontal, 0)
-        .background(Color.white)
+        .background(colorScheme == .light ? Color.white : Color(UIColor(hex: "#23272F")))
         .font(.system(size: 10))
         .contentShape(Rectangle())
         .onTapGesture {
