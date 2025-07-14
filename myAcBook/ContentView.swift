@@ -30,7 +30,7 @@ struct BlurView: UIViewRepresentable {
 struct ContentView: View {
     // MARK: - Environment & State
     @Environment(\.managedObjectContext) private var viewContext
-    @EnvironmentObject var purchaseManager: IAPManager
+    @EnvironmentObject var purchaseManager: PurchaseManager
     @AppStorage("colorScheme") private var colorSchemeSetting: String = "system"
     @AppStorage("isHapticsEnabled") private var isHapticsEnabled: Bool = true
     @AppStorage("isAdRemoved") private var isAdRemoved: Bool = false

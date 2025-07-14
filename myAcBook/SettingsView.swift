@@ -177,7 +177,7 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                         }
                     }
-                    /*
+                    
                     Section(header: Text(NSLocalizedString("premium_section", comment: "프리미엄"))){
                         if purchaseManager.isAdRemoved {
                             Text(NSLocalizedString("ad_removed_done", comment: "광고 제거 완료 🎉"))
@@ -206,7 +206,7 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    */
+                    
 #if DEBUG
                     Section(header: Text(NSLocalizedString("test_section_title", comment: "테스트"))) {
                         // 기존 데이터 삭제 버튼 추가
