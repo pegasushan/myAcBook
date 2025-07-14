@@ -18,6 +18,8 @@ struct UnifiedRecordRowView: View {
         colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
     }
     var body: some View {
+        let isCard = (record.paymentType == "카드" || record.paymentType == "card" || record.paymentType == NSLocalizedString("card", comment: "카드"))
+        let isCash = (record.paymentType == "현금" || record.paymentType == "cash" || record.paymentType == NSLocalizedString("cash", comment: "현금"))
         HStack(spacing: 0) {
             if isDeleteMode {
                 Button(action: onSelect) {
@@ -34,7 +36,7 @@ struct UnifiedRecordRowView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
                 .background(
-                    Capsule().fill((record.paymentType == "카드") ? Color.blue.opacity(0.7) : Color.green.opacity(0.7))
+                    Capsule().fill(isCard ? Color.blue.opacity(0.7) : isCash ? Color.green.opacity(0.7) : Color.gray.opacity(0.7))
                 )
                 .frame(width: 56, alignment: .center)
             Text(NSLocalizedString(record.categoryRelation?.name ?? "-", comment: ""))

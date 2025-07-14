@@ -83,11 +83,22 @@ struct ExpenseDetailView: View {
         var comps = DateComponents()
         comps.month = 1
         let endDate = Calendar.current.date(byAdding: comps, to: startDate) ?? Date()
-        var predicateFormat = "date >= %@ AND date < %@ AND type == %@"
-        var predicateArgs: [Any] = [startDate as NSDate, endDate as NSDate, "지출"]
+        // 다국어 type 비교 (지출)
+        let expenseTypes = ["지출", "expense", NSLocalizedString("expense", comment: "지출")]
+        var predicateFormat = "date >= %@ AND date < %@ AND (type == %@ OR type == %@ OR type == %@)"
+        var predicateArgs: [Any] = [startDate as NSDate, endDate as NSDate] + expenseTypes
         if let paymentType = paymentType {
-            predicateFormat += " AND paymentType == %@"
-            predicateArgs.append(paymentType)
+            // paymentType도 다국어 비교
+            let paymentTypeVariants: [String]
+            if paymentType == "현금" || paymentType == "cash" || paymentType == NSLocalizedString("cash", comment: "현금") {
+                paymentTypeVariants = ["현금", "cash", NSLocalizedString("cash", comment: "현금")]
+            } else if paymentType == "카드" || paymentType == "card" || paymentType == NSLocalizedString("card", comment: "카드") {
+                paymentTypeVariants = ["카드", "card", NSLocalizedString("card", comment: "카드")]
+            } else {
+                paymentTypeVariants = [paymentType]
+            }
+            predicateFormat += " AND (paymentType == %@ OR paymentType == %@ OR paymentType == %@)"
+            predicateArgs.append(contentsOf: paymentTypeVariants)
         }
         if let cardName = cardName {
             predicateFormat += " AND card.name == %@"
@@ -184,8 +195,10 @@ struct IncomeDetailView: View {
         var comps = DateComponents()
         comps.month = 1
         let endDate = Calendar.current.date(byAdding: comps, to: startDate) ?? Date()
-        var predicateFormat = "date >= %@ AND date < %@ AND type == %@"
-        var predicateArgs: [Any] = [startDate as NSDate, endDate as NSDate, "수입"]
+        // 다국어 type 비교 (수입)
+        let incomeTypes = ["수입", "income", NSLocalizedString("income", comment: "수입")]
+        var predicateFormat = "date >= %@ AND date < %@ AND (type == %@ OR type == %@ OR type == %@)"
+        var predicateArgs: [Any] = [startDate as NSDate, endDate as NSDate] + incomeTypes
         if let categoryName = categoryName {
             predicateFormat += " AND categoryRelation.name == %@"
             predicateArgs.append(categoryName)
@@ -529,16 +542,16 @@ struct StatisticsTabView: View {
                         let incomeCount = records.filter { record in
                             let dateFormatter = DateFormatter()
                             dateFormatter.dateFormat = "yyyy-MM"
-                            return record.type == NSLocalizedString("income", comment: "") && dateFormatter.string(from: record.date ?? Date()) == month
+                            return record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입" && dateFormatter.string(from: record.date ?? Date()) == month
                         }.count
                         let expenseCount = records.filter { record in
                             let dateFormatter = DateFormatter()
                             dateFormatter.dateFormat = "yyyy-MM"
-                            return record.type == NSLocalizedString("expense", comment: "") && dateFormatter.string(from: record.date ?? Date()) == month
+                            return record.type == NSLocalizedString("expense", comment: "지출") || record.type == "지출" && dateFormatter.string(from: record.date ?? Date()) == month
                         }.count
                         return [
-                            MonthValue(month: month, type: NSLocalizedString("income", comment: ""), value: monthlyIncomeTotals[month] ?? 0, count: incomeCount),
-                            MonthValue(month: month, type: NSLocalizedString("expense", comment: ""), value: monthlyExpenseTotals[month] ?? 0, count: expenseCount)
+                            MonthValue(month: month, type: "수입", value: monthlyIncomeTotals[month] ?? 0, count: incomeCount),
+                            MonthValue(month: month, type: "지출", value: monthlyExpenseTotals[month] ?? 0, count: expenseCount)
                         ]
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -584,7 +597,7 @@ struct StatisticsTabView: View {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM"
             let monthString = month
-            let incomeRecords = allRecords.filter { $0.type == "수입" && $0.date != nil && dateFormatter.string(from: $0.date!) == monthString }
+            let incomeRecords = allRecords.filter { $0.type == NSLocalizedString("income", comment: "수입") || $0.type == "수입" && $0.date != nil && dateFormatter.string(from: $0.date!) == monthString }
             let incomeCount = incomeRecords.count
             let monthNumber = month.split(separator: "-").count == 2 ? String(Int(month.split(separator: "-")[1]) ?? 0) : month
             return (month, categorySums, incomeSum, incomeCount, monthNumber)
@@ -629,7 +642,7 @@ struct StatisticsTabView: View {
                                     let dateFormatter = DateFormatter()
                                     dateFormatter.dateFormat = "yyyy-MM"
                                     let monthString = dateFormatter.string(from: record.date ?? Date())
-                                    return record.type == "수입" && record.categoryRelation?.name == category && monthString == data.month
+                                    return record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입" && record.categoryRelation?.name == category && monthString == data.month
                                 }.count
                                 NavigationLink(destination: IncomeDetailView(month: data.month, categoryName: category, customBGColor: customBGColor, customSectionColor: customSectionColor)) {
                                     HStack {
@@ -687,9 +700,15 @@ struct StatisticsTabView: View {
                 ForEach(sortedMonths, id: \.self) { month in
                     let filteredMonthRecords = monthRecordMap[month] ?? []
                     let monthCount = filteredMonthRecords.count
-                    let filteredCashRecords = filteredMonthRecords.filter { $0.paymentType == "현금" }
+                    let filteredCashRecords = filteredMonthRecords.filter {
+                        let paymentType = ($0.paymentType ?? "").lowercased()
+                        return paymentType == "현금" || paymentType == "cash" || paymentType == NSLocalizedString("cash", comment: "현금").lowercased()
+                    }
                     let cashCount = filteredCashRecords.count
-                    let filteredCardRecords = filteredMonthRecords.filter { $0.paymentType == "카드" }
+                    let filteredCardRecords = filteredMonthRecords.filter {
+                        let paymentType = ($0.paymentType ?? "").lowercased()
+                        return paymentType == "카드" || paymentType == "card" || paymentType == NSLocalizedString("card", comment: "카드").lowercased()
+                    }
                     let cardCount = filteredCardRecords.count
                     let totals = monthlyCategoryTotals[month] ?? [:]
                     let cashSum = monthlyCashExpenseTotals[month] ?? 0
@@ -764,7 +783,12 @@ struct StatisticsTabView: View {
                                             let localFormatter = DateFormatter()
                                             localFormatter.dateFormat = "yyyy-MM"
                                             let recordMonth = localFormatter.string(from: record.date ?? Date())
-                                            return recordMonth == month && record.type == "지출" && record.paymentType == "카드" && record.card?.name == cardName
+                                            let cardName1 = (record.card?.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                                            let cardName2 = cardName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                                            return recordMonth == month &&
+                                                (record.type == "지출" || record.type == "expense" || record.type == NSLocalizedString("expense", comment: "지출")) &&
+                                                (record.paymentType == "카드" || record.paymentType == "card" || record.paymentType == NSLocalizedString("card", comment: "카드")) &&
+                                                cardName1 == cardName2
                                         }
                                     }
                                     ForEach(cardSums.sorted(by: { $0.key < $1.key }), id: \.key) { cardName, value in
@@ -807,7 +831,6 @@ struct StatisticsTabView: View {
             .padding(.bottom, 24)
         }
     }
-
     func filterMonths<T>(dict: [String: T]) -> [String: T] {
         let months = dict.keys.sorted()
         let filteredKeys: [String]
@@ -828,7 +851,11 @@ struct StatisticsTabView: View {
     var monthRecordMap: [String: [Record]] {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM"
-        let expenseRecords = records.filter { $0.type == "지출" }
+        let expenseRecords = records.filter {
+            $0.type == "지출" ||
+            $0.type == "expense" ||
+            $0.type == NSLocalizedString("expense", comment: "지출")
+        }
         return Dictionary(grouping: expenseRecords) { record in
             dateFormatter.string(from: record.date ?? Date())
         }
@@ -860,6 +887,10 @@ struct GroupedBarChartView: View {
             ? UIScreen.main.bounds.width * CGFloat(monthCount) / 3
             : UIScreen.main.bounds.width - 40
         let colorMap: [String: Color] = [
+            "수입": pastelIncomeColor,
+            "지출": pastelExpenseColor,
+            "income": pastelIncomeColor,
+            "expense": pastelExpenseColor,
             NSLocalizedString("income", comment: ""): pastelIncomeColor,
             NSLocalizedString("expense", comment: ""): pastelExpenseColor
         ]

@@ -999,6 +999,9 @@ struct CompactRecordRowView: View {
         colorScheme == .light ? Color(UIColor(hex: customLightCardColorHex)) : Color(UIColor(hex: customDarkCardColorHex))
     }
     var body: some View {
+        let paymentType = (record.paymentType ?? "").lowercased()
+        let isCard = (paymentType == "카드" || paymentType == "card" || paymentType == NSLocalizedString("card", comment: "카드").lowercased())
+        let isCash = (paymentType == "현금" || paymentType == "cash" || paymentType == NSLocalizedString("cash", comment: "현금").lowercased())
         HStack(spacing: 0) {
             Text(NSLocalizedString(record.paymentType ?? "-", comment: ""))
                 .font(.caption2)
@@ -1006,7 +1009,7 @@ struct CompactRecordRowView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
                 .background(
-                    Capsule().fill((record.paymentType == "카드") ? Color.blue.opacity(0.7) : Color.green.opacity(0.7))
+                    Capsule().fill(isCard ? Color.blue.opacity(0.7) : isCash ? Color.green.opacity(0.7) : Color.gray.opacity(0.7))
                 )
                 .frame(width: 56, alignment: .center)
             Text(NSLocalizedString(record.categoryRelation?.name ?? "-", comment: ""))
@@ -1029,7 +1032,7 @@ struct CompactRecordRowView: View {
         .frame(height: 29)
         .padding(.vertical, 0)
         .padding(.horizontal, 0)
-        .background(colorScheme == .light ? customBGColor : customSectionColor)
+        .background(Color.white)
         .font(.system(size: 10))
         .contentShape(Rectangle())
         .onTapGesture {
