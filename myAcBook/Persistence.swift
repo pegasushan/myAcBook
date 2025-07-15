@@ -206,11 +206,11 @@ struct PersistenceController {
         let defaults = UserDefaults.standard
         if !defaults.bool(forKey: "didInsertDefaultCategories") {
             let defaultCategories: [(String, String)] = [
-                ("salary", "income"),
-                ("side_income", "income"),
-                ("food", "expense"),
-                ("beverage", "expense"),
-                ("shopping", "expense")
+                ("급여", "income"),
+                ("부수입", "income"),
+                ("식대", "expense"),
+                ("음료", "expense"),
+                ("쇼핑", "expense")
             ]
             let categoryFetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
             let existingCategories = (try? container.viewContext.fetch(categoryFetch)) ?? []
@@ -232,7 +232,7 @@ struct PersistenceController {
         }
         // 앱 최초 실행 시 기본 카드 자동 입력 (최초 1회만)
         if !defaults.bool(forKey: "didInsertDefaultCards") {
-            let defaultCards: [String] = ["shinhan_card", "samsung_card"]
+            let defaultCards: [String] = ["신한카드", "삼성카드"]
             let cardFetch: NSFetchRequest<Card> = Card.fetchRequest()
             let existingCards = (try? container.viewContext.fetch(cardFetch)) ?? []
             for name in defaultCards {
@@ -252,6 +252,7 @@ struct PersistenceController {
             }
         }
         // === 카드 한글 → 영문 키 마이그레이션 ===
+        /*
         let cardMigrationMap: [String: String] = [
             "삼성카드": "samsung_card",
             "신한카드": "shinhan_card",
@@ -288,5 +289,6 @@ struct PersistenceController {
             }
             try? container.viewContext.save()
         }
+        */
     }
 }

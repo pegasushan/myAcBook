@@ -50,14 +50,32 @@ public struct CategoryManagerView: View {
         let row: CategoryRowData
         let customCardColor: Color
         let onDelete: () -> Void
+        let onEdit: (String) -> Void
+        @State private var isEditing = false
+        @State private var editName: String = ""
 
         var body: some View {
             HStack(spacing: 12) {
                 Image(systemName: "tag")
                     .foregroundColor(.primary)
-                Text(NSLocalizedString(row.name, comment: ""))
+                if isEditing {
+                    TextField(NSLocalizedString("category_name_placeholder", comment: ""), text: $editName, onCommit: {
+                        let trimmed = editName.trimmingCharacters(in: .whitespaces)
+                        if !trimmed.isEmpty && trimmed != row.name {
+                            onEdit(trimmed)
+                        }
+                        isEditing = false
+                    })
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                     .foregroundColor(.primary)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(minWidth: 80)
+                    .onAppear { editName = row.name }
+                } else {
+                    Text(row.name)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(.primary)
+                }
                 Spacer()
                 Text(row.type == "income" ? NSLocalizedString("income", comment: "") : NSLocalizedString("expense", comment: ""))
                     .font(.system(size: 13, weight: .medium, design: .rounded))
@@ -66,6 +84,10 @@ public struct CategoryManagerView: View {
                     .padding(.vertical, 3)
                     .background(row.type == "income" ? Color(red: 0.7, green: 0.9, blue: 0.7) : Color(red: 1.0, green: 0.7, blue: 0.7))
                     .cornerRadius(8)
+                Button(action: { isEditing.toggle() }) {
+                    Image(systemName: "pencil")
+                        .foregroundColor(.blue)
+                }
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .foregroundColor(Color(red: 1.0, green: 0.7, blue: 0.7))
@@ -151,6 +173,15 @@ public struct CategoryManagerView: View {
                                         context.delete(row.managedObject)
                                         try? context.save()
                                     }
+                                },
+                                onEdit: { newName in
+                                    let trimmed = newName.trimmingCharacters(in: .whitespaces)
+                                    guard !trimmed.isEmpty else { return }
+                                    // 중복 체크
+                                    let isDuplicate = categories.contains { ($0.name?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "") == trimmed.lowercased() && $0.type == row.type && $0.id != row.id }
+                                    if isDuplicate { showDuplicateAlert = true; return }
+                                    row.managedObject.name = trimmed
+                                    try? viewContext.save()
                                 }
                             )
                         }

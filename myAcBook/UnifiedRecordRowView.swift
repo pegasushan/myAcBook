@@ -39,7 +39,7 @@ struct UnifiedRecordRowView: View {
                     Capsule().fill(isCard ? Color.blue.opacity(0.7) : isCash ? Color.green.opacity(0.7) : Color.gray.opacity(0.7))
                 )
                 .frame(width: 56, alignment: .center)
-            Text(NSLocalizedString(record.categoryRelation?.name ?? "-", comment: ""))
+            Text(record.categoryRelation?.name ?? "-")
                 .font(.footnote)
                 .foregroundColor(colorScheme == .dark ? colorForCategory(record.categoryRelation?.name).opacity(0.95) : colorForCategory(record.categoryRelation?.name))
                 .frame(width: 70, alignment: .leading)

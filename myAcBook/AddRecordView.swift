@@ -32,7 +32,7 @@ struct CustomDropdown: View {
             }) {
                 HStack {
                     // 선택된 카테고리명에 로컬라이징 적용
-                    Text(selectedIndex.flatMap { NSLocalizedString(options[safe: $0] ?? "", comment: "") } ?? placeholder)
+                    Text(selectedIndex.flatMap { options[safe: $0] } ?? placeholder)
                         .foregroundColor(colorScheme == .light ? .primary : .white)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                     Spacer()
@@ -55,11 +55,14 @@ struct CustomDropdown: View {
                 VStack(spacing: 0) {
                     ForEach(options.indices, id: \.self) { idx in
                         Button(action: {
-                            selectedIndex = idx
+                            print("[CustomDropdown] 선택 idx: \(idx), options.count: \(options.count)")
+                            if idx < options.count {
+                                selectedIndex = idx
+                            }
                             withAnimation { isExpanded = false }
                         }) {
                             HStack {
-                                Text(NSLocalizedString(options[idx], comment: ""))
+                                Text(options[idx])
                                     .foregroundColor(colorScheme == .light ? .primary : .white)
                                     .font(.system(size: 15, weight: .regular, design: .rounded))
                                 Spacer()
@@ -80,6 +83,9 @@ struct CustomDropdown: View {
             }
         }
         .animation(.spring(), value: isExpanded)
+        .onAppear {
+            print("[CustomDropdown] options: \(options), selectedIndex: \(selectedIndex?.description ?? "nil")")
+        }
     }
 }
 
@@ -199,7 +205,7 @@ struct PaymentTypeView: View {
                         .foregroundColor(.gray)
                     CustomDropdown(
                         selectedIndex: $selectedCardIndex,
-                        options: cardViewModel.cards.map { NSLocalizedString($0.name ?? "", comment: "") },
+                        options: cardViewModel.cards.map { $0.name ?? "" },
                         placeholder: NSLocalizedString("select_card_placeholder", comment: "카드 선택"),
                         onDropdownTap: {
                             isAmountFieldFocused = false
@@ -494,6 +500,7 @@ struct AddRecordView: View {
                 }
                 .onAppear {
                     if let record = recordToEdit {
+                        // 1. type을 가장 먼저 세팅
                         type = record.type ?? NSLocalizedString("expense", comment: "")
                         detail = record.detail ?? ""
                         let formatter = NumberFormatter()
@@ -502,24 +509,55 @@ struct AddRecordView: View {
                         date = record.date ?? Date()
                         paymentType = record.paymentType ?? "현금"
                         selectedCard = record.card
+                        // 2. selectedCategory를 세팅
                         selectedCategory = record.categoryRelation
+                        // 3. categoryOptions 최신화 후 인덱스 동기화
+                        DispatchQueue.main.async {
+                            print("categoryOptions: \(categoryOptions)")
+                            print("record.categoryRelation?.name: '\(record.categoryRelation?.name ?? "nil")'")
+                            if let categoryKey = record.categoryRelation?.name,
+                               let idx = categoryOptions.firstIndex(of: categoryKey) {
+                                selectedCategoryIndex = idx
+                            } else {
+                                selectedCategoryIndex = nil
+                            }
+                            print("selectedCategoryIndex: \(selectedCategoryIndex?.description ?? "nil")")
+                        }
                         if let card = record.card, let idx = cardViewModel.cards.firstIndex(where: { $0.objectID == card.objectID }) {
                             selectedCardIndex = idx
                         }
-                        if let category = record.categoryRelation, let idx = fetchedCategories.firstIndex(where: { $0.objectID == category.objectID }) {
-                            selectedCategoryIndex = idx
-                        }
-                    } else {
-                        type = NSLocalizedString("expense", comment: "")
-                        selectedCategory = nil
                     }
                 }
-                .onChange(of: type) {
-                    // No longer needed
+                .onChange(of: selectedCategoryIndex) { newValue in
+                    print("selectedCategoryIndex changed: \(newValue?.description ?? "nil")")
+                    if let idx = newValue, idx >= categoryOptions.count {
+                        selectedCategoryIndex = nil
+                        print("selectedCategoryIndex out of bounds, reset to nil")
+                    }
+                }
+                .onChange(of: categoryOptions) { newOptions in
+                    // categoryOptions가 바뀔 때마다 selectedCategoryIndex를 재동기화
+                    if let selectedCategory = selectedCategory,
+                       let name = selectedCategory.name,
+                       let idx = newOptions.firstIndex(of: name) {
+                        selectedCategoryIndex = idx
+                    } else {
+                        selectedCategoryIndex = nil
+                    }
+                    print("[categoryOptions changed] new options: \(newOptions), selectedCategoryIndex: \(selectedCategoryIndex?.description ?? "nil")")
+                }
+                .onChange(of: type) { newType in
+                    // type(지출/수입)이 바뀔 때마다 선택된 카테고리와 인덱스를 모두 초기화
+                    selectedCategory = nil
+                    selectedCategoryIndex = nil
+                    print("[type changed] type: \(newType), categoryOptions: \(categoryOptions), selectedCategoryIndex: nil (reset)")
                 }
                 .onChange(of: selectedCategoryIndex) {
-                    if let idx = selectedCategoryIndex, fetchedCategories.indices.contains(idx) {
-                        selectedCategory = fetchedCategories[idx]
+                    if let idx = selectedCategoryIndex, categoryOptions.indices.contains(idx) {
+                        let name = categoryOptions[idx]
+                        if let cat = fetchedCategories.first(where: { $0.name == name }) {
+                            selectedCategory = cat
+                        }
                     }
                 }
                 .onChange(of: selectedCardIndex) {
@@ -528,10 +566,7 @@ struct AddRecordView: View {
                     }
                 }
                 .onReceive(fetchedCategories.publisher.collect()) { _ in
-                    if let selected = selectedCategory,
-                       let idx = fetchedCategories.firstIndex(where: { $0.objectID == selected.objectID }) {
-                        selectedCategoryIndex = idx
-                    }
+                    // selectedCategoryIndex를 fetchedCategories 기준으로 세팅하는 코드를 제거하여, 항상 categoryOptions 기준으로만 동기화되도록 한다.
                 }
                 .onChange(of: cardViewModel.cards) {
                     if let selected = selectedCard,
