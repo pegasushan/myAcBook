@@ -123,9 +123,9 @@ struct SettingsView: View {
                 Form {
                     Section {
                         Picker("화면 모드", selection: $colorSchemeSetting) {
-                            Text("시스템 기본값").tag("system")
-                            Text("라이트 모드").tag("light")
-                            Text("다크 모드").tag("dark")
+                            Text(NSLocalizedString("system_default", comment: "시스템 기본값")).tag("system")
+                            Text(NSLocalizedString("light_mode", comment: "라이트 모드")).tag("light")
+                            Text(NSLocalizedString("dark_mode", comment: "다크 모드")).tag("dark")
                         }
                         .pickerStyle(.segmented)
                         .font(.system(size: 15, weight: .regular, design: .rounded))
@@ -165,7 +165,7 @@ struct SettingsView: View {
                                 .foregroundColor(.primary)
                         }
                     }
-                    Section(header: Text("데이터 관리")) {
+                    Section(header: Text(NSLocalizedString("data_management_section", comment: "데이터 관리"))) {
                         Button(action: { exportBackup() }) {
                             Text(NSLocalizedString("export_backup", comment: "백업 내보내기"))
                                 .font(.system(size: 15, weight: .regular, design: .rounded))

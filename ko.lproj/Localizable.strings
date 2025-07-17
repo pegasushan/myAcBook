@@ -139,3 +139,4 @@
 "card_total" = "카드 합계";
 "export_backup" = "백업 내보내기";
 "import_backup" = "백업 가져오기";
+"data_management_section" = "데이터 관리";
