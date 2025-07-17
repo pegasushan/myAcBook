@@ -24,6 +24,11 @@ struct CardListView: View {
     @State private var newName: String = ""
     @State private var showEmptyNameAlert = false
     @State private var showDuplicateAlert = false
+    // 수정 및 삭제 관련 상태 변수 추가
+    @State private var editingCardId: UUID? = nil
+    @State private var editedCardName: String = ""
+    @State private var showDeleteAlert = false
+    @State private var cardToDelete: Card? = nil
 
     var body: some View {
         NavigationStack {
@@ -69,12 +74,35 @@ struct CardListView: View {
                                 HStack(spacing: 12) {
                                     Image(systemName: "creditcard")
                                         .foregroundColor(.primary)
-                                    Text(NSLocalizedString(card.name ?? "", comment: ""))
+                                    if editingCardId == card.id {
+                                        TextField(NSLocalizedString("card_name_placeholder", comment: "카드 이름"), text: $editedCardName, onCommit: {
+                                            let trimmed = editedCardName.trimmingCharacters(in: .whitespaces)
+                                            if !trimmed.isEmpty {
+                                                cardViewModel.updateCard(card: card, newName: trimmed)
+                                            }
+                                            editingCardId = nil
+                                        })
                                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                                         .foregroundColor(.primary)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .frame(minWidth: 80)
+                                        .onAppear { editedCardName = card.name ?? "" }
+                                    } else {
+                                        Text(NSLocalizedString(card.name ?? "", comment: ""))
+                                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                            .foregroundColor(.primary)
+                                    }
                                     Spacer()
                                     Button(action: {
-                                        cardViewModel.deleteCard(card: card)
+                                        editingCardId = card.id
+                                        editedCardName = card.name ?? ""
+                                    }) {
+                                        Image(systemName: "pencil")
+                                            .foregroundColor(.blue)
+                                    }
+                                    Button(action: {
+                                        cardToDelete = card
+                                        showDeleteAlert = true
                                     }) {
                                         Image(systemName: "trash")
                                             .foregroundColor(.red)
@@ -141,6 +169,22 @@ struct CardListView: View {
             }
             .alert(NSLocalizedString("empty_card_name_alert", comment: "카드 이름을 입력해주세요."), isPresented: $showEmptyNameAlert) {
                 Button(NSLocalizedString("confirm", comment: "확인"), role: .cancel) { }
+            }
+            // 삭제 확인 Alert
+            .alert(
+                Text("카드 삭제"),
+                isPresented: $showDeleteAlert,
+                presenting: cardToDelete
+            ) { card in
+                Button("삭제", role: .destructive) {
+                    cardViewModel.deleteCard(card: card)
+                    cardToDelete = nil
+                }
+                Button("취소", role: .cancel) {
+                    cardToDelete = nil
+                }
+            } message: { _ in
+                Text("정말 삭제하시겠습니까?")
             }
         }
     }

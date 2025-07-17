@@ -28,6 +28,8 @@ public struct CategoryManagerView: View {
     @State private var selectedFilter: String
     @State private var showDuplicateAlert = false
     @State private var editingCategory: AppCategory? = nil
+    @State private var showDeleteAlert = false // 삭제 확인 Alert 상태
+    @State private var categoryToDelete: AppCategory? = nil // 삭제할 카테고리
 
     private var filteredCategories: [AppCategory] {
         let nonEmpty = Array(categories.filter { !($0.name?.isEmpty ?? true) })
@@ -169,10 +171,8 @@ public struct CategoryManagerView: View {
                                 row: row,
                                 customCardColor: AppColors.card,
                                 onDelete: {
-                                    if let context = row.managedObject.managedObjectContext {
-                                        context.delete(row.managedObject)
-                                        try? context.save()
-                                    }
+                                    categoryToDelete = row.managedObject
+                                    showDeleteAlert = true
                                 },
                                 onEdit: { newName in
                                     let trimmed = newName.trimmingCharacters(in: .whitespaces)
@@ -265,6 +265,24 @@ public struct CategoryManagerView: View {
         }
         .alert(LocalizedStringKey("duplicate_category_alert"), isPresented: $showDuplicateAlert) {
             Button(LocalizedStringKey("confirm"), role: .cancel) { }
+        }
+        .alert(
+            Text("카테고리 삭제"),
+            isPresented: $showDeleteAlert,
+            presenting: categoryToDelete
+        ) { category in
+            Button("삭제", role: .destructive) {
+                if let context = category.managedObjectContext {
+                    context.delete(category)
+                    try? context.save()
+                }
+                categoryToDelete = nil
+            }
+            Button("취소", role: .cancel) {
+                categoryToDelete = nil
+            }
+        } message: { _ in
+            Text("정말 삭제하시겠습니까?")
         }
     }
 }
