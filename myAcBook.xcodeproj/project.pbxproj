@@ -10,6 +10,8 @@
 		8357D5852DDAAEFD00A793E5 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 8357D5842DDAAEFD00A793E5 /* GoogleMobileAds */; };
 		837B09092DD32FA600BEC313 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 837B09052DD325F700BEC313 /* Localizable.strings */; };
 		837ED15E2DD3367F0082E0F0 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 837ED15A2DD3367F0082E0F0 /* Localizable.strings */; };
+		83B8801E2E28EB4C0069EAD8 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 837ED1592DD3367F0082E0F0 /* InfoPlist.strings */; };
+		83B8801F2E28EB520069EAD8 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 837B09032DD325F700BEC313 /* InfoPlist.strings */; };
 		83BE44272DBF478D005C700E /* Record+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BE44262DBF478D005C700E /* Record+CoreDataProperties.swift */; };
 		83BE44282DBF478D005C700E /* Record+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83BE44252DBF478D005C700E /* Record+CoreDataClass.swift */; };
 		83D132652DDD578400E00581 /* Card+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D132632DDD578400E00581 /* Card+CoreDataClass.swift */; };
@@ -280,6 +282,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				837B09092DD32FA600BEC313 /* Localizable.strings in Resources */,
+				83B8801F2E28EB520069EAD8 /* InfoPlist.strings in Resources */,
+				83B8801E2E28EB4C0069EAD8 /* InfoPlist.strings in Resources */,
 				837ED15E2DD3367F0082E0F0 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -509,9 +513,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/myAcBook/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = myAcBook;
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "$(NSFaceIDUsageDescription)";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -553,9 +557,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(SRCROOT)/myAcBook/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = myAcBook;
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "$(NSFaceIDUsageDescription)";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

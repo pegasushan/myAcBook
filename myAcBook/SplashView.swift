@@ -15,7 +15,7 @@ struct SplashView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 120, height: 120)
 
-                Text(NSLocalizedString("app_title", comment: "앱 타이틀"))
+                Text(NSLocalizedString("main_title", comment: "메인 타이틀"))
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .foregroundColor(Color("HighlightColor"))
                     .appTitle()

@@ -517,8 +517,7 @@ struct ContentView: View {
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDeleteMode)
 
             Spacer()
-            let locale = Locale.current.language.languageCode?.identifier ?? "en"
-            Text(locale == "ko" ? "myAcBook" : "myAcBook")
+            Text(NSLocalizedString("main_title", comment: "메인 타이틀"))
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundColor(colorScheme == .light ? Color(red: 0.18, green: 0.32, blue: 0.55) : Color(red: 0.7, green: 0.8, blue: 1.0))
                 .shadow(color: .black.opacity(0.08), radius: 2, x: 0, y: 1)
