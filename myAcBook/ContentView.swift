@@ -3,6 +3,13 @@ import Charts
 import GoogleMobileAds
 import CoreData
 import UIKit
+
+// Date 확장: startOfDay 프로퍼티 추가
+extension Date {
+    var startOfDay: Date {
+        Calendar.current.startOfDay(for: self)
+    }
+}
 // AdMob 배너 광고 뷰
 struct BannerAdView: UIViewRepresentable {
     func makeUIView(context: Context) -> BannerView {
@@ -71,6 +78,14 @@ struct ContentView: View {
     @State private var records: [Record] = []
     @State private var selectedMonth: String = "2025-07"
 
+    // MARK: - Date Filter Mode
+    enum DateFilterMode: String, CaseIterable, Identifiable {
+        case month = "월별"
+        case day = "일별"
+        var id: String { self.rawValue }
+    }
+    @State private var dateFilterMode: DateFilterMode = .month
+
     // 1. 전체 월 리스트 생성
     private var allMonths: [String] {
         let formatter = DateFormatter()
@@ -83,6 +98,43 @@ struct ContentView: View {
     }
 
     @State private var selectedMonthIndex: Int = 0
+    @State private var selectedDayIndex: Int = 0
+
+    private var monthOptions: [String] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        let now = Date()
+        return (0..<36).map { offset in
+            let date = Calendar.current.date(byAdding: .month, value: -offset, to: now)!
+            return formatter.string(from: date)
+        }
+    }
+    private var dayOptions: [String] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd (E)"
+        let days: Set<Date> = Set(filteredRecords.compactMap { $0.date?.startOfDay })
+        return days.sorted(by: >).map { formatter.string(from: $0) }
+    }
+
+    private var displayedRecords: [Record] {
+        if dateFilterMode == .month {
+            let monthString = monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : monthOptions.first ?? ""
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM"
+            return filteredRecords.filter { record in
+                guard let date = record.date else { return false }
+                return formatter.string(from: date) == monthString
+            }
+        } else {
+            let dayString = dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : dayOptions.first ?? ""
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd (E)"
+            return filteredRecords.filter { record in
+                guard let date = record.date else { return false }
+                return formatter.string(from: date) == dayString
+            }
+        }
+    }
 
     // MARK: - Init
     var onStatisticsDataChanged: (([String: Double], [String: Double], [String: [String: Double]], [String: [String: Double]], [String: [String: Double]], String, String, String, String, [String: Double]) -> Void)? = nil
@@ -312,6 +364,23 @@ struct ContentView: View {
             fetchRecords()
             notifyStatisticsDataChanged()
         }
+        .onChange(of: dateFilterMode) { _ in
+            if dateFilterMode == .month {
+                selectedMonthIndex = 0
+            } else {
+                selectedDayIndex = 0
+            }
+        }
+        .onChange(of: monthOptions) { _ in
+            if selectedMonthIndex >= monthOptions.count {
+                selectedMonthIndex = 0
+            }
+        }
+        .onChange(of: dayOptions) { _ in
+            if selectedDayIndex >= dayOptions.count {
+                selectedDayIndex = 0
+            }
+        }
         .sheet(isPresented: $isAddingNewRecord) {
             AddRecordView(onSave: {
                 fetchRecords()
@@ -365,126 +434,240 @@ struct ContentView: View {
         VStack(spacing: 0) {
             headerBar
             filterSummarySection
-            if !allMonths.isEmpty {
-                HStack(spacing: 8) {
-                    Button(action: { moveToPrevMonth() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18 * 0.7))
-                            .foregroundColor(.white)
-                            .padding(8 * 0.7)
-                            .background(pastelAccentColor)
-                            .clipShape(Circle())
-                            .shadow(color: pastelAccentColor.opacity(0.12), radius: 3 * 0.7, x: 0, y: 1)
+            // 날짜 그룹핑 Picker와 날짜 선택 Menu를 한 줄(HStack)로 배치
+            HStack(spacing: 12) {
+                Picker("그룹핑", selection: $dateFilterMode) {
+                    ForEach(DateFilterMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
                     }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(width: 120)
+                if dateFilterMode == .month {
                     Menu {
-                        ForEach(allMonths, id: \.self) { month in
-                            Button(action: { selectedMonth = month }) {
-                                Text(month)
+                        ForEach(monthOptions.indices, id: \.self) { idx in
+                            Button(action: { selectedMonthIndex = idx }) {
+                                Text(monthOptions[idx])
                             }
                         }
                     } label: {
-                        HStack {
-                            Text(selectedMonth)
-                                .font(.system(size: 20 * 0.7, weight: .bold))
-                                .foregroundColor(iconColor)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 18 * 0.7))
-                                .foregroundColor(iconColor)
-                        }
-                        .padding(.horizontal, 16 * 0.7)
-                        .padding(.vertical, 8 * 0.7)
-                        .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
-                        .cornerRadius(12 * 0.7)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12 * 0.7)
-                                .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
-                        )
-                        .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
-                        .foregroundColor(colorScheme == .light ? iconColor : Color.white)
+                        Text(monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : "")
+                            .font(.system(size: 20 * 0.7, weight: .bold))
+                            .fixedSize()
+                            .frame(minWidth: 120, alignment: .center)
+                            .foregroundColor(iconColor)
+                            .padding(.horizontal, 16 * 0.7)
+                            .padding(.vertical, 8 * 0.7)
+                            .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
+                            .cornerRadius(12 * 0.7)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12 * 0.7)
+                                    .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
+                            )
+                            .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
+                            .foregroundColor(colorScheme == .light ? iconColor : Color.white)
                     }
-                    Button(action: { moveToNextMonth() }) {
+                    Button(action: {
+                        if selectedMonthIndex < monthOptions.count - 1 { selectedMonthIndex += 1 }
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18 * 0.7))
+                            .foregroundColor(selectedMonthIndex < monthOptions.count - 1 ? .primary : .gray)
+                    }
+                    Button(action: {
+                        if selectedMonthIndex > 0 { selectedMonthIndex -= 1 }
+                    }) {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 18 * 0.7))
-                            .foregroundColor(.white)
-                            .padding(8 * 0.7)
-                            .background(pastelAccentColor)
-                            .clipShape(Circle())
-                            .shadow(color: pastelAccentColor.opacity(0.12), radius: 3 * 0.7, x: 0, y: 1)
+                            .foregroundColor(selectedMonthIndex > 0 ? .primary : .gray)
+                    }
+                } else {
+                    Menu {
+                        ForEach(dayOptions.indices, id: \.self) { idx in
+                            Button(action: { selectedDayIndex = idx }) {
+                                Text(dayOptions[idx])
+                            }
+                        }
+                    } label: {
+                        Text(dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : "")
+                            .font(.system(size: 20 * 0.7, weight: .bold))
+                            .fixedSize()
+                            .frame(minWidth: 120, alignment: .center)
+                            .foregroundColor(iconColor)
+                            .padding(.horizontal, 16 * 0.7)
+                            .padding(.vertical, 8 * 0.7)
+                            .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
+                            .cornerRadius(12 * 0.7)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12 * 0.7)
+                                    .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
+                            )
+                            .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
+                            .foregroundColor(colorScheme == .light ? iconColor : Color.white)
+                    }
+                    Button(action: {
+                        if selectedDayIndex < dayOptions.count - 1 { selectedDayIndex += 1 }
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18 * 0.7))
+                            .foregroundColor(selectedDayIndex < dayOptions.count - 1 ? .primary : .gray)
+                    }
+                    Button(action: {
+                        if selectedDayIndex > 0 { selectedDayIndex -= 1 }
+                    }) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 18 * 0.7))
+                            .foregroundColor(selectedDayIndex > 0 ? .primary : .gray)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
             }
-            Text("\(monthFilteredRecords.count)건")
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 16)
+            .padding(.bottom, 8)
+            Text("\(displayedRecords.count)건")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.secondary)
                 .padding(.bottom, 12)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 16)
-            Group {
-                if monthFilteredRecords.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "tray")
-                            .resizable()
-                            .frame(width: 50, height: 50)
-                            .foregroundColor(.secondary)
-                        Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
-                            .foregroundColor(.primary)
-                        Button(action: { isAddingNewRecord = true }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
-                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+            // 리스트만 분기
+            if dateFilterMode == .month {
+                Group {
+                    if displayedRecords.isEmpty {
+                        VStack(spacing: 20) {
+                            Image(systemName: "tray")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                                .foregroundColor(.secondary)
+                            Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
+                                .font(.system(size: 14, weight: .regular, design: .rounded))
+                                .foregroundColor(.primary)
+                            Button(action: { isAddingNewRecord = true }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
+                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 20)
+                                .background(Color("HighlightColor"))
+                                .clipShape(Capsule())
+                                .shadow(radius: 4)
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
                             }
-                            .foregroundColor(.white)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 20)
-                            .background(Color("HighlightColor"))
-                            .clipShape(Capsule())
-                            .shadow(radius: 4)
-                            .frame(maxWidth: .infinity)
-                            .multilineTextAlignment(.center)
                         }
-                    }
-                } else {
-                    RecordListSectionView(
-                        records: monthFilteredRecords,
-                        isNewDate: isNewDate,
-                        displayDate: displayDate,
-                        isTodayOrYesterday: isTodayOrYesterday,
-                        recordRowView: { rec in
-                            AnyView(
-                                UnifiedRecordRowView(
-                                    record: rec,
-                                    isDeleteMode: isDeleteMode,
-                                    selected: selectedRecords.contains(rec.objectID),
-                                    onSelect: {
-                                        if selectedRecords.contains(rec.objectID) {
-                                            selectedRecords.remove(rec.objectID)
-                                        } else {
-                                            selectedRecords.insert(rec.objectID)
-                                        }
-                                    },
-                                    onTap: {
-                                        selectedRecord = rec
-                                    },
-                                    colorForCategory: colorForCategory,
-                                    isIncome: isIncome,
-                                    customSectionColor: AppColors.section,
-                                    customBGColor: AppColors.background
+                    } else {
+                        RecordListSectionView(
+                            records: displayedRecords,
+                            isNewDate: isNewDate,
+                            displayDate: displayDate,
+                            isTodayOrYesterday: isTodayOrYesterday,
+                            recordRowView: { rec in
+                                AnyView(
+                                    UnifiedRecordRowView(
+                                        record: rec,
+                                        isDeleteMode: isDeleteMode,
+                                        selected: selectedRecords.contains(rec.objectID),
+                                        onSelect: {
+                                            if selectedRecords.contains(rec.objectID) {
+                                                selectedRecords.remove(rec.objectID)
+                                            } else {
+                                                selectedRecords.insert(rec.objectID)
+                                            }
+                                        },
+                                        onTap: {
+                                            selectedRecord = rec
+                                        },
+                                        colorForCategory: colorForCategory,
+                                        isIncome: isIncome,
+                                        customSectionColor: AppColors.section,
+                                        customBGColor: AppColors.background
+                                    )
                                 )
-                            )
-                        },
-                        selectedDateFilter: selectedDateFilter,
-                        loadedMonthCount: $loadedMonthCount,
-                        fetchRecords: fetchRecords,
-                        customBGColor: AppColors.background
-                    )
+                            },
+                            selectedDateFilter: selectedDateFilter,
+                            loadedMonthCount: $loadedMonthCount,
+                            fetchRecords: fetchRecords,
+                            customBGColor: AppColors.background
+                        )
+                    }
+                }
+            } else {
+                Group {
+                    if dayOptions.isEmpty {
+                        VStack(spacing: 20) {
+                            Image(systemName: "tray")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                                .foregroundColor(.secondary)
+                            Text(NSLocalizedString("no_matching_records", comment: "해당 조건에 맞는 내역이 없습니다."))
+                                .font(.system(size: 14, weight: .regular, design: .rounded))
+                                .foregroundColor(.primary)
+                            Button(action: { isAddingNewRecord = true }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    Text(NSLocalizedString("add_new_entry", comment: "새 항목 추가"))
+                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 20)
+                                .background(Color("HighlightColor"))
+                                .clipShape(Capsule())
+                                .shadow(radius: 4)
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
+                            }
+                        }
+                    } else {
+                        let dayString = dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : ""
+                        let recordsForDay = filteredRecords.filter { record in
+                            guard let date = record.date else { return false }
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "yyyy-MM-dd (E)"
+                            return formatter.string(from: date) == dayString
+                        }
+                        RecordListSectionView(
+                            records: recordsForDay,
+                            isNewDate: isNewDate,
+                            displayDate: displayDate,
+                            isTodayOrYesterday: isTodayOrYesterday,
+                            recordRowView: { rec in
+                                AnyView(
+                                    UnifiedRecordRowView(
+                                        record: rec,
+                                        isDeleteMode: isDeleteMode,
+                                        selected: selectedRecords.contains(rec.objectID),
+                                        onSelect: {
+                                            if selectedRecords.contains(rec.objectID) {
+                                                selectedRecords.remove(rec.objectID)
+                                            } else {
+                                                selectedRecords.insert(rec.objectID)
+                                            }
+                                        },
+                                        onTap: {
+                                            selectedRecord = rec
+                                        },
+                                        colorForCategory: colorForCategory,
+                                        isIncome: isIncome,
+                                        customSectionColor: AppColors.section,
+                                        customBGColor: AppColors.background
+                                    )
+                                )
+                            },
+                            selectedDateFilter: selectedDateFilter,
+                            loadedMonthCount: $loadedMonthCount,
+                            fetchRecords: fetchRecords,
+                            customBGColor: AppColors.background
+                        )
+                    }
                 }
             }
-            if isDeleteMode && !monthFilteredRecords.isEmpty {
+            if isDeleteMode && !displayedRecords.isEmpty {
                 deleteButtons
             }
         }
@@ -596,13 +779,40 @@ struct ContentView: View {
             }
             .buttonStyle(PlainButtonStyle())
             .alert(isPresented: $showingDeleteAlert) {
-                Alert(
+                let deleteCount: Int = {
+                    if dateFilterMode == .month {
+                        return monthFilteredRecords.count
+                    } else {
+                        let dayString = dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : ""
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd (E)"
+                        let recordsForDay = filteredRecords.filter { record in
+                            guard let date = record.date else { return false }
+                            return formatter.string(from: date) == dayString
+                        }
+                        return recordsForDay.count
+                    }
+                }()
+                return Alert(
                     title: Text("정말 현재 화면의 모든 내역을 삭제하시겠습니까?"),
-                    message: Text("현재 화면에 보이는 내역 \(monthFilteredRecords.count)건을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."),
+                    message: Text("현재 화면에 보이는 내역 \(deleteCount)건을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."),
                     primaryButton: .destructive(Text("전체 삭제")) {
                         withAnimation {
-                            for record in monthFilteredRecords {
-                                viewContext.delete(record)
+                            if dateFilterMode == .month {
+                                for record in monthFilteredRecords {
+                                    viewContext.delete(record)
+                                }
+                            } else {
+                                let dayString = dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : ""
+                                let formatter = DateFormatter()
+                                formatter.dateFormat = "yyyy-MM-dd (E)"
+                                let recordsForDay = filteredRecords.filter { record in
+                                    guard let date = record.date else { return false }
+                                    return formatter.string(from: date) == dayString
+                                }
+                                for record in recordsForDay {
+                                    viewContext.delete(record)
+                                }
                             }
                             do {
                                 try viewContext.save()
@@ -1261,11 +1471,5 @@ struct ContentView_LivePreview: View {
     }
 }
 
-struct ContentView_LivePreview_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView_LivePreview()
-            .previewDevice("iPhone 16 Pro")
-    }
-}
 #endif
 

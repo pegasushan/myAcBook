@@ -25,7 +25,7 @@ struct UnifiedRecordRowView: View {
                 Button(action: onSelect) {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(selected ? .pink : .gray)
-                        .font(.system(size: 22))
+                        .font(.system(size: 16))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .padding(.trailing, 4)
