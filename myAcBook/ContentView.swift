@@ -72,11 +72,17 @@ struct ContentView: View {
     @AppStorage("customLightSectionColor") private var customLightSectionColorHex: String = "#F6F7FA"
     @AppStorage("customDarkSectionColor") private var customDarkSectionColorHex: String = "#23272F"
     @Environment(\.colorScheme) var colorScheme
+    // 달력 팝업용 상태 변수 추가
+    @State private var showDatePicker: Bool = false
+    @State private var calendarSelectedDate: Date = Date()
+    @State private var selectedDay: String = ""
+    @State private var selectedMonth: String = "2025-07"
+    @State private var newRecordDate: Date? = nil
 
     // 페이징 관련 상태
     @State private var loadedMonthCount: Int = 1
     @State private var records: [Record] = []
-    @State private var selectedMonth: String = "2025-07"
+    // @State private var selectedMonth: String = "2025-07" // 중복 제거
 
     // MARK: - Date Filter Mode
     enum DateFilterMode: String, CaseIterable, Identifiable {
@@ -118,7 +124,12 @@ struct ContentView: View {
 
     private var displayedRecords: [Record] {
         if dateFilterMode == .month {
-            let monthString = monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : monthOptions.first ?? ""
+            let monthString: String
+            if selectedMonthIndex == -1 {
+                monthString = selectedMonth
+            } else {
+                monthString = monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : monthOptions.first ?? ""
+            }
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM"
             return filteredRecords.filter { record in
@@ -126,7 +137,12 @@ struct ContentView: View {
                 return formatter.string(from: date) == monthString
             }
         } else {
-            let dayString = dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : dayOptions.first ?? ""
+            let dayString: String
+            if selectedDayIndex == -1 {
+                dayString = selectedDay
+            } else {
+                dayString = dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : dayOptions.first ?? ""
+            }
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd (E)"
             return filteredRecords.filter { record in
@@ -134,6 +150,23 @@ struct ContentView: View {
                 return formatter.string(from: date) == dayString
             }
         }
+    }
+
+    // 1. 날짜별 수입/지출 딕셔너리 computed property 추가 (State/Computed property 선언부 근처)
+    private var incomeExpenseByDate: [Date: (income: Double, expense: Double)] {
+        let calendar = Calendar.current
+        var dict: [Date: (income: Double, expense: Double)] = [:]
+        for record in filteredRecords {
+            guard let date = record.date else { continue }
+            let day = calendar.startOfDay(for: date)
+            let isIncome = record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
+            if isIncome {
+                dict[day, default: (0,0)].income += record.amount
+            } else {
+                dict[day, default: (0,0)].expense += record.amount
+            }
+        }
+        return dict
     }
 
     // MARK: - Init
@@ -381,11 +414,14 @@ struct ContentView: View {
                 selectedDayIndex = 0
             }
         }
+        // 새 항목 추가 버튼 클릭 시
+        .onChange(of: isAddingNewRecord) { newValue in
+            if newValue {
+                newRecordDate = calendarSelectedDate
+            }
+        }
         .sheet(isPresented: $isAddingNewRecord) {
-            AddRecordView(onSave: {
-                fetchRecords()
-                notifyStatisticsDataChanged()
-            })
+            AddRecordView(defaultDate: newRecordDate ?? calendarSelectedDate)
         }
         .sheet(isPresented: $showFilterSheet) {
             let type = $selectedTypeFilter
@@ -444,14 +480,22 @@ struct ContentView: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(width: 120)
                 if dateFilterMode == .month {
-                    Menu {
-                        ForEach(monthOptions.indices, id: \.self) { idx in
-                            Button(action: { selectedMonthIndex = idx }) {
-                                Text(monthOptions[idx])
-                            }
+                    // Menu → Button으로 교체
+                    Button(action: {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM"
+                        if monthOptions.indices.contains(selectedMonthIndex), let date = formatter.date(from: monthOptions[selectedMonthIndex]) {
+                            calendarSelectedDate = date
+                        } else {
+                            calendarSelectedDate = Date()
                         }
-                    } label: {
-                        Text(monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : "")
+                        showDatePicker = true
+                    }) {
+                        Text(
+                            selectedMonthIndex == -1
+                                ? selectedMonth
+                                : (monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : "")
+                        )
                             .font(.system(size: 20 * 0.7, weight: .bold))
                             .fixedSize()
                             .frame(minWidth: 120, alignment: .center)
@@ -481,15 +525,24 @@ struct ContentView: View {
                             .font(.system(size: 18 * 0.7))
                             .foregroundColor(selectedMonthIndex > 0 ? .primary : .gray)
                     }
+                    // 달력 버튼(별도) 제거 가능, 이미 label이 달력 역할
                 } else {
-                    Menu {
-                        ForEach(dayOptions.indices, id: \.self) { idx in
-                            Button(action: { selectedDayIndex = idx }) {
-                                Text(dayOptions[idx])
-                            }
+                    // Menu → Button으로 교체
+                    Button(action: {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd (E)"
+                        if dayOptions.indices.contains(selectedDayIndex), let date = formatter.date(from: dayOptions[selectedDayIndex]) {
+                            calendarSelectedDate = date
+                        } else {
+                            calendarSelectedDate = Date()
                         }
-                    } label: {
-                        Text(dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : "")
+                        showDatePicker = true
+                    }) {
+                        Text(
+                            selectedDayIndex == -1
+                                ? selectedDay
+                                : (dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : "")
+                        )
                             .font(.system(size: 20 * 0.7, weight: .bold))
                             .fixedSize()
                             .frame(minWidth: 120, alignment: .center)
@@ -519,11 +572,50 @@ struct ContentView: View {
                             .font(.system(size: 18 * 0.7))
                             .foregroundColor(selectedDayIndex > 0 ? .primary : .gray)
                     }
+                    // 달력 버튼(별도) 제거 가능, 이미 label이 달력 역할
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 16)
             .padding(.bottom, 8)
+            // DatePicker Sheet 추가
+            .sheet(isPresented: $showDatePicker) {
+                CustomCalendarView(
+                    selectedDate: $calendarSelectedDate,
+                    incomeExpenseByDate: incomeExpenseByDate,
+                    onConfirm: {
+                        if dateFilterMode == .month {
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "yyyy-MM"
+                            let selectedMonthStr = formatter.string(from: calendarSelectedDate)
+                            if let idx = monthOptions.firstIndex(of: selectedMonthStr) {
+                                selectedMonthIndex = idx
+                            } else {
+                                // monthOptions에 없으면 임시로 추가 (주의: monthOptions가 computed property면 별도 관리 필요)
+                                // selectedMonthIndex를 -1로 두고, 필터링에서 selectedMonth 우선 적용
+                                selectedMonth = selectedMonthStr
+                                selectedMonthIndex = -1
+                            }
+                        } else {
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "yyyy-MM-dd (E)"
+                            let selectedDayStr = formatter.string(from: calendarSelectedDate)
+                            if let idx = dayOptions.firstIndex(of: selectedDayStr) {
+                                selectedDayIndex = idx
+                            } else {
+                                // dayOptions에 없으면 임시로 추가 (주의: dayOptions가 computed property면 별도 관리 필요)
+                                selectedDay = selectedDayStr
+                                selectedDayIndex = -1
+                            }
+                        }
+                        showDatePicker = false
+                    },
+                    onToday: {
+                        calendarSelectedDate = Date()
+                    }
+                )
+                .frame(maxHeight: 480)
+            }
             Text("\(displayedRecords.count)건")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.secondary)
@@ -596,8 +688,16 @@ struct ContentView: View {
                     }
                 }
             } else {
+                // let 선언을 Group 바깥으로 이동
+                let dayString: String = (selectedDayIndex == -1) ? selectedDay : (dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : "")
+                let recordsForDay = filteredRecords.filter { record in
+                    guard let date = record.date else { return false }
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd (E)"
+                    return formatter.string(from: date) == dayString
+                }
                 Group {
-                    if dayOptions.isEmpty {
+                    if recordsForDay.isEmpty {
                         VStack(spacing: 20) {
                             Image(systemName: "tray")
                                 .resizable()
@@ -624,13 +724,6 @@ struct ContentView: View {
                             }
                         }
                     } else {
-                        let dayString = dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : ""
-                        let recordsForDay = filteredRecords.filter { record in
-                            guard let date = record.date else { return false }
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM-dd (E)"
-                            return formatter.string(from: date) == dayString
-                        }
                         RecordListSectionView(
                             records: recordsForDay,
                             isNewDate: isNewDate,
@@ -707,6 +800,7 @@ struct ContentView: View {
 
             Spacer()
             Button(action: {
+                newRecordDate = calendarSelectedDate
                 isAddingNewRecord = true
             }) {
                 Image(systemName: "plus")

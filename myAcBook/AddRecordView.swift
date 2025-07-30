@@ -426,6 +426,7 @@ struct AddRecordView: View {
 
     var recordToEdit: Record?
     var onSave: (() -> Void)? = nil
+    var defaultDate: Date? = nil // 추가: 외부에서 날짜를 받을 수 있도록
 
     @State private var showCardDropdown = false
     @State private var showCategoryDropdown = false
@@ -435,6 +436,20 @@ struct AddRecordView: View {
 
     @FocusState private var isAmountFieldFocused: Bool
     @FocusState private var isDetailFieldFocused: Bool
+
+    init(defaultDate: Date? = nil, recordToEdit: Record? = nil, onSave: (() -> Void)? = nil) {
+        self.defaultDate = defaultDate
+        self.recordToEdit = recordToEdit
+        self.onSave = onSave
+        // date State 초기값 세팅
+        if let record = recordToEdit {
+            _date = State(initialValue: record.date ?? Date())
+        } else if let defaultDate = defaultDate {
+            _date = State(initialValue: defaultDate)
+        } else {
+            _date = State(initialValue: Date())
+        }
+    }
 
     var body: some View {
         let expenseText = NSLocalizedString("expense", comment: "")
