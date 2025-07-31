@@ -42,10 +42,14 @@ struct CustomCalendarView: View {
             .padding(.top, 12)
             // 요일 헤더
             HStack {
-                ForEach(["일", "월", "화", "수", "목", "금", "토"], id: \ .self) { day in
+                ForEach(["일", "월", "화", "수", "목", "금", "토"], id: \.self) { day in
                     Text(day)
-                        .font(.subheadline).bold()
-                        .foregroundColor(day == "일" ? .pink : (day == "토" ? .blue : .primary))
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(
+                            day == "일" ? Color(red: 1, green: 0.2, blue: 0.5) :
+                            day == "토" ? Color.blue :
+                            Color.gray
+                        )
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -53,28 +57,27 @@ struct CustomCalendarView: View {
             // 날짜 그리드
             let days = makeDays()
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
-                ForEach(days, id: \ .self) { day in
+                ForEach(days, id: \.self) { day in
                     dayCell(day: day)
                 }
             }
             .padding(.horizontal, 4)
             .padding(.bottom, 8)
             // 확인 버튼
+            Spacer().frame(height: 8)
             Button(action: { onConfirm() }) {
                 Text("확인")
-                    .font(.headline)
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.blue)
-                    .cornerRadius(10)
+                    .cornerRadius(20)
                     .padding(.horizontal)
                     .padding(.bottom, 8)
             }
         }
-        .background(Color(.systemBackground))
-        .cornerRadius(18)
-        .shadow(radius: 8)
+        .background(Color.white)
     }
     
     // MARK: - Helpers
@@ -106,27 +109,44 @@ struct CustomCalendarView: View {
         if let date = day {
             let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
             let isToday = calendar.isDateInToday(date)
+            let isSunday = calendar.component(.weekday, from: date) == 1
+            let isSaturday = calendar.component(.weekday, from: date) == 7
             let info = incomeExpenseByDate[calendar.startOfDay(for: date)]
-            VStack(spacing: 2) {
+            VStack(spacing: 0) {
                 ZStack {
                     if isSelected {
-                        Circle().fill(Color.blue.opacity(0.2)).frame(width: 36, height: 36)
+                        Circle().fill(Color.blue).frame(width: 36, height: 36)
                     } else if isToday {
-                        Circle().stroke(Color.blue, lineWidth: 2).frame(width: 36, height: 36)
+                        Circle().fill(Color.blue.opacity(0.15)).frame(width: 36, height: 36)
+                    } else if isSunday || isSaturday {
+                        Circle().fill(Color.gray.opacity(0.08)).frame(width: 36, height: 36)
                     }
                     Text("\(calendar.component(.day, from: date))")
-                        .font(.headline)
-                        .foregroundColor(isSelected ? .blue : (isToday ? .blue : .primary))
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(
+                            isSelected ? .white :
+                            isToday ? .blue :
+                            isSunday ? Color(red: 1, green: 0.2, blue: 0.5) :
+                            isSaturday ? .blue :
+                            .black
+                        )
                 }
+                .padding(.bottom, 2)
                 if let info = info {
-                    Text("+\(formatAmount(info.income))")
-                        .font(.caption2)
-                        .foregroundColor(.blue)
-                    Text("-\(formatAmount(info.expense))")
-                        .font(.caption2)
-                        .foregroundColor(.red)
+                    VStack(spacing: 0) {
+                        if info.income != 0 {
+                            Text("+\(formatAmount(info.income))")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.blue)
+                        }
+                        if info.expense != 0 {
+                            Text("-\(formatAmount(info.expense))")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.red)
+                        }
+                    }
                 } else {
-                    Spacer().frame(height: 18)
+                    Spacer().frame(height: 16)
                 }
             }
             .frame(height: 48)

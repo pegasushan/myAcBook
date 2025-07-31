@@ -10,6 +10,25 @@ extension Date {
         Calendar.current.startOfDay(for: self)
     }
 }
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
+    }
+}
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
 // AdMob 배너 광고 뷰
 struct BannerAdView: UIViewRepresentable {
     func makeUIView(context: Context) -> BannerView {
@@ -339,6 +358,50 @@ struct ContentView: View {
                         // .padding(.bottom, 0)
                         Spacer(minLength: 0)
                     }
+                    // 달력 오버레이
+                    // 기존 오버레이 코드 제거
+                    // if showDatePicker {
+                    //     Color.black.opacity(0.3)
+                    //         .ignoresSafeArea()
+                    //         .onTapGesture { showDatePicker = false }
+                    //     VStack {
+                    //         Spacer()
+                    //         CustomCalendarView(
+                    //             selectedDate: $calendarSelectedDate,
+                    //             incomeExpenseByDate: incomeExpenseByDate,
+                    //             onConfirm: {
+                    //                 if dateFilterMode == .month {
+                    //                     let formatter = DateFormatter()
+                    //                     formatter.dateFormat = "yyyy-MM"
+                    //                     let selectedMonthStr = formatter.string(from: calendarSelectedDate)
+                    //                     if let idx = monthOptions.firstIndex(of: selectedMonthStr) {
+                    //                         selectedMonthIndex = idx
+                    //                     } else {
+                    //                         selectedMonth = selectedMonthStr
+                    //                         selectedMonthIndex = -1
+                    //                     }
+                    //                 } else {
+                    //                     let formatter = DateFormatter()
+                    //                     formatter.dateFormat = "yyyy-MM-dd (E)"
+                    //                     let selectedDayStr = formatter.string(from: calendarSelectedDate)
+                    //                     if let idx = dayOptions.firstIndex(of: selectedDayStr) {
+                    //                         selectedDayIndex = idx
+                    //                     } else {
+                    //                         selectedDay = selectedDayStr
+                    //                         selectedDayIndex = -1
+                    //                     }
+                    //                 }
+                    //                 showDatePicker = false
+                    //             },
+                    //             onToday: { calendarSelectedDate = Date() }
+                    //         )
+                    //         .background(Color.white)
+                    //         .cornerRadius(18, corners: [.topLeft, .topRight])
+                    //         .frame(maxWidth: .infinity)
+                    //         .frame(height: 440)
+                    //         .shadow(radius: 10)
+                    //     }
+                    // }
                 }
             }
         }
@@ -463,6 +526,46 @@ struct ContentView: View {
             if let record = selectedRecord {
                 AddRecordView(recordToEdit: record)
             }
+        }
+        // 달력 sheet 팝업 추가
+        .sheet(isPresented: $showDatePicker) {
+            VStack(spacing: 0) {
+                CustomCalendarView(
+                    selectedDate: $calendarSelectedDate,
+                    incomeExpenseByDate: incomeExpenseByDate,
+                    onConfirm: {
+                        if dateFilterMode == .month {
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "yyyy-MM"
+                            let selectedMonthStr = formatter.string(from: calendarSelectedDate)
+                            if let idx = monthOptions.firstIndex(of: selectedMonthStr) {
+                                selectedMonthIndex = idx
+                            } else {
+                                selectedMonth = selectedMonthStr
+                                selectedMonthIndex = -1
+                            }
+                        } else {
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "yyyy-MM-dd (E)"
+                            let selectedDayStr = formatter.string(from: calendarSelectedDate)
+                            if let idx = dayOptions.firstIndex(of: selectedDayStr) {
+                                selectedDayIndex = idx
+                            } else {
+                                selectedDay = selectedDayStr
+                                selectedDayIndex = -1
+                            }
+                        }
+                        showDatePicker = false
+                    },
+                    onToday: { calendarSelectedDate = Date() }
+                )
+                .background(Color.white)
+                .cornerRadius(18, corners: [.topLeft, .topRight])
+                .frame(maxWidth: .infinity)
+                .frame(height: 440)
+            }
+            .presentationDetents([.height(480)])
+            .presentationDragIndicator(.hidden)
         }
     }
 
@@ -591,8 +694,6 @@ struct ContentView: View {
                             if let idx = monthOptions.firstIndex(of: selectedMonthStr) {
                                 selectedMonthIndex = idx
                             } else {
-                                // monthOptions에 없으면 임시로 추가 (주의: monthOptions가 computed property면 별도 관리 필요)
-                                // selectedMonthIndex를 -1로 두고, 필터링에서 selectedMonth 우선 적용
                                 selectedMonth = selectedMonthStr
                                 selectedMonthIndex = -1
                             }
@@ -603,7 +704,6 @@ struct ContentView: View {
                             if let idx = dayOptions.firstIndex(of: selectedDayStr) {
                                 selectedDayIndex = idx
                             } else {
-                                // dayOptions에 없으면 임시로 추가 (주의: dayOptions가 computed property면 별도 관리 필요)
                                 selectedDay = selectedDayStr
                                 selectedDayIndex = -1
                             }
