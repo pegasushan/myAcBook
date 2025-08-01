@@ -8,8 +8,22 @@ struct CustomCalendarView: View {
     let onConfirm: () -> Void
     let onToday: (() -> Void)?
     
-    @State private var displayMonth: Date = Date()
+    @State private var displayMonth: Date
     private let calendar = Calendar.current
+    
+    // ✅ displayMonth를 selectedDate로 초기화하는 init 추가
+    init(
+        selectedDate: Binding<Date>,
+        incomeExpenseByDate: [Date: (income: Double, expense: Double)],
+        onConfirm: @escaping () -> Void,
+        onToday: (() -> Void)? = nil
+    ) {
+        self._selectedDate = selectedDate
+        self.incomeExpenseByDate = incomeExpenseByDate
+        self.onConfirm = onConfirm
+        self.onToday = onToday
+        _displayMonth = State(initialValue: selectedDate.wrappedValue)
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -90,6 +104,10 @@ struct CustomCalendarView: View {
         .background(Color(UIColor.systemBackground))
         .cornerRadius(18)
         .shadow(radius: 12)
+        .onAppear {
+            // 달력이 나타날 때마다 displayMonth를 selectedDate로 맞춤
+            displayMonth = selectedDate
+        }
     }
     
     // MARK: - Helpers

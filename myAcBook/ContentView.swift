@@ -417,6 +417,18 @@ struct ContentView: View {
                 selectedMonthIndex = 0
                 selectedMonth = allMonths.first ?? ""
             }
+            if selectedDay.isEmpty {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd (E)"
+                selectedDay = formatter.string(from: initialDate)
+            }
+            if selectedMonth.isEmpty {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM"
+                selectedMonth = formatter.string(from: initialDate)
+            }
+            calendarSelectedDate = initialDate
+            tempCalendarSelectedDate = initialDate
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("TestDataInserted"))) { _ in
             fetchRecords()
@@ -548,13 +560,13 @@ struct ContentView: View {
                         } else {
                             selectedMonthIndex = -1
                         }
-                        selectedMonth = selectedMonthStr // 반드시 업데이트
+                        selectedMonth = selectedMonthStr
                         showDatePicker = false
                     }
                 )
                 .presentationDetents([.height(350)])
                 .presentationDragIndicator(.hidden)
-            } else {
+            } else if dateFilterMode == .day {
                 VStack(spacing: 0) {
                     CustomCalendarView(
                         selectedDate: $tempCalendarSelectedDate,
@@ -564,7 +576,7 @@ struct ContentView: View {
                             formatter.dateFormat = "yyyy-MM-dd (E)"
                             let selectedDayStr = formatter.string(from: tempCalendarSelectedDate)
                             selectedDay = selectedDayStr
-                            selectedDayIndex = -1 // 항상 선택한 날짜가 바로 반영되도록
+                            selectedDayIndex = -1
                             calendarSelectedDate = tempCalendarSelectedDate
                             showDatePicker = false
                         },
@@ -1302,7 +1314,15 @@ struct ContentView: View {
                 // 현재 선택된 월을 Date로 변환해서 calendarSelectedDate에 세팅
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM"
-                if let date = formatter.date(from: selectedMonth) {
+                let monthString: String
+                if selectedMonthIndex == -1 {
+                    monthString = selectedMonth
+                } else if monthOptions.indices.contains(selectedMonthIndex) {
+                    monthString = monthOptions[selectedMonthIndex]
+                } else {
+                    monthString = formatter.string(from: Date())
+                }
+                if let date = formatter.date(from: monthString) {
                     calendarSelectedDate = date
                 } else {
                     calendarSelectedDate = Date()
@@ -1330,7 +1350,10 @@ struct ContentView: View {
                 .foregroundColor(colorScheme == .light ? iconColor : Color.white)
             }
             Button(action: {
-                if selectedMonthIndex < monthOptions.count - 1 { selectedMonthIndex += 1 }
+                if selectedMonthIndex < monthOptions.count - 1 {
+                    selectedMonthIndex += 1
+                    selectedMonth = monthOptions[selectedMonthIndex] // 동기화
+                }
             }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18 * 0.7))
@@ -1338,7 +1361,10 @@ struct ContentView: View {
             }
             .padding(.leading, 4)
             Button(action: {
-                if selectedMonthIndex > 0 { selectedMonthIndex -= 1 }
+                if selectedMonthIndex > 0 {
+                    selectedMonthIndex -= 1
+                    selectedMonth = monthOptions[selectedMonthIndex] // 동기화
+                }
             }) {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 18 * 0.7))
@@ -1351,10 +1377,24 @@ struct ContentView: View {
     private var daySelector: some View {
         HStack(spacing: 8) {
             Button(action: {
-                // 현재 선택된 일자를 Date로 변환해서 tempCalendarSelectedDate에 세팅 (요일 무시)
+                // 선택된 날짜가 있으면 그 날짜로, 없으면 dayOptions에서 fallback
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy-MM-dd"
-                if let date = formatter.date(from: String(selectedDay.prefix(10))) {
+                let dayString: String
+                if selectedDayIndex == -1 {
+                    if !selectedDay.isEmpty {
+                        dayString = String(selectedDay.prefix(10))
+                    } else if let first = dayOptions.first {
+                        dayString = String(first.prefix(10))
+                    } else {
+                        dayString = formatter.string(from: Date())
+                    }
+                } else if dayOptions.indices.contains(selectedDayIndex) {
+                    dayString = String(dayOptions[selectedDayIndex].prefix(10))
+                } else {
+                    dayString = formatter.string(from: Date())
+                }
+                if let date = formatter.date(from: dayString) {
                     tempCalendarSelectedDate = date
                 } else {
                     tempCalendarSelectedDate = Date()
@@ -1382,23 +1422,70 @@ struct ContentView: View {
                 .foregroundColor(colorScheme == .light ? iconColor : Color.white)
             }
             Button(action: {
-                if selectedDayIndex < dayOptions.count - 1 { selectedDayIndex += 1 }
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd (E)"
+                let currentDate: Date
+                if selectedDayIndex == -1, !selectedDay.isEmpty {
+                    currentDate = formatter.date(from: selectedDay) ?? Date()
+                } else if dayOptions.indices.contains(selectedDayIndex) {
+                    currentDate = formatter.date(from: dayOptions[selectedDayIndex]) ?? Date()
+                } else {
+                    currentDate = Date()
+                }
+                // 하루 전 날짜
+                if let prevDate = Calendar.current.date(byAdding: .day, value: -1, to: currentDate) {
+                    let prevString = formatter.string(from: prevDate)
+                    if let idx = dayOptions.firstIndex(of: prevString) {
+                        selectedDayIndex = idx
+                        selectedDay = dayOptions[idx]
+                    } else {
+                        selectedDay = prevString
+                        selectedDayIndex = -1
+                    }
+                }
             }) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 18 * 0.7))
-                    .foregroundColor(selectedDayIndex < dayOptions.count - 1 ? .primary : .gray)
-            }
-            .padding(.leading, 4)
-            Button(action: {
-                if selectedDayIndex > 0 { selectedDayIndex -= 1 }
-            }) {
-                Image(systemName: "chevron.right")
                     .font(.system(size: 18 * 0.7))
                     .foregroundColor(selectedDayIndex > 0 ? .primary : .gray)
             }
             .padding(.leading, 4)
+            Button(action: {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd (E)"
+                let currentDate: Date
+                if selectedDayIndex == -1, !selectedDay.isEmpty {
+                    currentDate = formatter.date(from: selectedDay) ?? Date()
+                } else if dayOptions.indices.contains(selectedDayIndex) {
+                    currentDate = formatter.date(from: dayOptions[selectedDayIndex]) ?? Date()
+                } else {
+                    currentDate = Date()
+                }
+                // 하루 후 날짜
+                if let nextDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate) {
+                    let nextString = formatter.string(from: nextDate)
+                    if let idx = dayOptions.firstIndex(of: nextString) {
+                        selectedDayIndex = idx
+                        selectedDay = dayOptions[idx]
+                    } else {
+                        selectedDay = nextString
+                        selectedDayIndex = -1
+                    }
+                }
+            }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18 * 0.7))
+                    .foregroundColor(selectedDayIndex < dayOptions.count - 1 ? .primary : .gray)
+            }
+            .padding(.leading, 4)
         }
     }
+
+    // 원하는 최초 날짜를 ContentView 스코프 내에 명확히 선언
+    private let initialDate: Date = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: "2025-07-15") ?? Date()
+    }()
 }
 
 struct BannerAdContainerView: View {
