@@ -1,6 +1,8 @@
 import SwiftUI
+import UIKit
 
 struct CustomCalendarView: View {
+    @Environment(\.colorScheme) var colorScheme
     @Binding var selectedDate: Date
     let incomeExpenseByDate: [Date: (income: Double, expense: Double)]
     let onConfirm: () -> Void
@@ -12,48 +14,55 @@ struct CustomCalendarView: View {
     var body: some View {
         VStack(spacing: 0) {
             // 상단 네비게이션
-            HStack {
-                Button(action: { moveMonth(-1) }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .foregroundColor(.blue)
+            HStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    Button(action: { moveMonth(-1) }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                    }
+                    Text(monthTitle(displayMonth))
+                        .font(.title3).bold()
+                        .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
+                        .frame(minWidth: 90) // 최소 너비 확보
+                    Button(action: { moveMonth(1) }) {
+                        Image(systemName: "chevron.right")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                    }
                 }
                 Spacer()
-                Text(monthTitle(displayMonth))
-                    .font(.title3).bold()
-                    .foregroundColor(.blue)
-                Spacer()
-                Button(action: { moveMonth(1) }) {
-                    Image(systemName: "chevron.right")
-                        .font(.title2)
-                        .foregroundColor(.blue)
-                }
                 Button(action: {
                     displayMonth = Date()
                     onToday?()
                 }) {
                     Text("오늘")
                         .font(.subheadline).bold()
-                        .foregroundColor(.blue)
-                        .padding(.leading, 8)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(Color(red: 1.0, green: 0.5, blue: 0.7)) // 파스텔 핑크
+                        .cornerRadius(12)
+                        .padding(.leading, 6)
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 12)
+            .padding(.top, 2)
+            .padding(.bottom, 12)
             // 요일 헤더
             HStack {
                 ForEach(["일", "월", "화", "수", "목", "금", "토"], id: \.self) { day in
                     Text(day)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(
-                            day == "일" ? Color(red: 1, green: 0.2, blue: 0.5) :
-                            day == "토" ? Color.blue :
-                            Color.gray
+                            day == "일" ? Color(red: 1, green: 0.6, blue: 0.7) : // 파스텔 핑크
+                            day == "토" ? Color(red: 0.5, green: 0.7, blue: 1.0) : // 파스텔 블루
+                            Color(white: 0.85) // 더 밝은 회색
                         )
                         .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 12)
             // 날짜 그리드
             let days = makeDays()
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
@@ -67,17 +76,20 @@ struct CustomCalendarView: View {
             Spacer().frame(height: 8)
             Button(action: { onConfirm() }) {
                 Text("확인")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(20)
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
+                    .padding(.vertical, 16)
+                    .background(Color(red: 1.0, green: 0.5, blue: 0.7)) // 파스텔 핑크
+                    .cornerRadius(16)
+                    .shadow(radius: 4)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 16)
             }
         }
-        .background(Color.white)
+        .background(Color(UIColor.systemBackground))
+        .cornerRadius(18)
+        .shadow(radius: 12)
     }
     
     // MARK: - Helpers
@@ -109,44 +121,52 @@ struct CustomCalendarView: View {
         if let date = day {
             let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
             let isToday = calendar.isDateInToday(date)
-            let isSunday = calendar.component(.weekday, from: date) == 1
-            let isSaturday = calendar.component(.weekday, from: date) == 7
             let info = incomeExpenseByDate[calendar.startOfDay(for: date)]
             VStack(spacing: 0) {
                 ZStack {
                     if isSelected {
-                        Circle().fill(Color.blue).frame(width: 36, height: 36)
+                        Circle().fill(Color(red: 1.0, green: 0.5, blue: 0.7)).frame(width: 36, height: 36) // 진한 파스텔 핑크
                     } else if isToday {
-                        Circle().fill(Color.blue.opacity(0.15)).frame(width: 36, height: 36)
-                    } else if isSunday || isSaturday {
-                        Circle().fill(Color.gray.opacity(0.08)).frame(width: 36, height: 36)
+                        Circle().fill(Color(red: 1.0, green: 0.5, blue: 0.7).opacity(0.18)).frame(width: 36, height: 36) // 연한 파스텔 핑크
+                    } else if info != nil {
+                        Circle().fill(Color(red: 1.0, green: 0.85, blue: 0.92).opacity(0.7)).frame(width: 36, height: 36) // 연한 파스텔 핑크
                     }
                     Text("\(calendar.component(.day, from: date))")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(
                             isSelected ? .white :
-                            isToday ? .blue :
-                            isSunday ? Color(red: 1, green: 0.2, blue: 0.5) :
-                            isSaturday ? .blue :
-                            .black
+                            isToday ? Color(red: 1.0, green: 0.5, blue: 0.7) :
+                            calendar.component(.weekday, from: date) == 1 ? Color(red: 1, green: 0.6, blue: 0.7) :
+                            calendar.component(.weekday, from: date) == 7 ? Color(red: 1.0, green: 0.5, blue: 0.7) :
+                            .primary
                         )
                 }
+                .padding(.top, 6)
                 .padding(.bottom, 2)
                 if let info = info {
-                    VStack(spacing: 0) {
-                        if info.income != 0 {
-                            Text("+\(formatAmount(info.income))")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.blue)
-                        }
-                        if info.expense != 0 {
-                            Text("-\(formatAmount(info.expense))")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.red)
-                        }
+                    // 항상 두 줄 공간 확보
+                    if info.income != 0 {
+                        Text("+\(formatAmount(info.income))")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(Color(red: 0.4, green: 0.6, blue: 1.0)) // 파스텔 블루
+                    } else {
+                        Text(" ")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.clear)
+                    }
+                    if info.expense != 0 {
+                        Text("-\(formatAmount(info.expense))")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(Color(red: 1.0, green: 0.5, blue: 0.5)) // 파스텔 레드
+                    } else {
+                        Text(" ")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.clear)
                     }
                 } else {
-                    Spacer().frame(height: 16)
+                    // 둘 다 없는 경우에도 두 줄 확보
+                    Text(" ").font(.system(size: 10, weight: .bold)).foregroundColor(.clear)
+                    Text(" ").font(.system(size: 10, weight: .bold)).foregroundColor(.clear)
                 }
             }
             .frame(height: 48)

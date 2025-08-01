@@ -124,6 +124,9 @@ struct ContentView: View {
 
     @State private var selectedMonthIndex: Int = 0
     @State private var selectedDayIndex: Int = 0
+    // 추가: 임시 달력 선택 날짜 및 인덱스 변수
+    @State private var tempCalendarSelectedDate: Date = Date()
+    @State private var tempSelectedDayIndex: Int = 0
 
     private var monthOptions: [String] {
         let formatter = DateFormatter()
@@ -460,26 +463,30 @@ struct ContentView: View {
             fetchRecords()
             notifyStatisticsDataChanged()
         }
-        .onChange(of: dateFilterMode) { _ in
-            if dateFilterMode == .month {
-                selectedMonthIndex = 0
-            } else {
-                selectedDayIndex = 0
+        .onChange(of: dateFilterMode) {
+            if !showDatePicker {
+                if dateFilterMode == .month {
+                    selectedMonthIndex = 0
+                } else {
+                    selectedDayIndex = 0
+                }
             }
         }
-        .onChange(of: monthOptions) { _ in
+        .onChange(of: monthOptions) {
             if selectedMonthIndex >= monthOptions.count {
                 selectedMonthIndex = 0
             }
         }
-        .onChange(of: dayOptions) { _ in
-            if selectedDayIndex >= dayOptions.count {
-                selectedDayIndex = 0
+        .onChange(of: dayOptions) {
+            if !showDatePicker {
+                if selectedDayIndex >= dayOptions.count {
+                    selectedDayIndex = 0
+                }
             }
         }
         // 새 항목 추가 버튼 클릭 시
-        .onChange(of: isAddingNewRecord) { newValue in
-            if newValue {
+        .onChange(of: isAddingNewRecord) {
+            if isAddingNewRecord {
                 newRecordDate = calendarSelectedDate
             }
         }
@@ -529,193 +536,72 @@ struct ContentView: View {
         }
         // 달력 sheet 팝업 추가
         .sheet(isPresented: $showDatePicker) {
-            VStack(spacing: 0) {
-                CustomCalendarView(
-                    selectedDate: $calendarSelectedDate,
-                    incomeExpenseByDate: incomeExpenseByDate,
+            if dateFilterMode == .month {
+                MonthPickerView(
+                    selectedMonth: $calendarSelectedDate,
                     onConfirm: {
-                        if dateFilterMode == .month {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM"
-                            let selectedMonthStr = formatter.string(from: calendarSelectedDate)
-                            if let idx = monthOptions.firstIndex(of: selectedMonthStr) {
-                                selectedMonthIndex = idx
-                            } else {
-                                selectedMonth = selectedMonthStr
-                                selectedMonthIndex = -1
-                            }
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM"
+                        let selectedMonthStr = formatter.string(from: calendarSelectedDate)
+                        if let idx = monthOptions.firstIndex(of: selectedMonthStr) {
+                            selectedMonthIndex = idx
                         } else {
+                            selectedMonthIndex = -1
+                        }
+                        selectedMonth = selectedMonthStr // 반드시 업데이트
+                        showDatePicker = false
+                    }
+                )
+                .presentationDetents([.height(350)])
+                .presentationDragIndicator(.hidden)
+            } else {
+                VStack(spacing: 0) {
+                    CustomCalendarView(
+                        selectedDate: $tempCalendarSelectedDate,
+                        incomeExpenseByDate: incomeExpenseByDate,
+                        onConfirm: {
                             let formatter = DateFormatter()
                             formatter.dateFormat = "yyyy-MM-dd (E)"
-                            let selectedDayStr = formatter.string(from: calendarSelectedDate)
-                            if let idx = dayOptions.firstIndex(of: selectedDayStr) {
-                                selectedDayIndex = idx
-                            } else {
-                                selectedDay = selectedDayStr
-                                selectedDayIndex = -1
-                            }
-                        }
-                        showDatePicker = false
-                    },
-                    onToday: { calendarSelectedDate = Date() }
-                )
-                .background(Color.white)
-                .cornerRadius(18, corners: [.topLeft, .topRight])
-                .frame(maxWidth: .infinity)
-                .frame(height: 440)
+                            let selectedDayStr = formatter.string(from: tempCalendarSelectedDate)
+                            selectedDay = selectedDayStr
+                            selectedDayIndex = -1 // 항상 선택한 날짜가 바로 반영되도록
+                            calendarSelectedDate = tempCalendarSelectedDate
+                            showDatePicker = false
+                        },
+                        onToday: { tempCalendarSelectedDate = Date() }
+                    )
+                    .background(Color.white)
+                    .cornerRadius(18, corners: [.topLeft, .topRight])
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 484)
+                }
+                .presentationDetents([.height(528)])
+                .presentationDragIndicator(.hidden)
             }
-            .presentationDetents([.height(480)])
-            .presentationDragIndicator(.hidden)
         }
     }
 
     private var mainContent: some View {
-        VStack(spacing: 0) {
-            headerBar
-            filterSummarySection
-            // 날짜 그룹핑 Picker와 날짜 선택 Menu를 한 줄(HStack)로 배치
-            HStack(spacing: 12) {
-                Picker("그룹핑", selection: $dateFilterMode) {
-                    ForEach(DateFilterMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .frame(width: 120)
-                if dateFilterMode == .month {
-                    // Menu → Button으로 교체
-                    Button(action: {
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "yyyy-MM"
-                        if monthOptions.indices.contains(selectedMonthIndex), let date = formatter.date(from: monthOptions[selectedMonthIndex]) {
-                            calendarSelectedDate = date
-                        } else {
-                            calendarSelectedDate = Date()
-                        }
-                        showDatePicker = true
-                    }) {
-                        Text(
-                            selectedMonthIndex == -1
-                                ? selectedMonth
-                                : (monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : "")
-                        )
-                            .font(.system(size: 20 * 0.7, weight: .bold))
-                            .fixedSize()
-                            .frame(minWidth: 120, alignment: .center)
-                            .foregroundColor(iconColor)
-                            .padding(.horizontal, 16 * 0.7)
-                            .padding(.vertical, 8 * 0.7)
-                            .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
-                            .cornerRadius(12 * 0.7)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12 * 0.7)
-                                    .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
-                            )
-                            .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
-                            .foregroundColor(colorScheme == .light ? iconColor : Color.white)
-                    }
-                    Button(action: {
-                        if selectedMonthIndex < monthOptions.count - 1 { selectedMonthIndex += 1 }
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18 * 0.7))
-                            .foregroundColor(selectedMonthIndex < monthOptions.count - 1 ? .primary : .gray)
-                    }
-                    Button(action: {
-                        if selectedMonthIndex > 0 { selectedMonthIndex -= 1 }
-                    }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 18 * 0.7))
-                            .foregroundColor(selectedMonthIndex > 0 ? .primary : .gray)
-                    }
-                    // 달력 버튼(별도) 제거 가능, 이미 label이 달력 역할
-                } else {
-                    // Menu → Button으로 교체
-                    Button(action: {
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "yyyy-MM-dd (E)"
-                        if dayOptions.indices.contains(selectedDayIndex), let date = formatter.date(from: dayOptions[selectedDayIndex]) {
-                            calendarSelectedDate = date
-                        } else {
-                            calendarSelectedDate = Date()
-                        }
-                        showDatePicker = true
-                    }) {
-                        Text(
-                            selectedDayIndex == -1
-                                ? selectedDay
-                                : (dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : "")
-                        )
-                            .font(.system(size: 20 * 0.7, weight: .bold))
-                            .fixedSize()
-                            .frame(minWidth: 120, alignment: .center)
-                            .foregroundColor(iconColor)
-                            .padding(.horizontal, 16 * 0.7)
-                            .padding(.vertical, 8 * 0.7)
-                            .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
-                            .cornerRadius(12 * 0.7)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12 * 0.7)
-                                    .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
-                            )
-                            .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
-                            .foregroundColor(colorScheme == .light ? iconColor : Color.white)
-                    }
-                    Button(action: {
-                        if selectedDayIndex < dayOptions.count - 1 { selectedDayIndex += 1 }
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18 * 0.7))
-                            .foregroundColor(selectedDayIndex < dayOptions.count - 1 ? .primary : .gray)
-                    }
-                    Button(action: {
-                        if selectedDayIndex > 0 { selectedDayIndex -= 1 }
-                    }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 18 * 0.7))
-                            .foregroundColor(selectedDayIndex > 0 ? .primary : .gray)
-                    }
-                    // 달력 버튼(별도) 제거 가능, 이미 label이 달력 역할
-                }
+        // ViewBuilder 바깥에서 미리 계산
+        let dayString: String = {
+            if selectedDayIndex == -1 {
+                return selectedDay
+            } else if dayOptions.indices.contains(selectedDayIndex) {
+                return dayOptions[selectedDayIndex]
+            } else {
+                return dayOptions.first ?? ""
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 16)
-            .padding(.bottom, 8)
-            // DatePicker Sheet 추가
-            .sheet(isPresented: $showDatePicker) {
-                CustomCalendarView(
-                    selectedDate: $calendarSelectedDate,
-                    incomeExpenseByDate: incomeExpenseByDate,
-                    onConfirm: {
-                        if dateFilterMode == .month {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM"
-                            let selectedMonthStr = formatter.string(from: calendarSelectedDate)
-                            if let idx = monthOptions.firstIndex(of: selectedMonthStr) {
-                                selectedMonthIndex = idx
-                            } else {
-                                selectedMonth = selectedMonthStr
-                                selectedMonthIndex = -1
-                            }
-                        } else {
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = "yyyy-MM-dd (E)"
-                            let selectedDayStr = formatter.string(from: calendarSelectedDate)
-                            if let idx = dayOptions.firstIndex(of: selectedDayStr) {
-                                selectedDayIndex = idx
-                            } else {
-                                selectedDay = selectedDayStr
-                                selectedDayIndex = -1
-                            }
-                        }
-                        showDatePicker = false
-                    },
-                    onToday: {
-                        calendarSelectedDate = Date()
-                    }
-                )
-                .frame(maxHeight: 480)
-            }
+        }()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd (E)"
+        let recordsForDay = filteredRecords.filter { record in
+            guard let date = record.date else { return false }
+            return formatter.string(from: date) == dayString
+        }
+        return VStack(spacing: 0) {
+            headerBarSection
+            filterSummarySectionView
+            dateSelectionBar
             Text("\(displayedRecords.count)건")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundColor(.secondary)
@@ -788,14 +674,6 @@ struct ContentView: View {
                     }
                 }
             } else {
-                // let 선언을 Group 바깥으로 이동
-                let dayString: String = (selectedDayIndex == -1) ? selectedDay : (dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : "")
-                let recordsForDay = filteredRecords.filter { record in
-                    guard let date = record.date else { return false }
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy-MM-dd (E)"
-                    return formatter.string(from: date) == dayString
-                }
                 Group {
                     if recordsForDay.isEmpty {
                         VStack(spacing: 20) {
@@ -866,6 +744,14 @@ struct ContentView: View {
         }
         .padding(.horizontal, 20)
         .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private var headerBarSection: some View {
+        headerBar
+    }
+
+    private var filterSummarySectionView: some View {
+        filterSummarySection
     }
 
     private var headerBar: some View {
@@ -1375,6 +1261,142 @@ struct ContentView: View {
             fetchRecords()
         } catch {
             // 에러 처리
+        }
+    }
+
+    private var dateSelectionBar: some View {
+        HStack(spacing: 12) {
+            dateFilterPicker
+            monthOrDaySelector
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, 16)
+        .padding(.bottom, 8)
+    }
+
+    private var dateFilterPicker: some View {
+        Picker("그룹핑", selection: $dateFilterMode) {
+            ForEach(DateFilterMode.allCases) { mode in
+                Text(mode.rawValue).tag(mode)
+            }
+        }
+        .pickerStyle(SegmentedPickerStyle())
+        .frame(width: 120)
+    }
+
+    private var monthOrDaySelector: some View {
+        Group {
+            if dateFilterMode == .month {
+                monthSelector
+            } else if dateFilterMode == .day {
+                daySelector
+            } else {
+                EmptyView()
+            }
+        }
+    }
+
+    private var monthSelector: some View {
+        HStack(spacing: 8) {
+            Button(action: {
+                // 현재 선택된 월을 Date로 변환해서 calendarSelectedDate에 세팅
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM"
+                if let date = formatter.date(from: selectedMonth) {
+                    calendarSelectedDate = date
+                } else {
+                    calendarSelectedDate = Date()
+                }
+                showDatePicker = true
+            }) {
+                Text(
+                    selectedMonthIndex == -1
+                        ? selectedMonth
+                        : (monthOptions.indices.contains(selectedMonthIndex) ? monthOptions[selectedMonthIndex] : "")
+                )
+                .font(.system(size: 20 * 0.7, weight: .bold))
+                .fixedSize()
+                .frame(minWidth: 120, alignment: .center)
+                .foregroundColor(iconColor)
+                .padding(.horizontal, 16 * 0.7)
+                .padding(.vertical, 8 * 0.7)
+                .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
+                .cornerRadius(12 * 0.7)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12 * 0.7)
+                        .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
+                )
+                .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
+                .foregroundColor(colorScheme == .light ? iconColor : Color.white)
+            }
+            Button(action: {
+                if selectedMonthIndex < monthOptions.count - 1 { selectedMonthIndex += 1 }
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18 * 0.7))
+                    .foregroundColor(selectedMonthIndex < monthOptions.count - 1 ? .primary : .gray)
+            }
+            .padding(.leading, 4)
+            Button(action: {
+                if selectedMonthIndex > 0 { selectedMonthIndex -= 1 }
+            }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18 * 0.7))
+                    .foregroundColor(selectedMonthIndex > 0 ? .primary : .gray)
+            }
+            .padding(.leading, 4)
+        }
+    }
+
+    private var daySelector: some View {
+        HStack(spacing: 8) {
+            Button(action: {
+                // 현재 선택된 일자를 Date로 변환해서 tempCalendarSelectedDate에 세팅 (요일 무시)
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                if let date = formatter.date(from: String(selectedDay.prefix(10))) {
+                    tempCalendarSelectedDate = date
+                } else {
+                    tempCalendarSelectedDate = Date()
+                }
+                showDatePicker = true
+            }) {
+                Text(
+                    selectedDayIndex == -1
+                        ? selectedDay
+                        : (dayOptions.indices.contains(selectedDayIndex) ? dayOptions[selectedDayIndex] : "")
+                )
+                .font(.system(size: 20 * 0.7, weight: .bold))
+                .fixedSize()
+                .frame(minWidth: 120, alignment: .center)
+                .foregroundColor(iconColor)
+                .padding(.horizontal, 16 * 0.7)
+                .padding(.vertical, 8 * 0.7)
+                .background(colorScheme == .light ? Color.white.opacity(0.95) : Color(UIColor(hex: customDarkCardColorHex)).opacity(0.92))
+                .cornerRadius(12 * 0.7)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12 * 0.7)
+                        .stroke(colorScheme == .light ? borderColor : Color.white.opacity(0.18), lineWidth: 1.2 * 0.7)
+                )
+                .shadow(color: (colorScheme == .light ? borderColor.opacity(0.06) : Color.black.opacity(0.18)), radius: 2 * 0.7, x: 0, y: 1)
+                .foregroundColor(colorScheme == .light ? iconColor : Color.white)
+            }
+            Button(action: {
+                if selectedDayIndex < dayOptions.count - 1 { selectedDayIndex += 1 }
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18 * 0.7))
+                    .foregroundColor(selectedDayIndex < dayOptions.count - 1 ? .primary : .gray)
+            }
+            .padding(.leading, 4)
+            Button(action: {
+                if selectedDayIndex > 0 { selectedDayIndex -= 1 }
+            }) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 18 * 0.7))
+                    .foregroundColor(selectedDayIndex > 0 ? .primary : .gray)
+            }
+            .padding(.leading, 4)
         }
     }
 }
