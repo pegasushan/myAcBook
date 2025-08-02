@@ -582,13 +582,12 @@ struct ContentView: View {
                         },
                         onToday: { tempCalendarSelectedDate = Date() }
                     )
-                    .background(Color.white)
-                    .cornerRadius(18, corners: [.topLeft, .topRight])
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 484)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                 }
-                .presentationDetents([.height(528)])
-                .presentationDragIndicator(.hidden)
+                .background(Color(UIColor.systemBackground).ignoresSafeArea())
+                .presentationDetents([.fraction(0.65)])
+                .presentationDragIndicator(.visible)
             }
         }
     }

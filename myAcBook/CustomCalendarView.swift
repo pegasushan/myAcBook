@@ -27,6 +27,8 @@ struct CustomCalendarView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // 상단 패딩 60pt로 조정
+            Spacer().frame(height: 60)
             // 상단 네비게이션
             HStack(spacing: 4) {
                 HStack(spacing: 4) {
@@ -140,15 +142,35 @@ struct CustomCalendarView: View {
             let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
             let isToday = calendar.isDateInToday(date)
             let info = incomeExpenseByDate[calendar.startOfDay(for: date)]
+            // 다크모드 시인성 개선 색상
+            let circleColor: Color = {
+                if colorScheme == .dark {
+                    if isSelected {
+                        return Color(red: 1.0, green: 0.5, blue: 0.7) // 진한 파스텔 핑크
+                    } else if isToday {
+                        return Color.white.opacity(0.18)
+                    } else if info != nil {
+                        return Color.white.opacity(0.12)
+                    } else {
+                        return Color.clear
+                    }
+                } else {
+                    if isSelected {
+                        return Color(red: 1.0, green: 0.5, blue: 0.7)
+                    } else if isToday {
+                        return Color(red: 1.0, green: 0.5, blue: 0.7).opacity(0.18)
+                    } else if info != nil {
+                        return Color(red: 1.0, green: 0.85, blue: 0.92).opacity(0.7)
+                    } else {
+                        return Color.clear
+                    }
+                }
+            }()
+            let incomeColor: Color = colorScheme == .dark ? Color.cyan : Color(red: 0.4, green: 0.6, blue: 1.0)
+            let expenseColor: Color = colorScheme == .dark ? Color(red: 1.0, green: 0.4, blue: 0.4) : Color(red: 1.0, green: 0.5, blue: 0.5)
             VStack(spacing: 0) {
                 ZStack {
-                    if isSelected {
-                        Circle().fill(Color(red: 1.0, green: 0.5, blue: 0.7)).frame(width: 36, height: 36) // 진한 파스텔 핑크
-                    } else if isToday {
-                        Circle().fill(Color(red: 1.0, green: 0.5, blue: 0.7).opacity(0.18)).frame(width: 36, height: 36) // 연한 파스텔 핑크
-                    } else if info != nil {
-                        Circle().fill(Color(red: 1.0, green: 0.85, blue: 0.92).opacity(0.7)).frame(width: 36, height: 36) // 연한 파스텔 핑크
-                    }
+                    Circle().fill(circleColor).frame(width: 36, height: 36)
                     Text("\(calendar.component(.day, from: date))")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(
@@ -166,25 +188,33 @@ struct CustomCalendarView: View {
                     if info.income != 0 {
                         Text("+\(formatAmount(info.income))")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color(red: 0.4, green: 0.6, blue: 1.0)) // 파스텔 블루
+                            .foregroundColor(incomeColor)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                            .frame(maxWidth: .infinity)
                     } else {
                         Text(" ")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.clear)
+                            .frame(maxWidth: .infinity)
                     }
                     if info.expense != 0 {
                         Text("-\(formatAmount(info.expense))")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color(red: 1.0, green: 0.5, blue: 0.5)) // 파스텔 레드
+                            .foregroundColor(expenseColor)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                            .frame(maxWidth: .infinity)
                     } else {
                         Text(" ")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.clear)
+                            .frame(maxWidth: .infinity)
                     }
                 } else {
                     // 둘 다 없는 경우에도 두 줄 확보
-                    Text(" ").font(.system(size: 10, weight: .bold)).foregroundColor(.clear)
-                    Text(" ").font(.system(size: 10, weight: .bold)).foregroundColor(.clear)
+                    Text(" ").font(.system(size: 10, weight: .bold)).foregroundColor(.clear).frame(maxWidth: .infinity)
+                    Text(" ").font(.system(size: 10, weight: .bold)).foregroundColor(.clear).frame(maxWidth: .infinity)
                 }
             }
             .frame(height: 48)
@@ -204,7 +234,8 @@ struct CustomCalendarView: View {
     }
 }
 
-// 미리보기용
+// CustomCalendarView 미리보기 및 실제 사용 시 높이 지정
+#if DEBUG
 struct CustomCalendarView_Previews: PreviewProvider {
     static var previews: some View {
         CustomCalendarView(
@@ -215,6 +246,7 @@ struct CustomCalendarView_Previews: PreviewProvider {
             onConfirm: {},
             onToday: nil
         )
-        .frame(height: 420)
+        .frame(height: UIScreen.main.bounds.height * 0.5)
     }
 }
+#endif
