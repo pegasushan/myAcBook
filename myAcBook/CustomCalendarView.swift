@@ -34,17 +34,40 @@ struct CustomCalendarView: View {
                 HStack(spacing: 4) {
                     Button(action: { moveMonth(-1) }) {
                         Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(.blue)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(Color(UIColor.systemGray5).opacity(colorScheme == .dark ? 0.25 : 0.7))
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(Color(UIColor.systemGray3), lineWidth: 1)
+                            )
+                            .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
                     }
                     Text(monthTitle(displayMonth))
                         .font(.title3).bold()
                         .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
-                        .frame(minWidth: 90) // 최소 너비 확보
+                        .frame(minWidth: 120, maxWidth: .infinity)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .multilineTextAlignment(.center)
                     Button(action: { moveMonth(1) }) {
                         Image(systemName: "chevron.right")
-                            .font(.title2)
-                            .foregroundColor(.blue)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(Color(UIColor.systemGray5).opacity(colorScheme == .dark ? 0.25 : 0.7))
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(Color(UIColor.systemGray3), lineWidth: 1)
+                            )
+                            .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
                     }
                 }
                 Spacer()
