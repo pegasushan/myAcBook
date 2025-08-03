@@ -642,6 +642,7 @@ struct AddRecordView: View {
                 print("Save error: \(error.localizedDescription)")
             }
         }
+        NotificationCenter.default.post(name: Notification.Name("RecordAdded"), object: date)
     }
     
     private func fetchCategories() {

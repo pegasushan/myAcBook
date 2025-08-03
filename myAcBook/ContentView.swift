@@ -95,7 +95,11 @@ struct ContentView: View {
     @State private var showDatePicker: Bool = false
     @State private var calendarSelectedDate: Date = Date()
     @State private var selectedDay: String = ""
-    @State private var selectedMonth: String = "2025-07"
+    @State private var selectedMonth: String = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        return formatter.string(from: Date())
+    }()
     @State private var newRecordDate: Date? = nil
 
     // 페이징 관련 상태
@@ -417,18 +421,16 @@ struct ContentView: View {
                 selectedMonthIndex = 0
                 selectedMonth = allMonths.first ?? ""
             }
-            if selectedDay.isEmpty {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd (E)"
-                selectedDay = formatter.string(from: initialDate)
-            }
-            if selectedMonth.isEmpty {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM"
-                selectedMonth = formatter.string(from: initialDate)
-            }
-            calendarSelectedDate = initialDate
-            tempCalendarSelectedDate = initialDate
+            let today = Date()
+            calendarSelectedDate = today
+            let monthFormatter = DateFormatter()
+            monthFormatter.dateFormat = "yyyy-MM"
+            selectedMonth = monthFormatter.string(from: today)
+            let dayFormatter = DateFormatter()
+            dayFormatter.dateFormat = "yyyy-MM-dd (E)"
+            selectedDay = dayFormatter.string(from: today)
+            tempCalendarSelectedDate = today
+            tempSelectedDayIndex = 0
         }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("TestDataInserted"))) { _ in
             fetchRecords()
@@ -588,6 +590,12 @@ struct ContentView: View {
                 .background(Color(UIColor.systemBackground).ignoresSafeArea())
                 .presentationDetents([.fraction(0.65)])
                 .presentationDragIndicator(.visible)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("RecordAdded"))) { notification in
+            fetchRecords()
+            if let date = notification.object as? Date {
+                calendarSelectedDate = date
             }
         }
     }
@@ -1352,6 +1360,11 @@ struct ContentView: View {
                 if selectedMonthIndex < monthOptions.count - 1 {
                     selectedMonthIndex += 1
                     selectedMonth = monthOptions[selectedMonthIndex] // 동기화
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM"
+                    if let date = formatter.date(from: monthOptions[selectedMonthIndex]) {
+                        calendarSelectedDate = date
+                    }
                 }
             }) {
                 Image(systemName: "chevron.left")
@@ -1363,6 +1376,11 @@ struct ContentView: View {
                 if selectedMonthIndex > 0 {
                     selectedMonthIndex -= 1
                     selectedMonth = monthOptions[selectedMonthIndex] // 동기화
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM"
+                    if let date = formatter.date(from: monthOptions[selectedMonthIndex]) {
+                        calendarSelectedDate = date
+                    }
                 }
             }) {
                 Image(systemName: "chevron.right")
@@ -1437,9 +1455,13 @@ struct ContentView: View {
                     if let idx = dayOptions.firstIndex(of: prevString) {
                         selectedDayIndex = idx
                         selectedDay = dayOptions[idx]
+                        tempCalendarSelectedDate = prevDate
+                        calendarSelectedDate = prevDate
                     } else {
                         selectedDay = prevString
                         selectedDayIndex = -1
+                        tempCalendarSelectedDate = prevDate
+                        calendarSelectedDate = prevDate
                     }
                 }
             }) {
@@ -1465,9 +1487,13 @@ struct ContentView: View {
                     if let idx = dayOptions.firstIndex(of: nextString) {
                         selectedDayIndex = idx
                         selectedDay = dayOptions[idx]
+                        tempCalendarSelectedDate = nextDate
+                        calendarSelectedDate = nextDate
                     } else {
                         selectedDay = nextString
                         selectedDayIndex = -1
+                        tempCalendarSelectedDate = nextDate
+                        calendarSelectedDate = nextDate
                     }
                 }
             }) {

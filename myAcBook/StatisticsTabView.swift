@@ -365,31 +365,6 @@ struct StatisticsTabView: View {
     }
 
     var body: some View {
-        let colorForCategory: (String?) -> Color = { name in
-            if let name = name {
-                let fetch: NSFetchRequest<AppCategory> = AppCategory.fetchRequest()
-                fetch.predicate = NSPredicate(format: "name == %@", name)
-                if let cat = try? PersistenceController.shared.container.viewContext.fetch(fetch).first, let hex = cat.colorHex, !hex.isEmpty {
-                    return Color(UIColor(hex: hex))
-                }
-            }
-            switch name {
-            case "식대": return .pink
-            case "음료": return .blue
-            case "교통": return .green
-            case "부수입": return .purple
-            case "급여": return .orange
-            case "쿠팡33": return .yellow
-            case "food": return .brown
-            case "salary": return .mint
-            case "side_income": return .purple
-            case "beverage": return .blue
-            default: return .gray
-            }
-        }
-        let isIncome: (Record) -> Bool = { record in
-            record.type == NSLocalizedString("income", comment: "수입") || record.type == "수입"
-        }
         VStack {
             contentView
         }
