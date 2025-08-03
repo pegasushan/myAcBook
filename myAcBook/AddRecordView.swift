@@ -133,7 +133,7 @@ struct AmountInputView: View {
                 .onTapGesture {
                     isAmountFieldFocused = true
                 }
-                .onChange(of: amount) {
+                .onChange(of: amount) { _,_ in
                     let numberString = amount.replacingOccurrences(of: ",", with: "")
                     if let value = Int(numberString) {
                         let formatter = NumberFormatter()
@@ -543,31 +543,7 @@ struct AddRecordView: View {
                         }
                     }
                 }
-                .onChange(of: selectedCategoryIndex) { newValue in
-                    print("selectedCategoryIndex changed: \(newValue?.description ?? "nil")")
-                    if let idx = newValue, idx >= categoryOptions.count {
-                        selectedCategoryIndex = nil
-                        print("selectedCategoryIndex out of bounds, reset to nil")
-                    }
-                }
-                .onChange(of: categoryOptions) { newOptions in
-                    // categoryOptions가 바뀔 때마다 selectedCategoryIndex를 재동기화
-                    if let selectedCategory = selectedCategory,
-                       let name = selectedCategory.name,
-                       let idx = newOptions.firstIndex(of: name) {
-                        selectedCategoryIndex = idx
-                    } else {
-                        selectedCategoryIndex = nil
-                    }
-                    print("[categoryOptions changed] new options: \(newOptions), selectedCategoryIndex: \(selectedCategoryIndex?.description ?? "nil")")
-                }
-                .onChange(of: type) { newType in
-                    // type(지출/수입)이 바뀔 때마다 선택된 카테고리와 인덱스를 모두 초기화
-                    selectedCategory = nil
-                    selectedCategoryIndex = nil
-                    print("[type changed] type: \(newType), categoryOptions: \(categoryOptions), selectedCategoryIndex: nil (reset)")
-                }
-                .onChange(of: selectedCategoryIndex) {
+                .onChange(of: selectedCategoryIndex) { _,_ in
                     if let idx = selectedCategoryIndex, categoryOptions.indices.contains(idx) {
                         let name = categoryOptions[idx]
                         if let cat = fetchedCategories.first(where: { $0.name == name }) {
@@ -575,7 +551,7 @@ struct AddRecordView: View {
                         }
                     }
                 }
-                .onChange(of: selectedCardIndex) {
+                .onChange(of: selectedCardIndex) { _,_ in
                     if let idx = selectedCardIndex, cardViewModel.cards.indices.contains(idx) {
                         selectedCard = cardViewModel.cards[idx]
                     }
@@ -583,10 +559,35 @@ struct AddRecordView: View {
                 .onReceive(fetchedCategories.publisher.collect()) { _ in
                     // selectedCategoryIndex를 fetchedCategories 기준으로 세팅하는 코드를 제거하여, 항상 categoryOptions 기준으로만 동기화되도록 한다.
                 }
-                .onChange(of: cardViewModel.cards) {
+                .onChange(of: cardViewModel.cards) { _,_ in
                     if let selected = selectedCard,
                        let idx = cardViewModel.cards.firstIndex(where: { $0.objectID == selected.objectID }) {
                         selectedCardIndex = idx
+                    }
+                }
+                .onChange(of: type) { _,_ in
+                    // type(지출/수입)이 바뀔 때마다 선택된 카테고리와 인덱스를 모두 초기화
+                    selectedCategory = nil
+                    selectedCategoryIndex = nil
+                    print("[type changed] type: \(type), categoryOptions: \(categoryOptions), selectedCategoryIndex: nil (reset)")
+                }
+                .onChange(of: categoryOptions) { _,_ in
+                    // categoryOptions가 바뀔 때마다 selectedCategoryIndex를 재동기화
+                    if let selectedCategory = selectedCategory,
+                       let name = selectedCategory.name,
+                       let idx = categoryOptions.firstIndex(of: name) {
+                        selectedCategoryIndex = idx
+                    } else {
+                        selectedCategoryIndex = nil
+                    }
+                    print("[categoryOptions changed] new options: \(categoryOptions), selectedCategoryIndex: \(selectedCategoryIndex?.description ?? "nil")")
+                }
+                .onChange(of: amount) { _,_ in
+                    let numberString = amount.replacingOccurrences(of: ",", with: "")
+                    if let value = Int(numberString) {
+                        let formatter = NumberFormatter()
+                        formatter.numberStyle = .decimal
+                        amount = formatter.string(from: NSNumber(value: value)) ?? ""
                     }
                 }
             }
