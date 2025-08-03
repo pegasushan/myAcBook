@@ -4,5 +4,13 @@
 <dict>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-7005642235163744~3610956801</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 </dict>
 </plist>

@@ -1,7 +1,16 @@
 import SwiftUI
+import UIKit
+
+// 앱 전체를 세로(Portrait)로만 고정하는 AppDelegate 추가
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        return .portrait
+    }
+}
 
 @main
 struct myAcBookApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     let persistenceController = PersistenceController.shared
     @AppStorage("colorScheme") private var colorScheme: String = "system"
     @AppStorage("isAppLockEnabled") private var isAppLockEnabled: Bool = false
